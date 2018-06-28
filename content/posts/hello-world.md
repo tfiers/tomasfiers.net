@@ -1,6 +1,6 @@
 ---
-title: "Hello World"
-date: 2018-06-28T15:19:48+02:00
----
+title: Hello World
+date: 2018-06-28 13:19:48 +0000
 
-Yes bitches
+---
+Dinges
