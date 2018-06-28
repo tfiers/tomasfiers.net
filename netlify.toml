@@ -4,6 +4,8 @@
 [build]
   # Static site generator (.md > .html)
   command = "hugo"
-  HUGO_VERSION = "0.42"
   # Directory to save the html to
   publish = "public/"
+
+[context.production.environment]
+  HUGO_VERSION = "0.42"
