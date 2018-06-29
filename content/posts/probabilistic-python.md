@@ -3,6 +3,15 @@ title: "Probabilistic programming in Python: Pyro versus PyMC3"
 date: 2018-06-28T16:45:16+02:00
 ---
 
+_I wrote this as an answer to a question in [the
+lab](https://kloostermanlab.org/) where I did my master's thesis. I posted a
+link introducing [Pyro](http://pyro.ai/examples/) to the lab chat, and the PI
+wondered about differences and limitations compared to
+[PyMC3](https://docs.pymc.io/index.html), the then used tool for statistical
+modelling in Python. When should you use Pyro, PyMC3, or still another tool?_
+
+<!--more-->
+
 
 ## Part 1: Goals
 
@@ -12,11 +21,13 @@ BUGS, perform so called **approximate inference**.
 
 _Inference_ means, rather abstractly, to determine the joint probability
 distribution $p(x)$ underlying some data set ${x}$. For example, $x$ might
-consist of three variables: _ff_. You have gathered a great many data points
-{(,,), (,,), ..}, and you now want to get a feel for the density in this (,,)
-space; i.e. which values are common? And which combinations occur together
-often? (This information can be used for prediction, for example when only two
-of the three values of some data point are known).
+consist of three variables: _wind speed_, _cloudiness_, and _sound of rustling
+leaves_. You have gathered a great many data points {(3 km/h, 82%, 8 dB_SPL),
+(23 km/h, 15%, 42 dB_SPL), ..}, and you now want to get a feel for the density
+in this (wind speed, cloudiness, rustle sound) space; i.e. which values are
+common? And which combinations occur together often? (This information can be
+used for prediction; for example when only two of the three values of a data
+point are known).
 
 In practice, inference means to directly _use_ the probability distribution. You
 might want to:
@@ -123,9 +134,10 @@ you have to give a unique name, and that represent probability distributions.
 That is why, for these libraries, the computational graph is a probabilistic
 model.
 
-The **automatic differentiation** part of the Theano, PyTorch, or TensorFlow
-frameworks **can now compute exact derivatives of the output of your function with
-respect to its parameters** (`x` and `y` in the example).
+The automatic differentiation part of the Theano, PyTorch, or TensorFlow
+frameworks can now compute **exact derivatives of the output of your function
+with respect to its parameters** (i.e. $\pd{model}{x}$ and $\pd{model}{y}$ in
+the example).
 
 As an aside, this is why these three frameworks are (foremost) used for
 specifying and fitting neural network models ("deep learning"): the main
@@ -218,7 +230,7 @@ is a rather big disadvantage at the moment.
 
 As to when you should use sampling and when variational inference: I don't have
 enough experience with approximate inference to make claims; from [this
-StackExchange answer](https://stats.stackexchange.com/a/271862/191343) however:
+StackExchange question](https://stats.stackexchange.com/q/271844/191343) however:
 
 > Thus, variational inference is suited to large data sets and scenarios where
 > we want to quickly explore many models; MCMC is suited to smaller data sets
@@ -230,12 +242,13 @@ StackExchange answer](https://stats.stackexchange.com/a/271862/191343) however:
 > billion text documents and where the inferences will be used to serve search
 > results to a large population of users. In this scenario, we can use
 > distributed computation and stochastic optimization to scale and speed up
-> inference, and we can easily explore many different models of the data.
+> inference, and we can easily explore many different models of the data. –
+> [Sean Easter](https://stats.stackexchange.com/a/271862/191343)
 
-I think VI can also be very useful for 'small data', when you want to fit a
-model with many parameters / hidden variables – and of course a good regulariser
-in that case. I.e. you are not sure what a good model would be. (The final
-model that you find can then be described in simpler terms).
+I think VI can also be useful for 'small data', when you want to fit a model
+with many parameters / hidden variables. (Of course making sure good
+regularisation is applied). That is, you are not sure what a good model would
+be; The final model that you find can then be described in simpler terms.
 
 
 So the conclusion seems to be: the classics PyMC3 and Stan still come out as the
