@@ -103,12 +103,12 @@ Additionally however, they also offer automatic differentiation (which they
 often call "autograd"):
 
 They expose a whole library of functions on tensors, that you can compose with
-`+`, `-`, `*`, `/`, tensor concatenation, analytic functions, etc. The result is
-called a _computational graph_. This computational graph is your 'function', or
-your model. For example:
+`+`, `-`, `*`, `/`, tensor concatenation, etc. The result is called a
+_computational graph_. This computational graph is your 'function', or your
+model. For example:
 
 ```python
-def model(x,y):
+def model(x, y):
    s = framework.sin(x)
    m = 3 * framework.max(x, 6*y)
    return s + m

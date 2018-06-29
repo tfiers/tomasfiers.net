@@ -2,3 +2,6 @@ baseURL = "https://tomasfiers.net/"
 languageCode = "en-us"
 title = "Tomas Fiers"
 theme = "hyde"
+
+# Enable ```python [code]```
+pygmentsCodeFences = true
