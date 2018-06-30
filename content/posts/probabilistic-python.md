@@ -3,12 +3,12 @@ title: "Probabilistic programming in Python: Pyro versus PyMC3"
 date: 2018-06-28T16:45:16+02:00
 ---
 
-_I wrote this as an answer to a question in [the
-lab](https://kloostermanlab.org/) where I did my master's thesis. I posted a
-link introducing [Pyro](http://pyro.ai/examples/) to the lab chat, and the PI
-wondered about differences and limitations compared to
-[PyMC3](https://docs.pymc.io/index.html), the then used tool for statistical
-modelling in Python. When should you use Pyro, PyMC3, or still another tool?_
+_This post was sparked by a question in [the lab](https://kloostermanlab.org/)
+where I did my master's thesis. I had sent a link introducing
+[Pyro](http://pyro.ai/examples/) to the lab chat, and the PI wondered about
+differences and limitations compared to
+[PyMC3](https://docs.pymc.io/index.html), the 'classic' tool for statistical
+modelling in Python. When should you use Pyro, PyMC3, or something else still?_
 
 <!--more-->
 
@@ -20,28 +20,27 @@ Pyro, and other probabilistic programming packages such as Stan, Edward, and
 BUGS, perform so called **approximate inference**.
 
 _Inference_ means, rather abstractly, to determine the joint probability
-distribution $p(x)$ underlying some data set ${x}$. For example, $x$ might
-consist of three variables: _wind speed_, _cloudiness_, and _sound of rustling
-leaves_. You have gathered a great many data points {(3 km/h, 82%, 8 dB_SPL),
-(23 km/h, 15%, 42 dB_SPL), ..}, and you now want to get a feel for the density
-in this (wind speed, cloudiness, rustle sound) space; i.e. which values are
-common? And which combinations occur together often? (This information can be
-used for prediction; for example when only two of the three values of a data
-point are known).
+distribution $p(x)$ underlying a data set ${x}$. For example, $x$ might consist
+of three variables: _wind speed_, _cloudiness_, and _sound level of the rustling
+leaves_. You have gathered a great many data points { (3 km/h, 82%, 8 dB_SPL),
+(23 km/h, 15%, 42 dB_SPL), ... }, and you now want to get a feel for the density
+in this data space. I.e. which values are common? And which combinations occur
+together often? (This information can be used for prediction: for example when
+only two of the three values of a data point are known).
 
-In practice, inference means to directly _use_ the probability distribution. You
+In practice, inference means to directly _use_ this probability distribution. You
 might want to:
 
 - Do a 'lookup' in the probabilty distribution, i.e. calculate how likely a
   given datapoint is;
 - Marginalise (= summate) the joint probability distribution over the variables
   you're not interested in, so you can make a nice 1D or 2D plot of the
-  resulting distribution (Symbolically: p(b) = \sum_a p(a,b));
+  resulting marginal distribution (Symbolically: p(b) = \sum_a p(a,b));
 - Combine marginalisation and lookup to answer conditional questions: given the
   value for this variable, how likely is the value of some other variable?
   (Symbolically: p(a|b) = p(a,b) / p(b))
 - Find the most likely set of data for this distribution, i.e. calculate the
-  mode (`argmax`). (This can be used in Bayesian learning of a parametric model.
+  mode, `argmax`. (This can be used in Bayesian learning of a parametric model.
   The probability distribution in question is then a conditional probability
   distribution over parameters. You can then answer: given the data, what are
   the most likely parameters of the model?)
