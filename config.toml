@@ -3,5 +3,5 @@ languageCode = "en-us"
 title = "Tomas Fiers"
 theme = "hyde"
 
-# Enable ```python [code]```
+# Enable << ```python [some code]``` >> syntax in markdown
 pygmentsCodeFences = true
