@@ -1,7 +1,7 @@
 ---
 title: "Web interface to label neuro data"
 date: 2018-06-29T16:42:01+02:00
-image: Slanted-Slice-01.png
+image: 
 ---
 
 The signals I had to detect for my master's thesis where not clearly defined –
