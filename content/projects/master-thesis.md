@@ -1,6 +1,6 @@
 ---
 title: "Master's thesis: Signal processing for neuroscience"
-date: 2018-06-29T16:47:28+02:00
+date: 2018-07-01
 image: Slanted-Slice-01.png
 ---
 

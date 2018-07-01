@@ -1,6 +1,6 @@
 ---
-title: "3D Rat Brain"
-date: 2018-07-01T13:51:35+02:00
+title: "Online 3D rat brain"
+date: 2018-05-01
 image: 3D-DG.png
 ---
 
