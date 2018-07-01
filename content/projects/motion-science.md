@@ -8,5 +8,5 @@ image: Mocap.gif
 full of sensors that can be worn anywhere on the body. My job was to validate
 the signal quality of the motion sensors (accelerometer, gyroscope, and
 magnetometer) against the golden standard: motion capture. Read all about it in
-this [blog
+[this blog
 post](https://news.byteflies.com/blog/summer-interning-at-byteflies-data-science).
