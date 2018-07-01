@@ -5,3 +5,7 @@ theme = "hyde"
 
 # Enable << ```python [some code]``` >> syntax in markdown
 pygmentsCodeFences = true
+
+# Simple sections menu
+sectionPagesMenu = "main"
+
