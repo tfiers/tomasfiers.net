@@ -9,8 +9,14 @@
     text-decoration: none;
 }
 
-.sidebar-about p {
-    font-size: 1.25rem;
+.social a {
+    text-decoration: none;
+    color: rgba(255,255,255,.5);
+    font-size: 1.08rem;
+}
+
+.social a:hover {
+    color: #0084b4;
 }
 
 #sidebar-smallprint a {
