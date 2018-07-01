@@ -1,3 +1,18 @@
-#license {
+.sidebar-about h1 {
+    color: #fff;
+    margin-top: 0;
+    font-size: 2.5rem;
+    font-family: "Markazi Text";
+}
+
+.sidebar-about a {
+    text-decoration: none;
+}
+
+.sidebar-about p {
+    font-size: 1.25rem;
+}
+
+#sidebar-smallprint a {
     color: rgba(255,255,255,.5);
 }

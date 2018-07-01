@@ -1,11 +1,13 @@
 <div class="sidebar">
   <div class="container sidebar-sticky">
-<!--     <div class="sidebar-about">
+
+
+    <div class="sidebar-about">
       <a href="{{ .Site.BaseURL }}"><h1>{{ .Site.Title }}</h1></a>
       <p class="lead">
-      {{ with .Site.Params.description }} {{.}} {{ else }}An elegant JOLK open source and mobile first theme for <a href="http://hugo.spf13.com">hugo</a> made by <a href="http://twitter.com/mdo">@mdo</a>. Originally made for Jekyll.{{end}}
+      Signals, software, and science
       </p>
-    </div> -->
+    </div>
 
     <ul class="sidebar-nav">
       <li><a href="{{ .Site.BaseURL }}">About</a></li>
@@ -13,10 +15,12 @@
       <li><a href="{{ .Site.BaseURL }}posts">Posts</a></li>
     </ul>
 
-    <p>
+    <p id="sidebar-smallprint">
+      <a href="https://github.com/tfiers/tomasfiers.net/">Source</a>
+       •
       <a href="https://creativecommons.org/licenses/by-sa/4.0/"
          id="license">
-      License: CC BY-SA
+        License
       </a>
     </p>
   </div>
