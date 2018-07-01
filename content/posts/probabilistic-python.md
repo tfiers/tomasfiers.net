@@ -24,9 +24,9 @@ distribution $p(x)$ underlying a data set ${x}$. For example, $x$ might consist
 of three variables: _wind speed_, _cloudiness_, and _sound level of the rustling
 leaves_. You have gathered a great many data points { (3 km/h, 82%, 8 dB_SPL),
 (23 km/h, 15%, 42 dB_SPL), ... }, and you now want to get a feel for the density
-in this data space. I.e. which values are common? And which combinations occur
-together often? (This information can be used for prediction: for example when
-only two of the three values of a data point are known).
+in this wind-clouds-rustle space. I.e. which values are common? And which
+combinations occur together often? (This information can be used for prediction:
+for example when only two of the three values of a data point are known).
 
 In practice, inference means to directly _use_ this probability distribution. You
 might want to:

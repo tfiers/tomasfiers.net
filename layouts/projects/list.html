@@ -4,7 +4,7 @@
 {{ range .Data.Pages -}}
 <div class="post">
   <h1 class="post-title">{{ .Title }}</h1>
-  <img src="/{{ .Params.Image }}">
+  <img src="/content/{{ .Params.Image }}">
   {{ .Content }}
 </div>
 {{- end }}
