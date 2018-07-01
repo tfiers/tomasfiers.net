@@ -1,5 +1,5 @@
 ---
-title: "Master's thesis: Signal processing for neuroscience"
+title: "Master's thesis: machine learning for neuroscience"
 date: 2018-07-01
 image: Slanted-Slice-01.png
 ---
