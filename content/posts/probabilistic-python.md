@@ -41,8 +41,8 @@ might want to:
   value for this variable, how likely is the value of some other variable?
   (Symbolically: $p(a|b) = \frac{p(a,b)}{p(b)}$)
 - Find the most likely set of data for this distribution, i.e. calculate the
-  mode, $\text{arg max}\_{a,b}\ p(a,b)$. (This can be used in Bayesian learning
-  of a parametric model. The probability distribution in question is then a
+  mode, $\text{arg max}\ p(a,b)$. (This can be used in Bayesian learning of a
+  parametric model. The probability distribution in question is then a
   probability distribution over parameters. You can then answer: given the data,
   what are the most likely parameters of the model?)
 
