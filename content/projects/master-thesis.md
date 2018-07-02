@@ -13,6 +13,6 @@ abstract](https://docs.google.com/document/d/15s-bZM8kam85nFLLU4uAXUC2fgHxB81u75
 This [poster](/content/Poster-SWR-NERF-retreat.pdf), made at the beginning of
 the project, visually shows the setup and the initial plan. I developed a
 detection algorithm based on a gated recurrent neural network, yielding a
-significant improvement over the state of the art. (For the hippocampus
-connoisseurs: [here](/content/Detections.pdf) are some preliminary detection
-results. Blue: state of the art method. Magenta: new method).
+significant improvement over the state of the art. (For the hippocampal sharp
+wave-ripple connoisseurs: [here](/content/Detections.pdf) are some preliminary
+detection results. Blue: state of the art method. Magenta: new method).
