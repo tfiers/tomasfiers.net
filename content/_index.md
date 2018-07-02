@@ -26,7 +26,7 @@ and machine learning
 [more Bayes](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm),
 [deep learning](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm),
 [classic multivariate statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
-[non-linear systems](https://onderwijsaanbod.kuleuven.be/syllabi/n/H0S11AN.htm),
+[nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm),
 [ML overview](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
 [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm)).
 
