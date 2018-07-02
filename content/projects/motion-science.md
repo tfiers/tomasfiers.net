@@ -2,6 +2,7 @@
 title: "Data science internship: wearable motion sensor validation"
 date: 2017-09-01
 image: Mocap.gif
+link: https://news.byteflies.com/blog/summer-interning-at-byteflies-data-science
 ---
 
 [Byteflies](https://www.byteflies.com/) makes medical wearables – small devices

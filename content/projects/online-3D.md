@@ -2,6 +2,7 @@
 title: "Interactive 3D rat brain"
 date: 2018-05-01
 image: 3D-DG.png
+link: https://tfiers.github.io/3D-rat-brain/
 ---
 
 I wanted to learn about the gross neuroanatomy of the animals in the lab.

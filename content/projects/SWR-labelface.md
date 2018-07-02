@@ -2,6 +2,7 @@
 title: "Web interface to label neuro data"
 date: 2018-06-29
 image: Labelface-3.png
+link: https://tfiers.github.io/labelface
 ---
 
 The signals I had to detect for my master's thesis were not clearly defined –
