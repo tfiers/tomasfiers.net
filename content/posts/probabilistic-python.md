@@ -20,11 +20,12 @@ Pyro, and other probabilistic programming packages such as Stan, Edward, and
 BUGS, perform so called **approximate inference**.
 
 _Inference_ means, rather abstractly, to determine the joint probability
-distribution $p(x)$ underlying a data set ${x}$. For example, $x$ might consist
-of three variables: _wind speed_, _cloudiness_, and _sound level of the rustling
-leaves_. You have gathered a great many data points { (3 km/h, 82%, 8 dB_SPL),
-(23 km/h, 15%, 42 dB_SPL), ... }, and you now want to get a feel for the density
-in this wind-clouds-rustle space. I.e. which values are common? And which
+distribution $p(\boldsymbol{x})$ underlying a data set {$\boldsymbol{x}$}. For
+example, $\boldsymbol{x}$ might consist of three variables: _wind speed_,
+_cloudiness_, and _sound level of the rustling leaves_. You have gathered a
+great many data points { (3 km/h, 82%, 8 dB<sub>SPL</sub> ), (23 km/h, 15%, 42
+dB<sub>SPL</sub> ), ... }, and you now want to get a feel for the density in
+this wind-clouds-rustle space. I.e. which values are common? And which
 combinations occur together often? (This information can be used for prediction:
 for example when only two of the three values of a data point are known).
 
@@ -35,15 +36,15 @@ might want to:
   given datapoint is;
 - Marginalise (= summate) the joint probability distribution over the variables
   you're not interested in, so you can make a nice 1D or 2D plot of the
-  resulting marginal distribution (Symbolically: p(b) = \sum_a p(a,b));
+  resulting marginal distribution. (Symbolically: $p(b) = \sum_a p(a,b)$);
 - Combine marginalisation and lookup to answer conditional questions: given the
   value for this variable, how likely is the value of some other variable?
-  (Symbolically: p(a|b) = p(a,b) / p(b))
+  (Symbolically: $p(a|b) = \frac{p(a,b)}{p(b)}$)
 - Find the most likely set of data for this distribution, i.e. calculate the
-  mode, `argmax`. (This can be used in Bayesian learning of a parametric model.
-  The probability distribution in question is then a conditional probability
-  distribution over parameters. You can then answer: given the data, what are
-  the most likely parameters of the model?)
+  mode, $\text{arg max}\_{a,b}\ p(a,b)$. (This can be used in Bayesian learning
+  of a parametric model. The probability distribution in question is then a
+  probability distribution over parameters. You can then answer: given the data,
+  what are the most likely parameters of the model?)
 
 We have to resort to _approximate_ inference when we do not have closed,
 analytical formulas for the above calculations. Apparently this is often the
@@ -135,8 +136,8 @@ model.
 
 The automatic differentiation part of the Theano, PyTorch, or TensorFlow
 frameworks can now compute **exact derivatives of the output of your function
-with respect to its parameters** (i.e. $\pd{model}{x}$ and $\pd{model}{y}$ in
-the example).
+with respect to its parameters** (i.e. $\frac{\partial \ \text{model}}{\partial
+x}$ and $\frac{\partial \ \text{model}}{\partial y}$ in the example).
 
 As an aside, this is why these three frameworks are (foremost) used for
 specifying and fitting neural network models ("deep learning"): the main
@@ -155,11 +156,11 @@ Python development, according to their marketing and to their design goals. In
 my experience, this is true. In Theano and TensorFlow, you build a (static)
 computational graph as above, and then 'compile' it. In PyTorch, there is no
 separate compilation step. Commands are executed immediately. (If you execute `a
-= sqrt(16)`, then `a` will contain `4` [1]. Not so in Theano or TensorFlow).
-This means that debugging is easier: you can for example insert `print`
-statements in the `def model` example above. This is not possible in the other
-two frameworks. It also means that models can be more expressive: PyTorch can
-auto-differentiate functions that contain plain Python loops, `if`s, and
+= sqrt(16)`, then `a` will contain `4` <sup>[1]</sup>. Not so in Theano or
+TensorFlow). This means that debugging is easier: you can for example insert
+`print` statements in the `def model` example above. This is not possible in the
+other two frameworks. It also means that models can be more expressive: PyTorch
+can auto-differentiate functions that contain plain Python loops, `if`s, and
 function calls (including recursion and closures). Also, like Theano but unlike
 TensorFlow, PyTorch tries to make its tensor API as similar to NumPy's as
 possible.
@@ -171,7 +172,7 @@ to use immediate execution / dynamic computational graphs in the style of
 PyTorch.
 
 
-[1] This is pseudocode. Real PyTorch code:
+<sup>[1]</sup> This is pseudocode. Real PyTorch code:
 ```python
 import torch
 a = torch.sqrt(torch.Tensor([16]))
@@ -196,8 +197,8 @@ differentiation (ADVI). For MCMC sampling, it offers the NUTS algorithm. NUTS is
 easy for the end user: no manual tuning of sampling parameters is needed.
 
 **Pyro** came out November 2017. Not much documentation yet. It was built with
-large scale ADVI problems in mind. Beginning of 2018, support for approximate
-inference was added, with both the NUTS and the HMC algorithms.
+large scale ADVI problems in mind. Beginning of this year, support for
+approximate inference was added, with both the NUTS and the HMC algorithms.
 
 **Edward** is also relatively new (Februari 2016). It offers both approximate
 inference by sampling and variational inference. I don't know much about it,
