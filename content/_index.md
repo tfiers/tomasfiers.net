@@ -10,7 +10,7 @@ I am a machine learning and software engineer, irresistibly attracted to
 circuit-level neuroscience.
 
 You are welcome to read one of my [posts](/posts), or check out some
-of the things I built under [posts](/posts).
+of the things I built under [projects](/projects).
 
 {{% /sidepic %}}
 
