@@ -22,3 +22,30 @@
 #sidebar-smallprint a {
     color: rgba(255,255,255,.5);
 }
+
+.sidepic {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+}
+
+.sidepic-text {
+    min-width: 12rem;
+    flex: 1;
+}
+
+.sidepic-pic {
+    max-width: 8.8rem;
+    margin-left: 1rem;
+}
+
+/* Bootstrap extra-small screens (portrait phones) */
+@media (max-width: 575.98px) {
+    .sidepic {
+        flex-direction: column;
+    }
+    .sidepic-pic {
+        order: -1;
+        margin: auto;
+    }
+}
