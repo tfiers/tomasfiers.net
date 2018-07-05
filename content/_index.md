@@ -16,11 +16,21 @@ of the things I built under [projects](/projects).
 
 
 
+## Scientific goal
+
+I want to discover circuit-level mechanisms in higher-order brain areas. I plan
+to do this by 1). applying an ever-improving machine learning toolbox to large
+scale activity recordings at the level of individual cells <!-- to reveal robust
+patterns; --> and 2). building software models that make vague theories
+explicit, predict experimental data, and generate testable hypotheses.
+
+
+
 ## Education
 
 I have a bachelor's in computer science and electrical engineering, and a
 master's in biomedical engineering, from [KU Leuven](https://www.kuleuven.be/english/).
-I took every course offered by the university in neuroscience
+I took every graduate-level course offered by the university in neuroscience
 ([methods](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
 [computation](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02B3AE.htm)),
 and machine learning
