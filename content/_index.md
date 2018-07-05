@@ -2,7 +2,7 @@
 ---
 
 
-{{% sidepic filename="me.jpg" %}}
+{{% sidepic %}}
 
 ## Welcome
 
