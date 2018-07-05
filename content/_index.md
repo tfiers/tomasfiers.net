@@ -25,8 +25,8 @@ Approach:
 1. Apply an ever-improving machine learning toolbox to large scale activity
    recordings at the level of individual cells to reveal robust patterns;
 
-2. Build software models that make vague theories explicit, predict experimental
-   data, and generate testable hypotheses.
+2. Build software models grounded in the literature that make vague theories
+   explicit, predict experimental data, and generate testable hypotheses.
 
 
 
