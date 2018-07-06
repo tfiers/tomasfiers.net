@@ -38,11 +38,11 @@ I took all graduate-level courses offered by the university in neuroscience
 ([methods](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
 [computation](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02B3AE.htm)),
 and machine learning
-([probabilistic graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
-[Bayesian models](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm),
-[ML overview](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
+([ML overview](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
 [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm),
-[multivariate statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
+[Bayes & graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
+[bio-informatics & more Bayes](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm),
+[multivariate & robust statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
 [nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm),
 and [artificial neural networks](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm)).
 
