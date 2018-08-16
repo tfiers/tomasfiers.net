@@ -32,7 +32,7 @@ Approach:
 
 ## Education
 
-I have a bachelor's in computer science and electrical engineering, and a
+I have a bachelor's in computer science and electrical engineering, and am finishing a
 master's in biomedical engineering, from [KU Leuven](https://www.kuleuven.be/english/).
 I took all graduate-level courses offered by the university in neuroscience
 ([methods](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
