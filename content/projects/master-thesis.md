@@ -4,7 +4,7 @@ date: 2018-07-01
 image: Slanted-Slice-01.png
 ---
 
-I had the chance to do my engineering master's thesis in the lab of [Fabian
+I had the opportunity to do my engineering master's thesis in the lab of [Fabian
 Kloosterman](http://www.vib.be/en/research/scientists/Pages/Fabian-Kloosterman-lab.aspx)
 at [NERF](http://nerf.be/), where I was introduced to the wonderful world of
 neuroscience. The context and the goals of my thesis, and the current results,
