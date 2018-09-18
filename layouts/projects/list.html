@@ -3,7 +3,10 @@
 <div class="posts">
 {{ range .Data.Pages -}}
 <div class="post">
-  <h1 class="post-title">{{ .Title }}</h1>
+  <h1 class="post-title">
+    {{ .Title }}
+    <a id="{{.Title | urlize}}" href="#{{.Title | urlize}}">#</a>
+  </h1>
   {{ if isset .Params "link" }}
     <a href="{{ .Params.Link }}">
       <img src="/content/{{ .Params.Image }}">
