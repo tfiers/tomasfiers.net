@@ -6,8 +6,8 @@
 
 ## Welcome
 
-I am a machine learning and software engineer. I am interested in
-neuroscience, and I love to dance, sing, and play music.
+I am a machine learning and software engineer, interested in neuroscience, who
+loves to dance, sing, and play music.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
