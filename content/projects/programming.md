@@ -12,5 +12,5 @@ projects, small and large. A selection of the ones I remember:
 - Fractal tree generator, including a clumsily animated giraffe.
 - A [PID controller](https://www.wikiwand.com/en/PID_controller) for a
   two-wheeled balancing robot (like a Segway) made with [Lego Mindstorms](https://www.wikiwand.com/en/Lego_Mindstorms_NXT).
-- A chess AI. Prototype in Python, final optimised code in pure C.
+- A chess AI. Prototype in Python, final optimised code in pure C, using vectorized CPU instructions.
 - A Scrabble AI (directly interfacing with the [Wordfeud](https://wordfeud.com/) API).
