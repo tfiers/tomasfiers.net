@@ -6,8 +6,8 @@
 
 ## Welcome
 
-I am a machine learning and software engineer, interested in neuroscience, who
-loves to dance, sing, and play music.
+I am a machine learning and software engineer, interested in neuroscience. I
+love to dance, sing, and play music.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
@@ -49,7 +49,11 @@ and as many machine learning courses as would fit:
 - [Nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm), and
 - [Artificial neural networks](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm).
 
-See also my [Resume.pdf](/content/CV.pdf).
+
+See also my resume:
+
+- [Academic, 2-page resume](/content/CV_ac.pdf)
+- [General, 1-page resume](/content/CV_short.pdf)
 
 
 
