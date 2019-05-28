@@ -2,6 +2,7 @@
 title: "Master's thesis: machine learning for neuroscience researchers"
 date: 2018-07-01
 image: Slanted-Slice-01.png
+link: https://github.com/tfiers/master-thesis
 ---
 
 I had the opportunity to do my engineering master's thesis in the lab of [Fabian
