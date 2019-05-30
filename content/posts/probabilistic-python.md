@@ -23,13 +23,11 @@ _Inference_ means calculating probabilities. It means working with the joint
 probability distribution $p(\boldsymbol{x})$ underlying a data set
 {$\boldsymbol{x}$}.
 
-> For example, $\boldsymbol{x}$ might consist of three variables: "wind speed",
-"cloudiness", and "sound level of the rustling leaves". You have gathered a
-great many data points { (3 km/h, 82%, 8 dB<sub>SPL</sub> ), (23 km/h, 15%, 42
-dB<sub>SPL</sub> ), ... }. The joint probability distribution
-$p(\boldsymbol{x})$ then gives you a feel for the density in this
-wind-clouds-rustle space. I.e. which values are common? And which combinations
-occur together often?
+> For example, $\boldsymbol{x}$ might consist of two variables: "wind speed",
+and "cloudiness". You have gathered a great many data points { (3 km/h, 82%),
+(23 km/h, 15%,), ... }. The joint probability distribution $p(\boldsymbol{x})$
+then gives you a feel for the density in this windiness-cloudiness space. I.e.
+which values are common? And which combinations occur together often?
 
 You might want to:
 
