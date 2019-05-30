@@ -19,18 +19,19 @@ First, let's make sure we're on the same page on what we want to do. PyMC3,
 Pyro, and other probabilistic programming packages such as Stan, Edward, and
 BUGS, perform so called **approximate inference**.
 
-_Inference_ means, rather abstractly, to determine the joint probability
-distribution $p(\boldsymbol{x})$ underlying a data set {$\boldsymbol{x}$}. For
-example, $\boldsymbol{x}$ might consist of three variables: _wind speed_,
-_cloudiness_, and _sound level of the rustling leaves_. You have gathered a
-great many data points { (3 km/h, 82%, 8 dB<sub>SPL</sub> ), (23 km/h, 15%, 42
-dB<sub>SPL</sub> ), ... }, and you now want to get a feel for the density in
-this wind-clouds-rustle space. I.e. which values are common? And which
-combinations occur together often? (This information can be used for prediction:
-for example when only two of the three values of a data point are known).
+_Inference_ means calculating probabilities. It means working with the joint
+probability distribution $p(\boldsymbol{x})$ underlying a data set
+{$\boldsymbol{x}$}.
 
-In practice, inference means to directly _use_ this probability distribution. You
-might want to:
+> For example, $\boldsymbol{x}$ might consist of three variables: "wind speed",
+"cloudiness", and "sound level of the rustling leaves". You have gathered a
+great many data points { (3 km/h, 82%, 8 dB<sub>SPL</sub> ), (23 km/h, 15%, 42
+dB<sub>SPL</sub> ), ... }. The joint probability distribution
+$p(\boldsymbol{x})$ then gives you a feel for the density in this
+wind-clouds-rustle space. I.e. which values are common? And which combinations
+occur together often?
+
+You might want to:
 
 - Do a 'lookup' in the probabilty distribution, i.e. calculate how likely a
   given datapoint is;
@@ -47,15 +48,14 @@ might want to:
   given the data, what are the most likely parameters of the model?)
 
 We have to resort to _approximate_ inference when we do not have closed,
-analytical formulas for the above calculations. Apparently this is often the
-case in practice.
+analytical formulas for the above calculations.
 
 There are generally two approaches to approximate inference:
 
 1. Sampling
 2. Variational inference
 
-In **sampling**, you use a method (called a Monte Carlo method) that draws
+In **sampling**, you use an algorithm (called a Monte Carlo method) that draws
 samples from the probability distribution that you are performing inference on
 -- or at least from a good approximation to it. You then perform your desired
 inference calculation on the samples. For example: mode of the probability
@@ -65,13 +65,12 @@ Hamiltonian/Hybrid Monte Carlo (HMC) and No-U-Turn Sampling (NUTS) are
 refinements.
 
 **Variational inference** (VI) is an approach to approximate inference that does
-not need samples. In my limited understanding, it transforms the inference
-problem into an optimisation problem, where we need to maximise some target
-function.
+not need samples. It transforms the inference problem into an optimisation
+problem, where we need to maximise some target function.
 
 The optimisation procedure in VI (which is gradient descent, or a second order
 derivative method) requires derivatives of this target function. This is where
-**automatic differentiation** (AD) comes in.  AD can calculate accurate values
+**automatic differentiation** (AD) comes in. AD can calculate accurate values
 for the derivatives of a function that is specified by a computer program. You
 can thus use VI even when you don't have explicit formulas for your derivatives.
 

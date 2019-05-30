@@ -43,7 +43,7 @@ and as many machine learning courses as would fit:
 
 - [ML 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
 - [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm),
-- [Bayes & graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
+- [Bayes & probabilistic graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
 - [Bio-informatics & more Bayes](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm),
 - [Multivariate & robust statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
 - [Nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm), and
