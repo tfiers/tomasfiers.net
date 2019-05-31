@@ -1,3 +1,4 @@
+publishDir = "_build"
 baseURL = "https://tomasfiers.net/"
 languageCode = "en-us"
 title = "Tomas Fiers"
