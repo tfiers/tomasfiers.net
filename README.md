@@ -5,3 +5,17 @@ Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 - The site is auto-built and hosted by [Netlify](https://www.netlify.com/)
 
 Many thanks to all three!
+
+Build
+-----
+
+To launch a local server with live-reloading:
+```bash
+hugo server
+```
+This command keeps the built site in memory.
+
+To build to disk:
+```
+hugo
+```
