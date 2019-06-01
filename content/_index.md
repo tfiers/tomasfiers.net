@@ -7,7 +7,7 @@
 ## Welcome
 
 I am a machine learning and software engineer, interested in neuroscience. I
-love to dance, sing, and play music.
+love to sing, play the viola, and dance balfolk and swing.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
@@ -22,10 +22,11 @@ I want to discover circuit-level mechanisms in higher-order brain areas.
 
 Approach:
 
-1. Apply an ever-improving machine learning toolbox to large scale activity
-   recordings at the level of individual cells to reveal robust patterns;
+1. Take the ever-improving machine learning and data-analysis toolbox,
+   and apply it to large scale activity recordings at the level of 
+   individual cells to reveal robust patterns.
 
-2. Build software models grounded in the literature that make vague theories
+2. Build software models grounded in the literature, that make vague theories
    explicit, predict experimental data, and generate testable hypotheses.
 
 
@@ -39,15 +40,16 @@ both from [KU Leuven](https://www.kuleuven.be/english/).
 I took all graduate-level courses offered by the university in neuroscience 
 ([methods 101](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
 [computation 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02B3AE.htm)),
-and as many machine learning courses as would fit:
+and as many machine learning and data-analysis courses as would fit:
 
+- [Bayesian & probabilistic graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
+- [Artificial neural networks](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm),
 - [ML 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
 - [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm),
-- [Bayes & probabilistic graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
-- [Bio-informatics & more Bayes](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm),
 - [Multivariate & robust statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
-- [Nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm), and
-- [Artificial neural networks](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm).
+- [Bio-informatics & more Bayesian modelling](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm), and
+- [Nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm).
+
 
 
 See also my resume:
