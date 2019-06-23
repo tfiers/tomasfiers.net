@@ -7,7 +7,7 @@
 ## Welcome
 
 I am a machine learning and software engineer, interested in neuroscience. I
-love to sing, play the viola, and dance balfolk and swing.
+love to sing, play the viola, and dance balfolk and swing rock.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
