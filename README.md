@@ -1,3 +1,6 @@
+About
+----
+
 Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 
 - It uses [Hugo](https://gohugo.io/) as a static site generator; i.e. to convert markdown files to HTML.
@@ -19,3 +22,10 @@ To build to disk:
 ```
 hugo
 ```
+
+Publish
+-------
+
+Auto-published on each commit to GitHub.
+
+[🚀 Check deployment status](https://app.netlify.com/sites/tomasfiers/overview).
