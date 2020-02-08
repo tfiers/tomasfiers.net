@@ -197,7 +197,7 @@ easy for the end user: no manual tuning of sampling parameters is needed.
 large scale ADVI problems in mind. Beginning of this year, support for
 approximate inference was added, with both the NUTS and the HMC algorithms.
 
-**Edward** is also relatively new (Februari 2016). It offers both approximate
+**Edward** is also relatively new (February 2016). It offers both approximate
 inference by sampling and variational inference. I don't know much about it,
 other than that its documentation has style. For MCMC, it has the HMC algorithm
 (in which sampling parameters are not automatically updated, but should rather
