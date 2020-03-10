@@ -28,12 +28,21 @@
 }
 
 .sidebar #social {
-    margin: 0.8em 0 0.8em 0;
+    margin: 0.9em 0 0.9em 0;
 }
 
 .sidebar #social a:hover {
     color: #0084b4;
 }
+
+.sidebar .sidebar-nav li {
+    margin-bottom: 0.15em
+}
+.sidebar .sidebar-nav li {
+    margin-bottom: 0.15em
+}
+
+
 
 .sidepic {
     display: flex;
@@ -61,6 +70,9 @@
         margin: auto;
     }
 }
+
+
+
 
 h2 {
     margin-top: 2rem;
