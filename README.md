@@ -12,8 +12,11 @@ Many thanks to all three!
 Clone
 -----
 
-To develop locally, use `git clone --recursive`
-(necessary to also download the submodules in `.gitmodules`).
+To develop locally, use
+```
+git clone --recursive git@github.com:tfiers/tomasfiers.net.git
+```
+The `--recursive` flag is necessary to also download the required submodules from `.gitmodules`.
 
 
 Build
