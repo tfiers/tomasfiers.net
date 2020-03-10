@@ -47,6 +47,11 @@ on Windows:
 hugo server
 ```
 This command keeps the built site in memory.
+
+When working on layout, use
+```
+hugo server --disableFastRender
+```
 <br>
 <br>
 
