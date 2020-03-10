@@ -23,7 +23,7 @@ the Hugo version specified in [`netlify.toml`](netlify.toml).
 E.g. using the [Chocolatey package manager](https://chocolatey.org/install)
 on Windows:
 ```
-choco install hugo --version 0.42
+choco install hugo --version 0.42 --yes
 ```
 
 To build to disk:
