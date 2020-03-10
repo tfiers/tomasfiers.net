@@ -16,7 +16,7 @@ To develop locally, use
 ```
 git clone --recursive git@github.com:tfiers/tomasfiers.net.git
 ```
-The `--recursive` flag is necessary to also download the required submodules from `.gitmodules`.
+The `--recursive` flag is necessary to also download required submodules (which are listed in `.gitmodules`).
 
 
 Build
