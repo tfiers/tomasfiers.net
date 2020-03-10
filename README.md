@@ -13,8 +13,8 @@ Many thanks to all three!
 Deployment
 ----------
 
-The site is auto-published on each commit to GitHub.
-> [🚀 (If authorized): Check build/deployment status](https://app.netlify.com/sites/tomasfiers/overview).
+The site is auto-published on each commit to GitHub.  
+> Deploy/build status: [![Netlify Status](https://api.netlify.com/api/v1/badges/cca080cc-e1f3-4785-ae25-b3ac42521276/deploy-status)](https://app.netlify.com/sites/tomasfiers/deploys)
 
 Text-only changes can therefore be made simply on GitHub.
 
