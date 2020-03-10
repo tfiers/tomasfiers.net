@@ -1,26 +1,38 @@
-.sidebar-about h1 {
+.sidebar p,
+.sidebar h1 {
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar a.icon-link {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar a.icon-link:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar #title h1 {
     color: #fff;
-    margin-top: 0;
     font-size: 2.5rem;
     font-family: "Markazi Text";
 }
 
-.sidebar-about a {
+.sidebar #title a {
     text-decoration: none;
 }
 
-.social a {
-    text-decoration: none;
-    color: rgba(255,255,255,.5);
-    font-size: 1.08rem;
+.sidebar #title {
+    margin-bottom: -0.4em;
 }
 
-.social a:hover {
+.sidebar #social {
+    margin: 0.8em 0 0.8em 0;
+}
+
+.sidebar #social a:hover {
     color: #0084b4;
-}
-
-#sidebar-smallprint a {
-    color: rgba(255,255,255,.5);
 }
 
 .sidepic {

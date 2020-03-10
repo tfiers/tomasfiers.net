@@ -2,30 +2,36 @@
   <div class="container sidebar-sticky">
 
 
-    <div class="sidebar-about">
+    <div id="title">
       <a href="{{ .Site.BaseURL }}"><h1>{{ .Site.Title }}</h1></a>
-      <p class="lead">
-        Signals, software, and science&nbsp;
-      </p>
     </div>
 
+    <div id="tagline">
+      <p>Signals, software, and science</p>
+    </div>
+
+    <div id="social">
+      <a class="icon-link" href="https://twitter.com/TomasFiers" target="_blank">
+        <span class="fab fa-twitter"></span> Twitter
+      </a>
+    </div>
+
+    <!-- This ul class is required for the theme. -->
     <ul class="sidebar-nav">
-      <li><a href="{{ .Site.BaseURL }}">About</a></li>
+      <li><a href="{{ .Site.BaseURL }}">Home</a></li>
       <li><a href="{{ .Site.BaseURL }}projects">Projects</a></li>
       <li><a href="{{ .Site.BaseURL }}posts">Posts</a></li>
     </ul>
 
-<!--     <div class="social">
-      <a href="https://twitter.com/TomasFiers">
-        <span class="fab fa-twitter"></span>
+    <p id="smallprint">
+      <a class="icon-link" href="https://github.com/tfiers/tomasfiers.net/" target="_blank">
+        <!-- fas = Font Awesome solid icon -->
+        <span class="fas fa-edit"></span>
+        Source
       </a>
-    </div> -->
-
-    <p id="sidebar-smallprint">
-      <a href="https://github.com/tfiers/tomasfiers.net/">Source</a>
-       •
-      <a href="https://creativecommons.org/licenses/by-sa/4.0/"
-         id="license">
+      &nbsp;•&nbsp;
+      <a class="icon-link" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">
+        <span class="fab fa-creative-commons"></span>
         License
       </a>
     </p>
