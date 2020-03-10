@@ -10,43 +10,47 @@ Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 Many thanks to all three!
 
 
-Setup local development
------------------------
+Deployment
+----------
 
+The site is auto-published on each commit to GitHub.
+> [🚀 Check deployment status (if authorized)](https://app.netlify.com/sites/tomasfiers/overview).
+
+Text-only changes can therefore be made simply on GitHub.
+
+For other development (layout eg), see the next section.
+
+
+Local development
+-----------------
+
+Clone with
 ```
-git clone --recursive git@github.com:tfiers/tomasfiers.net.git
+git clone --recursive
 ```
-The `--recursive` flag is necessary to also download required submodules
-(which are listed in [`.gitmodules`](.gitmodules)).
+to make sure the required [submodules](.gitmodules) are also downloaded.
+<br>
+<br>
 
 [Install](https://gohugo.io/getting-started/installing/)
-the Hugo version specified in [`netlify.toml`](netlify.toml).
-
-E.g. using the [Chocolatey package manager](https://chocolatey.org/install)
+the Hugo version specified in [`netlify.toml`](netlify.toml).  
+> Example, using the [Chocolatey package manager](https://chocolatey.org/install)
 on Windows:
-```
-choco install hugo --version 0.42 --yes
-```
+> ```
+> choco install hugo --version 0.42 --yes
+> ```
+<br>
+<br>
 
-
-Build
------
-
-To launch a local server with live-reloading:
+👉 To launch a local server with live-reloading:
 ```bash
 hugo server
 ```
 This command keeps the built site in memory.
+<br>
+<br>
 
 To build to disk:
 ```
 hugo
 ```
-
-
-Publish
--------
-
-Auto-published on each commit to GitHub.
-
-[🚀 Check deployment status](https://app.netlify.com/sites/tomasfiers/overview).
