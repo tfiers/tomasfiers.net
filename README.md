@@ -1,5 +1,5 @@
 About
-----
+-----
 
 Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 
@@ -9,29 +9,34 @@ Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 
 Many thanks to all three!
 
-Clone
------
+Develop locally
+---------------
 
-To develop locally, use
 ```
 git clone --recursive git@github.com:tfiers/tomasfiers.net.git
 ```
-The `--recursive` flag is necessary to also download required submodules (which are listed in `.gitmodules`).
+The `--recursive` flag is necessary to also download required submodules
+(which are listed in [`.gitmodules`](.gitmodules)).
 
-
-Build
------
-
-To launch a local server with live-reloading:
-```bash
-hugo server
+[Install](https://gohugo.io/getting-started/installing/)
+the Hugo version specified in [`netlify.toml`](netlify.toml).  
+E.g. using the [Chocolatey package manager](https://chocolatey.org/install)
+on Windows:
 ```
-This command keeps the built site in memory.
+choco install hugo --version 0.42
+```
 
 To build to disk:
 ```
 hugo
 ```
+
+👉 To launch a local server with live-reloading:
+```bash
+hugo server
+```
+This command keeps the built site in memory.
+
 
 Publish
 -------
