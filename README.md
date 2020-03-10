@@ -9,6 +9,13 @@ Source for my personal website, [tomasfiers.net](https://tomasfiers.net).
 
 Many thanks to all three!
 
+Clone
+-----
+
+To develop locally, use `git clone --recursive`
+(necessary to also download the submodules in `.gitmodules`).
+
+
 Build
 -----
 
