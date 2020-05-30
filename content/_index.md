@@ -6,13 +6,20 @@
 
 ## Welcome
 
-I am a machine learning and software engineer, interested in neuroscience. I
-love to sing, play the viola, and dance balfolk and swing rock.
+I am an engineer, working in neuroscience research.
+I love to make music and to dance (swing, balfolk, ..)
+
+I often think about how to give scientists more insight into their own and others' code.
+
+{{% /sidepic %}}
+
+I am currently working on a PhD with [Mark Humphries](https://www.humphries-lab.org/).
+Neuroscientists can film precise voltages of individual neurons in living animals.
+We wonder how we can use such data to infer the wiring between neurons.
+We could then construct connectomes _in vivo_.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
-
-{{% /sidepic %}}
 
 
 
