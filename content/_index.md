@@ -6,10 +6,10 @@
 
 ## Welcome
 
-I am an engineer, applying maths and software in neuroscience research.
+I am an engineer working in neuroscience research, where I apply maths and write software.
 I love to make music and to dance (swing, balfolk, ..)
 
-I often think about how we could scientists more insight into their own and others' code.
+I often think about how we could give scientists more insight into their own and others' code.
 
 {{% /sidepic %}}
 
