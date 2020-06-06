@@ -15,7 +15,7 @@ I often think about how we could give scientists more insight into their own and
 
 I am currently working on a PhD with [Mark Humphries](https://www.humphries-lab.org/).
 Neuroscientists can film precise voltages of individual neurons in living animals.
-We wonder how we can use such data to infer the wiring between neurons.
+We wonder how we can use such data to infer the wiring between those neurons.
 We could then construct connectomes _in vivo_.
 
 You are welcome to read one of my [posts](/posts), or check out some
