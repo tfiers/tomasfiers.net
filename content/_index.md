@@ -9,7 +9,7 @@
 I am an engineer working in neuroscience research, where I apply maths and write software.
 I love to make music and to dance (swing, balfolk, ..)
 
-I often think about: "How can we give scientists more insight into their own and others' code?".
+"How can we give scientists more insight into their own and others' code?" is a question I often wonder about.
 
 {{% /sidepic %}}
 
