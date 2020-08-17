@@ -41,7 +41,7 @@ Approach:
 ## Education
 
 I have a bachelor's in computer science and electrical engineering, and a 
-master's in [biomedical engineering](https://onderwijsaanbod.kuleuven.be/opleidingen/e/CQ_51360389.htm),
+master's in [biomedical engineering](https://onderwijsaanbod.kuleuven.be/opleidingen/e/CQ_51360389.htm) (specialization: signal processing),
 both from [KU Leuven](https://www.kuleuven.be/english/).
 
 I did my [master's thesis](https://tomasfiers.net/projects/#masters-thesis-machine-learning-for-neuroscience-researchers) 
