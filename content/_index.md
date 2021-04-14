@@ -15,8 +15,8 @@ Questions I often wonder about:
 - What do tools look like that are maximally synergistic 
 with the natural curiosity of kids and researchers?
 
-- How can we make ideas as intuitive and simple to understand as possible?
-Both when sharing our own ideas as when researching others'.
+- How can we distill and represent ideas as intuitively as possible?
+Both when researching others' ideas as when sharing our own.
 
 - What is good interface design?
 
