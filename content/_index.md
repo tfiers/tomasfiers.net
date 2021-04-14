@@ -6,10 +6,17 @@
 
 ## Welcome
 
-I am an engineer working in neuroscience research, where I apply maths and write software.
-I love to make music and to dance (swing, balfolk, ..)
+I am an engineer working in neuroscience research, 
+where I apply maths and write software.
+I love to make music and to dance (💙 balfolk)
 
-"How can we give scientists more insight into their own and others' code?" is a question I often wonder about.
+Questions I often wonder about: 
+- What do tools look like that are maximally synergistic 
+with the natural curiosity of kids and researchers?
+- How can we make ideas as intuitive and simple to understand as possible?
+Both when sharing our own ideas as when researching others'.
+- What is good interface design?
+
 
 {{% /sidepic %}}
 
@@ -20,21 +27,6 @@ We could then construct connectomes _in vivo_.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
-
-
-
-## Scientific goal
-
-I want to discover circuit-level mechanisms in higher-order brain areas.
-
-Approach:
-
-1. Take the ever-improving machine learning and data-analysis toolbox,
-   and apply it to large scale activity recordings at the level of 
-   individual cells to reveal robust patterns.
-
-2. Build software models grounded in the literature, that make vague theories
-   explicit, predict experimental data, and generate testable hypotheses.
 
 
 
