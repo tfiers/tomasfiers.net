@@ -10,7 +10,7 @@ I am an engineer working in neuroscience research,
 where I apply maths and write software.
 I love to make music and to dance (💙 balfolk)
 
-Questions I often wonder about: 
+Questions I often think about: 
 
 - What do tools look like that are maximally synergistic 
 with the natural curiosity of kids and researchers?
