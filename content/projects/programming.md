@@ -4,11 +4,10 @@ date: 2008
 image: null.png
 ---
 
-I have been programming since I was 10. This has lead to a heap of hobby
-projects, small and large. A selection of the ones I remember:
+I loved programming as a kid (still do and still am). Some of the hobby projects I remember:
 
-- Gravity & planetary motion simulator. The generated trajectories were pretty
-  to look at. Programmed, as many other projects, in Flash / ActionScript (RIP
+- Gravity & planetary motion simulator. The generated trajectories were interesting.
+  Programmed, as many other projects, in Flash / ActionScript (RIP
   this beautiful programming environment).
 - [Weierstrass function](https://www.wikiwand.com/en/Weierstrass_function)
   plotter. I was fascinated by this function that was continuous everywhere, but
