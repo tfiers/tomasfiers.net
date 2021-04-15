@@ -81,3 +81,10 @@ h2 {
 .anchor {
     color: #aaa !important;
 }
+
+/* = Bootstrap breakpoint for small laptops and up */
+@media (min-width: 992px) {
+    .content {
+        font-size: 0.9; /* = a percentage of parent i.e. of default */
+    }
+}
