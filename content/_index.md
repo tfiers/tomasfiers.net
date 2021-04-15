@@ -12,6 +12,8 @@ I love to make music and to dance (💙 balfolk)
 
 Questions I often think about: 
 
+{{% /sidepic %}}
+
 - What do tools look like that are maximally synergistic 
 with the natural curiosity of kids and researchers?
 
@@ -20,8 +22,6 @@ Both when researching others' ideas as when sharing our own.
 
 - What is good interface design?
 
-
-{{% /sidepic %}}
 
 I am currently working on a PhD with [Mark Humphries](https://www.humphries-lab.org/).
 Neuroscientists can film precise voltages of individual neurons in living animals.
