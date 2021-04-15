@@ -88,3 +88,5 @@ h2 {
         font-size: 0.9em; /* = a percentage of parent i.e. of default */
     }
 }
+h1 { font-size: 2em } /* instead of default of 2**r**em. This is to respect the above downscale. */
+h2 { font-size: 1.5em }
