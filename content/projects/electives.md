@@ -6,10 +6,9 @@ image: null.png
 
 Machine learning and data analysis:
 
-- [Bayesian & probabilistic graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
+- [Bayesian & probabilistic-graphical models](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02D2AE.htm),
 - [Artificial neural networks](https://onderwijsaanbod.kuleuven.be/syllabi/e/H03V7BE.htm),
-- [ML 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm),
-- [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm),
+- [ML 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02C1AE.htm), [ML in practice](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm),
 - [Multivariate & robust statistics](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/G0O00AE.htm),
 - [Bio-informatics & more Bayesian modelling](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H05M9AE.htm), and
 - [Nonlinear systems](https://onderwijsaanbod.kuleuven.be/syllabi/v/e/H0S11AE.htm).
@@ -17,5 +16,14 @@ Machine learning and data analysis:
 
 Neuroscience:
 
-- [methods in systems neuroscience 101](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
-- [computational neuroscience 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02B3AE.htm).
+- [Methods in systems neuroscience 101](https://onderwijsaanbod.kuleuven.be//2017/syllabi/e/G0U76AE.htm),
+- [Computational neuroscience 101](https://onderwijsaanbod.kuleuven.be/syllabi/e/H02B3AE.htm).
+
+
+Misc and from core curriculum:
+
+- IT security
+- Human physiology, Cell biology
+- Anatomy, Biomechanics, Bio-fluid mechanics
+- Sensors & stimulation in healthcare
+- Biomaterials, Design in medical tech, Medical imaging
