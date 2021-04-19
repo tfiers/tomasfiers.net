@@ -8,7 +8,7 @@
 
 I am an engineer working in neuroscience research, 
 where I apply maths and write software.
-I love to make music and to dance (💙 balfolk)
+I like to make music and to dance (💙 balfolk)
 
 Questions I often think about: 
 
