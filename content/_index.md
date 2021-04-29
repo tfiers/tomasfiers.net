@@ -23,7 +23,9 @@ Both when researching others' ideas as when sharing our own.
 - What is good interface design?
 
 
-I am currently working on a PhD with [Mark Humphries](https://www.humphries-lab.org/).
+I am currently working on a PhD in computational neuroscience
+with [Mark Humphries](https://www.humphries-lab.org/)
+at the University of Nottingham.
 Neuroscientists can film precise voltages of individual neurons in living animals.
 We wonder how we can use such data to infer the wiring between those neurons.
 We could then construct connectomes _in vivo_.
