@@ -14,11 +14,11 @@ Questions I often think about:
 
 {{% /sidepic %}}
 
-- What do tools look like that are maximally synergistic 
+- What do tools look like that work well
 with the natural curiosity of kids and researchers?
 
 - How can we distill and represent ideas as intuitively as possible?
-Both when researching others' ideas as when sharing our own.
+Both when researching others' ideas, as when sharing our own.
 
 - What is good interface design?
 
@@ -29,6 +29,8 @@ at the University of Nottingham.
 Neuroscientists can film precise voltages of individual neurons in living animals.
 We wonder how we can use such data to infer the wiring between those neurons.
 We could then construct connectomes _in vivo_.
+
+[This YouTube video](https://youtu.be/FryqOCMyByA) is a short presentation about the work, made a while back.
 
 You are welcome to read one of my [posts](/posts), or check out some
 of the things I built under [projects](/projects).
