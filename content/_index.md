@@ -4,7 +4,7 @@
 
 {{% sidepic %}}
 
-## Welcome
+## Hi
 
 I am an engineer working in neuroscience research, 
 where I apply maths and write software.
