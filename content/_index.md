@@ -61,5 +61,8 @@ See also my resume:
 [tomas.fiers@gmail.com](mailto:tomas.fiers@gmail.com)
 
 [Twitter](https://twitter.com/TomasFiers) •
+<a rel="me" href="https://fediscience.org/@TomasFiers">Mastodon</a> •
 [GitHub](https://github.com/tfiers) •
 [LinkedIn](https://www.linkedin.com/in/tomasfiers/)
+
+<!-- ↑ masto identity verification link -->
