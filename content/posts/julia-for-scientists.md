@@ -6,9 +6,9 @@ date: 2022-12-21T16:00:00+02:00
 I gave a presentation on the programming language [Julia](https://julialang.org),
 for my uni's Psychology department.
 
-- When should you use it over Python / Matlab / Excel?
-- What do I like about it
-- Gripes
+- When should you use it over Python / Matlab / Excel
+- What are Julia's strengths
+- Current weaknesses
 - Tips
 
 Here are the slides:
