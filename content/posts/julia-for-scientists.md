@@ -12,6 +12,7 @@ for my uni's Psychology department.
 - Tips
 
 Here are the slides:
+
 <a href="/content/2022-12-07-Julia-for-research.pdf">
 <img src="/content/Julia-for-scientists-Intro-slide.png" width=350>
 </a>
