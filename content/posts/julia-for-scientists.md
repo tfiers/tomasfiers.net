@@ -11,7 +11,10 @@ for my uni's Psychology department.
 - Gripes
 - Tips
 
- → [**Here are the slides**](/content/2022-12-07-Julia-for-research.pdf)
+Here are the slides:
+<a href="/content/2022-12-07-Julia-for-research.pdf">
+<img src="/content/Julia-for-scientists-Intro-slide.png" width=350>
+</a>
  
 (The presentation starts at a basic level, but quickly goes into more nerdy terrain;
 The audience was varied, hence the different registers).
