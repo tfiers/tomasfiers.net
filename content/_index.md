@@ -51,8 +51,8 @@ in data analysis, neuroscience, and machine learning.
 
 See also my resume:
 
+- [General, 1-page resume](/content/CV-2022-12.pdf)
 - [Academic, 2-page resume](/content/CV_ac.pdf)
-- [General, 1-page resume](/content/CV_short.pdf)
 
 
 
