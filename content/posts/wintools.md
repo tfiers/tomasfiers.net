@@ -13,7 +13,7 @@ Allows me to type arrow keys, backspace, `Delete`, `Home`, `End`, etc without ha
 move my hands away from the 'home row' of the keyboard (`asdf`, `jkl;`)\
 I.e. like vim; but in any textfield, in any app.
 
-In general, AutoHotkey enables end-user programmability of the Windows GUI,
+In general, AutoHotkey enables [end-user programming] of the Windows GUI,
 through a (slightly quirky) scripting language.
 
 The functionality of some of the below apps (wincompose, beeftext) can 
@@ -21,6 +21,7 @@ be implemented with AutoHotkey; but a dedicated config GUI makes them more usefu
 
 [AutoHotkey]: https://www.autohotkey.com/
 [SharpKeys]: http://www.randyrants.com/category/sharpkeys/
+[end-user programming]: https://www.inkandswitch.com/end-user-programming/
 
 
 ### [WinCompose]
