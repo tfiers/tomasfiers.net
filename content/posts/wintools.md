@@ -11,7 +11,7 @@ This is a running collection of tools I use to make Windows good.
 
 Allows me to type arrow keys, backspace, `Delete`, `Home`, `End`, etc without having to
 move my hands away from the 'home row' of the keyboard (`asdf`, `jkl;`)\
-I.e. like vim; but in any textfield, in any app.
+I.e. like vim; but available in any text field in any app.
 
 In general, AutoHotkey enables [end-user programming] of the Windows GUI,
 through a (slightly quirky) scripting language.
@@ -27,13 +27,14 @@ but dedicated config GUIs (plus collaborative open-source dev) makes the apps wo
 ### [WinCompose]
 → **Keyboard shortcuts for special characters** (Greek letters, math symbols, arrows, accents, ..)
 
+→ See [my `.XCompose` file](https://github.com/tfiers/dotfiles/blob/main/.XCompose)
+
 - tray app, C#, [active development](https://github.com/samhocevar/wincompose)
 - Kinda wonky UI, but works
 - Supports the [.XCompose] file format from the linux world.
-  - [My `.XCompose` file](https://github.com/tfiers/dotfiles/blob/main/.XCompose)
-- Big advantage over e.g. Julia's great `\alpha<tab>`-completion
-  (see first "Julia likes" slide [here](/posts/julia-for-scientists)):
-  available in every text field in every app.
+- The big advantage over e.g. [Julia's] great `\alpha<tab>`-completion
+  (see also the first "Julia likes" slide [here](/posts/julia-for-scientists)):
+  this is available in every text field in every app.
 
 <!--
 Hugo syntax for is {{< ref "julia-for-scientists" >}}
@@ -41,6 +42,7 @@ Hugo syntax for is {{< ref "julia-for-scientists" >}}
 But that doesn't even insert a link.
 -->
 
+[Julia's]: https://docs.julialang.org/en/v1/stdlib/REPL/#Tab-completion
 [WinCompose]: http://wincompose.info
 [.XCompose]: https://wiki.debian.org/XCompose
 
