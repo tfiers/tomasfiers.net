@@ -6,20 +6,21 @@ date: 2023-01-06T12:00:00+02:00
 This is a running collection of tools I use to make Windows good.
 
 
-### AutoHotkey + SharpKeys
+### [AutoHotkey] + [SharpKeys]
 → **See [Many but finite's 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
 
 Allows me to type arrow keys & backspace without having to
 move my hands away from the 'home row' on the keyboard (`asdf`, `jkl;`)\
 I.e. like vim; but in any textfield, in any app.
 
+[AutoHotkey]: https://www.autohotkey.com/
+[SharpKeys]: http://www.randyrants.com/category/sharpkeys/
 
 
-### WinCompose
+### [WinCompose]
 → **Keyboard shortcuts for special characters** (Greek letters, math symbols, arrows, accents, ..)
 
-- [wincompose.info](http://wincompose.info/) | [github](https://github.com/samhocevar/wincompose)
-- tray app, C#, active development
+- tray app, C#, [active development](https://github.com/samhocevar/wincompose)
 - Kinda wonky UI, but works
 - Supports the [.XCompose] format from the linux world.
   - [My `.XCompose` file](https://github.com/tfiers/dotfiles/blob/main/.XCompose)
@@ -33,39 +34,42 @@ Hugo syntax for is {{< ref "julia-for-scientists" >}}
 But that doesn't even insert a link.
 -->
 
+[WinCompose]: http://wincompose.info
 [.XCompose]: https://wiki.debian.org/XCompose
 
 
-### Beeftext
-→ **text snippets**
+### [Beeftext]
+→ **Text snippets (auto-replace shortcodes)**
 
-- [beeftext.org](https://beeftext.org) | [github](https://github.com/xmichelo/Beeftex)
-- tray app, C++, modern GUI (Qt5), active development
+- tray app, C++, modern GUI (Qt5), [active development](https://github.com/xmichelo/Beeftext)
 - Great UX
 
 What I use it for (i.e. things I'm tired of typing over and over)
 - To make images less huge on github: `<img width=400 src="…">`
 
+[Beeftext]: https://beeftext.org
 
-### PasteIntoFile
-→ **Paste images on the clipboard in Explorer** without having to go through Paint
 
-- [github:eltos](https://github.com/eltos/PasteIntoFile)
+### [PasteIntoFile]
+→ **Paste images on the clipboard in Explorer** (without having to go through Paint)
+
 - tray app, C#, active development
 - [Long history](https://github.com/eltos/PasteIntoFile/issues/15).
-  eltos's fork is the most advanced version.
+  eltos's fork (the one linked here) is the most advanced version.
 
 PowerPoint is one of the best tools for vector graphic design, weirdly/sadly.
 To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as an svg files using this great tool.
 
+[PasteIntoFile]: https://github.com/eltos/PasteIntoFile
 
 
-### ExplorerPatcher
-→ **Get back Win10 taskbar & context menu in Win11**
+### [ExplorerPatcher]
+→ **Get the Win10 taskbar & context menu back in Windows 11**
 
-- [github](https://github.com/valinet/ExplorerPatcher)
 - C, active development
 - accessed by right-clicking taskbar > 'Properties'
+
+[ExplorerPatcher]: https://github.com/valinet/ExplorerPatcher
 
 
 ### Misc
