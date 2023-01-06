@@ -7,14 +7,17 @@ This is a running collection of tools I use to make Windows good.
 
 
 ### [AutoHotkey] + [SharpKeys]
-→ **See [_Many but finite_'s Home Row Computing](https://manybutfinite.com/post/home-row-computing/)**
+→ **See [_Many but finite_’s 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
 
-Allows me to type arrow keys, backspace, home/end, etc without having to
+Allows me to type arrow keys, backspace, `Delete`, `Home`, `End`, etc without having to
 move my hands away from the 'home row' of the keyboard (`asdf`, `jkl;`)\
 I.e. like vim; but in any textfield, in any app.
 
-On its own, AutoHotkey allows end-user programmability of the Windows GUI,
+In general, AutoHotkey enables end-user programmability of the Windows GUI,
 through a (slightly quirky) scripting language.
+
+The functionality of some of the below apps (wincompose, beeftext) can 
+be implemented with AutoHotkey; but a dedicated config GUI makes them more useful.
 
 [AutoHotkey]: https://www.autohotkey.com/
 [SharpKeys]: http://www.randyrants.com/category/sharpkeys/
