@@ -22,7 +22,7 @@ What I use it for (i.e. things I'm tired of typing over and over)
 - Supports the [.XCompose] format from the linux world.
   - [My `.XCompose` file](https://github.com/tfiers/dotfiles/blob/main/.XCompose)
 - Big advantage over e.g. Julia's great `\alpha<tab>`-completion
-  (see first "Julia likes" slide [here](/posts/julia-for-scientists.md)):
+  (see first "Julia likes" slide [here](/posts/julia-for-scientists)):
   available in every text field in every app.
 
 <!--
