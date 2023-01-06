@@ -51,7 +51,7 @@ But that doesn't even insert a link.
 
 
 ### [Beeftext]
-→ **Text snippets (auto-replace shortcodes)**
+→ **Text snippets** (auto-replace shortcodes with oft-typed text)
 
 - tray app, C++, modern GUI (Qt5), [active development](https://github.com/xmichelo/Beeftext)
 - Great UX
