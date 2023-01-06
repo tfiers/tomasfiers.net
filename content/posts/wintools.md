@@ -79,5 +79,5 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
   - More and more dev tools have a good UX on Windows.
     But most still suck, even if they technically support Windows.
     WSL, especially in combination with VS Code remote dev, works well then.
-- [Windows PowerTools](https://learn.microsoft.com/en-us/windows/powertoys/)
+- [Microsoft PowerTools](https://learn.microsoft.com/en-us/windows/powertoys/)
   - Open source, active dev. Well done Microsoft.
