@@ -6,6 +6,7 @@ date: 2023-01-06T12:00:00+02:00
 This is a running collection of tools I use to make Windows good.
 
 
+
 ### [AutoHotkey] + [SharpKeys]
 → **See [_Many but finite_'s 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
 
@@ -22,6 +23,7 @@ but dedicated config GUIs (plus collaborative open-source dev) makes the apps wo
 [AutoHotkey]: https://www.autohotkey.com/
 [SharpKeys]: http://www.randyrants.com/category/sharpkeys/
 [end-user programming]: https://www.inkandswitch.com/end-user-programming/
+
 
 
 ### [WinCompose]
@@ -47,6 +49,7 @@ But that doesn't even insert a link.
 [.XCompose]: https://wiki.debian.org/XCompose
 
 
+
 ### [Beeftext]
 → **Text snippets (auto-replace shortcodes)**
 
@@ -57,6 +60,7 @@ What I use it for (i.e. things I'm tired of typing over and over)
 - To make images less huge on github: `<img width=400 src="…">`
 
 [Beeftext]: https://beeftext.org
+
 
 
 ### [PasteIntoFile]
@@ -72,6 +76,7 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
 [PasteIntoFile]: https://github.com/eltos/PasteIntoFile
 
 
+
 ### [ExplorerPatcher]
 → **Get the old taskbar & context menu back in Windows 11**
 
@@ -81,7 +86,8 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
 [ExplorerPatcher]: https://github.com/valinet/ExplorerPatcher
 
 
-### Misc
+
+### Microsoft-supported tools
 
 - [Windows Terminal](https://github.com/microsoft/terminal#readme)
 - [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/)
@@ -89,4 +95,6 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
     But most still suck, even if they technically support Windows.
     WSL, especially in combination with VS Code remote dev, works well then.
 - [Microsoft PowerToys](https://learn.microsoft.com/en-us/windows/powertoys/)
-  - Open source, active dev. Well done Microsoft.
+  - Open source, active dev.
+- [VS Code](https://code.visualstudio.com)
+- Do not use: PowerAutomate. Bad UX.
