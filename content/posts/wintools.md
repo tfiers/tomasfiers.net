@@ -16,8 +16,8 @@ I.e. like vim; but in any textfield, in any app.
 In general, AutoHotkey enables [end-user programming] of the Windows GUI,
 through a (slightly quirky) scripting language.
 
-The functionality of some of the below apps (wincompose, beeftext) can 
-be implemented with AutoHotkey; but a dedicated config GUI makes them more useful.
+The functionality of many of the apps below can be implemented with AutoHotkey instead;
+but dedicated config GUIs (plus collaborative open-source dev) makes the apps worth it.
 
 [AutoHotkey]: https://www.autohotkey.com/
 [SharpKeys]: http://www.randyrants.com/category/sharpkeys/
