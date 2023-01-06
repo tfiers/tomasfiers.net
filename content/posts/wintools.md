@@ -64,7 +64,7 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
 
 
 ### [ExplorerPatcher]
-→ **Get the Win10 taskbar & context menu back in Windows 11**
+→ **Get the old taskbar & context menu back in Windows 11**
 
 - C, active development
 - accessed by right-clicking taskbar > 'Properties'
