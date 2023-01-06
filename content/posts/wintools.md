@@ -54,7 +54,7 @@ What I use it for (i.e. things I'm tired of typing over and over)
 
 
 ### [PasteIntoFile]
-→ **Paste images on the clipboard in Explorer** (without having to go through Paint)
+→ **Paste images on the clipboard directly as files in Windows Explorer** (without having to go through Paint)
 
 - tray app, C#, active development
 - [Long history](https://github.com/eltos/PasteIntoFile/issues/15).
