@@ -28,7 +28,7 @@ be implemented with AutoHotkey; but a dedicated config GUI makes them more usefu
 
 - tray app, C#, [active development](https://github.com/samhocevar/wincompose)
 - Kinda wonky UI, but works
-- Supports the [.XCompose] format from the linux world.
+- Supports the [.XCompose] file format from the linux world.
   - [My `.XCompose` file](https://github.com/tfiers/dotfiles/blob/main/.XCompose)
 - Big advantage over e.g. Julia's great `\alpha<tab>`-completion
   (see first "Julia likes" slide [here](/posts/julia-for-scientists)):
