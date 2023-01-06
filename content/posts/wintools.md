@@ -7,7 +7,7 @@ This is a running collection of tools I use to make Windows good.
 
 
 ### [AutoHotkey] + [SharpKeys]
-→ **See [_Many but finite_’s 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
+→ **See [_Many but finite_'s 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
 
 Allows me to type arrow keys, backspace, `Delete`, `Home`, `End`, etc without having to
 move my hands away from the 'home row' of the keyboard (`asdf`, `jkl;`)\
