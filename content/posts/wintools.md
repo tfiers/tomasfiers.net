@@ -1,5 +1,5 @@
 ---
-title: "Windows power user Tools"
+title: "Tools for Windows"
 date: 2023-01-06T12:00:00+02:00
 ---
 
@@ -89,12 +89,13 @@ To use diagrams made in PPT in LaTeX, I copy a diagram from PPT and paste it as 
 
 ### Microsoft-supported tools
 
+All are open-source and under active development.
+
+- [Microsoft PowerToys](https://learn.microsoft.com/en-us/windows/powertoys/)
 - [Windows Terminal](https://github.com/microsoft/terminal#readme)
 - [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/)
   - More and more dev tools have a good UX on Windows.
-    But most still suck, even if they technically support Windows.
-    WSL, especially in combination with VS Code remote dev, works well then.
-- [Microsoft PowerToys](https://learn.microsoft.com/en-us/windows/powertoys/)
-  - Open source, active dev.
+    But for a lot of them, Windows development is still painful, even if they nominally/technically support it.
+    WSL, especially in combination with VS Code remote dev, is a good solution then.
 - [VS Code](https://code.visualstudio.com)
-- Do not use: PowerAutomate. Bad UX.
+- Do not use: PowerAutomate (bad UX).
