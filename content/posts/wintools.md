@@ -1,5 +1,5 @@
 ---
-title: "Windows Tools"
+title: "Windows power user Tools"
 date: 2023-01-06T12:00:00+02:00
 ---
 
@@ -7,9 +7,12 @@ This is a running collection of tools I use to make Windows good.
 
 
 ### AutoHotkey + SharpKeys
-→ **Arrow keys etc w/o moving hands** (a bit vim-like; but in any app)
+→ **See [Many but finite's 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)**
 
-See [Many but finite's 'Home Row Computing'](https://manybutfinite.com/post/home-row-computing/)
+Allows me to type arrow keys & backspace without having to
+move my hands away from the 'home row' on the keyboard (`asdf`, `jkl;`)\
+I.e. like vim; but in any textfield, in any app.
+
 
 
 ### WinCompose
