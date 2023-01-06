@@ -56,7 +56,8 @@ But that doesn't even insert a link.
 - tray app, C++, modern GUI (Qt5), [active development](https://github.com/xmichelo/Beeftext)
 - Great UX
 
-What I use it for (i.e. things I'm tired of typing over and over)
+What I use it for (i.e. things I'm tired of typing over and over):
+
 - To make images less huge on github: `<img width=400 src="…">`
 
 [Beeftext]: https://beeftext.org
