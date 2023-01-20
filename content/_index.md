@@ -60,9 +60,10 @@ See also my resume:
 
 [tomas.fiers@gmail.com](mailto:tomas.fiers@gmail.com)
 
-[Twitter](https://twitter.com/TomasFiers) •
-<a rel="me" href="https://fediscience.org/@TomasFiers">Mastodon</a> •
-[GitHub](https://github.com/tfiers) •
-[LinkedIn](https://www.linkedin.com/in/tomasfiers/)
+Elsewhere on the web:
 
-<!-- ↑ masto identity verification link -->
+[Twitter](https://twitter.com/TomasFiers) •
+<a rel="me" href="https://fediscience.org/@TomasFiers">Mastodon</a> •  <!-- (for identity verification) -->
+[GitHub](https://github.com/tfiers) •
+[LinkedIn](https://www.linkedin.com/in/tomasfiers/) •
+[StackExchange](https://stackexchange.com/users/3084439/tomas?tab=accounts)
