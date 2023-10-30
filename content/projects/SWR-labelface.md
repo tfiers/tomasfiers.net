@@ -12,3 +12,5 @@ lab, to label potential events. Tech: Vue.js, Node.js, mongodb, Bootstrap,
 Heroku, and the scientific Python stack for data processing and plot generation.
 GitHub repo's for [frontend](https://github.com/tfiers/labelface), and
 [backend](https://github.com/tfiers/labelback).
+
+⚠️ NOTE: the free service on which the backend was hosted has gone bankrupt; so the full interface won't load anymore, alas.
