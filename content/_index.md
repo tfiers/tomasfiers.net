@@ -58,7 +58,10 @@ See also my resume:
 ## Links
 
 I like and recommend this.
+
 - Gordon Brander's [Patterns](https://gordonbrander.com/pattern): useful concepts for thinking about things
+  - I have gotten a lot of mileage out of [Capture, Organize, Synthesize](https://gordonbrander.com/pattern/capture-organize-synthesize/).
+  - Ideas like the [Lindy effect](https://gordonbrander.com/pattern/lindy-effect/), the [OODA loop](https://gordonbrander.com/pattern/ooda-loop/), [Science is the only news](https://gordonbrander.com/pattern/science-is-the-only-news/), and [Architects vs gardeners](https://gordonbrander.com/pattern/architects-vs-gardeners/) have been useful too.
 
 
 
