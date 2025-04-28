@@ -55,6 +55,12 @@ See also my resume:
 - [Academic, 2-page resume](/content/CV_ac.pdf)
 
 
+## Links
+
+I like and recommend this.
+- Gordon Brander's [Patterns](https://gordonbrander.com/pattern): useful concepts for thinking about things
+
+
 
 ## Contact
 
