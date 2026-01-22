@@ -33,11 +33,11 @@ to make sure the required [submodules](.gitmodules) are also downloaded.
 <br>
 
 [Install](https://gohugo.io/getting-started/installing/)
-the Hugo version specified in [`netlify.toml`](netlify.toml).  
-> Example, using the [Chocolatey package manager](https://chocolatey.org/install)
+the Hugo version specified in [`netlify.toml`](netlify.toml).
+> Example, using the [Scoop package manager](https://scoop.sh/)
 on Windows:
 > ```
-> choco install hugo --version 0.42 --yes
+> scoop install hugo
 > ```
 <br>
 <br>

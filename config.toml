@@ -4,5 +4,11 @@ languageCode = "en-us"
 title = "Tomas Fiers"
 theme = "hyde"
 
-# Enable << ```python [some code]``` >> syntax in markdown
-pygmentsCodeFences = true
+[markup]
+  [markup.highlight]
+    # Enable << ```python [some code]``` >> syntax in markdown
+    codeFences = true
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      # Allow raw HTML in markdown files
+      unsafe = true
