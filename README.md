@@ -37,7 +37,7 @@ the Hugo version specified in [`netlify.toml`](netlify.toml).
 > Example, using the [Scoop package manager](https://scoop.sh/)
 on Windows:
 > ```
-> scoop install hugo
+> scoop install hugo@0.154.5
 > ```
 <br>
 <br>
