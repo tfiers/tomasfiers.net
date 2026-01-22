@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap Tempo</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #fff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0 0 4px;
+        }
+        .subtitle {
+            font-size: 12px;
+            color: #999;
+            margin: 0 0 20px;
+        }
+        .bpm-display {
+            margin-bottom: 16px;
+        }
+        .bpm-value {
+            font-size: 48px;
+            font-weight: 600;
+            line-height: 1;
+        }
+        .bpm-decimal {
+            font-size: 24px;
+            color: #999;
+            font-weight: 400;
+        }
+        .bpm-label {
+            font-size: 13px;
+            color: #666;
+        }
+        .tap-button {
+            padding: 10px 24px;
+            font-size: 14px;
+            background: #333;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .tap-button:hover {
+            background: #444;
+        }
+        .tap-button:active {
+            background: #222;
+        }
+        .stats {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .stat-value {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .stat-decimal {
+            font-size: 14px;
+            color: #999;
+            font-weight: 400;
+        }
+        .stat-label {
+            color: #666;
+        }
+        .graph-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .graph-title {
+            font-size: 12px;
+            color: #666;
+        }
+        .graph-legend {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: #666;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .graph {
+            height: 180px;
+            position: relative;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .ma-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #666;
+            flex: 1;
+        }
+        .ma-control input[type="range"] {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .ma-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #666;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .ma-control input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #666;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .ma-value {
+            min-width: 20px;
+            text-align: right;
+        }
+        .reset-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+        }
+        .reset-button:hover {
+            background: #eee;
+        }
+        .hint {
+            color: #999;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 10;
+            transform: translate(-50%, -100%);
+            margin-top: -8px;
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        function formatBPM(bpm) {
+            if (bpm <= 0) return { whole: '—', decimal: '' };
+            const whole = Math.floor(bpm);
+            const decimal = (bpm - whole).toFixed(1).slice(1);
+            return { whole: String(whole), decimal };
+        }
+
+        function BPMCounter() {
+            const [taps, setTaps] = useState([]);
+            const [intervals, setIntervals] = useState([]);
+            const [maWindow, setMaWindow] = useState(10);
+
+            // Exponential slider: slider value 0-100 maps to MA window 2-50
+            const sliderToMa = (v) => Math.round(2 * Math.pow(50/2, v / 100));
+            const maToSlider = (ma) => Math.round(100 * Math.log(ma / 2) / Math.log(50 / 2));
+
+            const MAX_INTERVAL = 2000;
+
+            const handleTap = useCallback(() => {
+                const now = performance.now();
+                setTaps(prevTaps => {
+                    if (prevTaps.length > 0 && now - prevTaps[prevTaps.length - 1] > MAX_INTERVAL) {
+                        return [now];
+                    }
+                    const newTaps = [...prevTaps, now];
+                    return newTaps.length > 50 ? newTaps.slice(1) : newTaps;
+                });
+            }, []);
+
+            useEffect(() => {
+                if (taps.length < 2) {
+                    setIntervals([]);
+                    return;
+                }
+                const newIntervals = [];
+                for (let i = 1; i < taps.length; i++) {
+                    newIntervals.push(taps[i] - taps[i - 1]);
+                }
+                setIntervals(newIntervals);
+            }, [taps]);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.code === 'Space' || e.code === 'Enter' || e.key === 't' || e.key === 'T') {
+                        e.preventDefault();
+                        handleTap();
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [handleTap]);
+
+            const reset = () => {
+                setTaps([]);
+                setIntervals([]);
+            };
+
+            const intervalToBPM = (interval) => 60000 / interval;
+
+            const currentBPM = intervals.length > 0
+                ? intervalToBPM(intervals[intervals.length - 1])
+                : 0;
+
+            const avgInterval = intervals.length > 0
+                ? intervals.reduce((a, b) => a + b, 0) / intervals.length
+                : 0;
+            const avgBPM = avgInterval > 0 ? intervalToBPM(avgInterval) : 0;
+
+            const movingAvgIntervals = intervals.slice(-maWindow);
+            const movingAvgInterval = movingAvgIntervals.length > 0
+                ? movingAvgIntervals.reduce((a, b) => a + b, 0) / movingAvgIntervals.length
+                : 0;
+            const movingAvgBPM = movingAvgInterval > 0 ? intervalToBPM(movingAvgInterval) : 0;
+
+            const movingAverages = intervals.map((_, idx) => {
+                const start = Math.max(0, idx - maWindow + 1);
+                const windowSlice = intervals.slice(start, idx + 1);
+                return windowSlice.reduce((a, b) => a + b, 0) / windowSlice.length;
+            });
+
+            const mainBPM = formatBPM(movingAvgBPM);
+            const currBPM = formatBPM(currentBPM);
+            const avgBPMFormatted = formatBPM(avgBPM);
+
+            return (
+                <div className="container">
+                    <h1>Tap Tempo</h1>
+                    <p className="subtitle">BPM counter with graph and moving average</p>
+
+                    <div className="bpm-display">
+                        <div className="bpm-value">
+                            {mainBPM.whole}<span className="bpm-decimal">{mainBPM.decimal}</span>
+                        </div>
+                        <div className="bpm-label">BPM (moving average)</div>
+                    </div>
+
+                    <button className="tap-button" onClick={handleTap}>
+                        Tap
+                    </button>
+
+                    <div className="stats">
+                        <div>
+                            <div className="stat-value">
+                                {currBPM.whole}<span className="stat-decimal">{currBPM.decimal}</span>
+                            </div>
+                            <div className="stat-label">Current</div>
+                        </div>
+                        <div>
+                            <div className="stat-value">
+                                {avgBPMFormatted.whole}<span className="stat-decimal">{avgBPMFormatted.decimal}</span>
+                            </div>
+                            <div className="stat-label">Average</div>
+                        </div>
+                        <div>
+                            <div className="stat-value">{taps.length}</div>
+                            <div className="stat-label">Taps</div>
+                        </div>
+                    </div>
+
+                    <div className="graph-container">
+                        <div className="graph-header">
+                            <div className="graph-title">BPM per tap</div>
+                            <div className="graph-legend">
+                                <div className="legend-item">
+                                    <div className="legend-dot" style={{background: '#2563eb'}}></div>
+                                    <span>BPM</span>
+                                </div>
+                                <div className="legend-item">
+                                    <div className="legend-dot" style={{background: '#dc2626'}}></div>
+                                    <span>Moving avg</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="graph">
+                            <Graph
+                                bpmValues={intervals.map(intervalToBPM)}
+                                movingAvgBpmValues={movingAverages.map(intervalToBPM)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="controls">
+                        <div className="ma-control">
+                            <label>MA window:</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={maToSlider(maWindow)}
+                                onChange={(e) => setMaWindow(sliderToMa(parseInt(e.target.value)))}
+                            />
+                            <span className="ma-value">{maWindow}</span>
+                        </div>
+                        <button className="reset-button" onClick={reset}>Reset</button>
+                    </div>
+
+                    <p className="hint">Press Space, Enter, or T to tap</p>
+                </div>
+            );
+        }
+
+        function Graph({ bpmValues, movingAvgBpmValues }) {
+            const [hover, setHover] = useState(null);
+            const svgRef = useRef(null);
+
+            if (bpmValues.length === 0) {
+                return (
+                    <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="xMidYMid meet">
+                        <text x="200" y="90" textAnchor="middle" fill="#999" fontSize="12">
+                            Start tapping to see the graph
+                        </text>
+                    </svg>
+                );
+            }
+
+            const width = 400;
+            const height = 180;
+            const padding = { top: 8, right: 8, bottom: 20, left: 36 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            const allValues = [...bpmValues, ...movingAvgBpmValues];
+            const dataMin = Math.min(...allValues);
+            const dataMax = Math.max(...allValues);
+            const padding_pct = 0.02;
+            const minVal = dataMin - (dataMax - dataMin) * padding_pct;
+            const maxVal = dataMax + (dataMax - dataMin) * padding_pct;
+            const range = maxVal - minVal || 1;
+
+            const xScale = (i) => padding.left + (i / Math.max(bpmValues.length - 1, 1)) * graphWidth;
+            const yScale = (v) => padding.top + graphHeight - ((v - minVal) / range) * graphHeight;
+
+            const bpmPath = bpmValues.map((v, i) =>
+                `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`
+            ).join(' ');
+
+            const maPath = movingAvgBpmValues.map((v, i) =>
+                `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`
+            ).join(' ');
+
+            // More y-axis ticks for taller graph
+            const yTicks = [];
+            const tickCount = 5;
+            for (let i = 0; i <= tickCount; i++) {
+                yTicks.push(minVal + (maxVal - minVal) * (i / tickCount));
+            }
+
+            const handleMouseMove = (e) => {
+                if (!svgRef.current) return;
+                const rect = svgRef.current.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width * width;
+
+                // Find closest point
+                let closestIdx = 0;
+                let closestDist = Infinity;
+                for (let i = 0; i < bpmValues.length; i++) {
+                    const dist = Math.abs(xScale(i) - x);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestIdx = i;
+                    }
+                }
+
+                if (closestDist < 30) {
+                    const svgX = xScale(closestIdx);
+                    const svgY = yScale(bpmValues[closestIdx]);
+                    // Convert SVG coords to pixel coords
+                    const pixelX = svgX / width * rect.width;
+                    const pixelY = svgY / height * rect.height;
+                    setHover({
+                        idx: closestIdx,
+                        x: pixelX,
+                        y: pixelY,
+                        bpm: bpmValues[closestIdx],
+                        ma: movingAvgBpmValues[closestIdx]
+                    });
+                } else {
+                    setHover(null);
+                }
+            };
+
+            const handleMouseLeave = () => setHover(null);
+
+            return (
+                <>
+                    <svg
+                        ref={svgRef}
+                        width="100%"
+                        height="100%"
+                        viewBox={`0 0 ${width} ${height}`}
+                        preserveAspectRatio="xMidYMid meet"
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
+                        style={{ cursor: 'crosshair' }}
+                    >
+                        {/* Grid lines */}
+                        {yTicks.map((v, i) => (
+                            <g key={i}>
+                                <line
+                                    x1={padding.left}
+                                    y1={yScale(v)}
+                                    x2={width - padding.right}
+                                    y2={yScale(v)}
+                                    stroke="#eee"
+                                    strokeWidth="1"
+                                />
+                                <text
+                                    x={padding.left - 4}
+                                    y={yScale(v)}
+                                    textAnchor="end"
+                                    fill="#999"
+                                    fontSize="10"
+                                    dominantBaseline="middle"
+                                >
+                                    {Math.round(v)}
+                                </text>
+                            </g>
+                        ))}
+
+                        {/* BPM line */}
+                        <path
+                            d={bpmPath}
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeWidth="1.5"
+                        />
+
+                        {/* Moving average line */}
+                        <path
+                            d={maPath}
+                            fill="none"
+                            stroke="#dc2626"
+                            strokeWidth="2"
+                        />
+
+                        {/* Data points */}
+                        {bpmValues.map((v, i) => (
+                            <circle
+                                key={i}
+                                cx={xScale(i)}
+                                cy={yScale(v)}
+                                r={hover?.idx === i ? 5 : 3}
+                                fill={hover?.idx === i ? '#1d4ed8' : '#2563eb'}
+                            />
+                        ))}
+                    </svg>
+                    {hover && (
+                        <div
+                            className="tooltip"
+                            style={{ left: hover.x, top: hover.y }}
+                        >
+                            Tap {hover.idx + 1}: {hover.bpm.toFixed(1)} BPM (MA: {hover.ma.toFixed(1)})
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<BPMCounter />);
+    </script>
+</body>
+</html>
