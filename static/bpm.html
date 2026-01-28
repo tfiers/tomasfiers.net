@@ -264,7 +264,12 @@
             }, [handleTap]);
 
             useEffect(() => {
-                const handleClick = () => {
+                const handleClick = (e) => {
+                    // Don't register tap if clicking on interactive controls
+                    const target = e.target;
+                    if (target.closest('.reset-button') || target.closest('input[type="range"]')) {
+                        return;
+                    }
                     handleTap();
                 };
                 document.addEventListener('click', handleClick);
@@ -315,7 +320,7 @@
                         <div className="bpm-label">BPM (moving average)</div>
                     </div>
 
-                    <button className="tap-button" onClick={handleTap}>
+                    <button className="tap-button">
                         Tap
                     </button>
 
