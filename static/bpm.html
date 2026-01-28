@@ -263,6 +263,14 @@
                 return () => window.removeEventListener('keydown', handleKeyDown);
             }, [handleTap]);
 
+            useEffect(() => {
+                const handleClick = () => {
+                    handleTap();
+                };
+                document.addEventListener('click', handleClick);
+                return () => document.removeEventListener('click', handleClick);
+            }, [handleTap]);
+
             const reset = () => {
                 setTaps([]);
                 setIntervals([]);
@@ -367,7 +375,7 @@
                         <button className="reset-button" onClick={reset}>Reset</button>
                     </div>
 
-                    <p className="hint">Press Space, Enter, or T to tap</p>
+                    <p className="hint">Click anywhere, or press Space, Enter, or T to tap</p>
                 </div>
             );
         }
