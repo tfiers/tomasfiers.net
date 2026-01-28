@@ -265,9 +265,11 @@
 
             useEffect(() => {
                 const handleClick = (e) => {
-                    // Don't register tap if clicking on interactive controls
+                    // Don't register tap if clicking on interactive controls or graph
                     const target = e.target;
-                    if (target.closest('.reset-button') || target.closest('input[type="range"]')) {
+                    if (target.closest('.reset-button') || 
+                        target.closest('input[type="range"]') ||
+                        target.closest('.graph-container')) {
                         return;
                     }
                     handleTap();
