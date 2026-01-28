@@ -244,8 +244,9 @@
                     if (prevTaps.length > 0 && now - prevTaps[prevTaps.length - 1] > MAX_INTERVAL) {
                         return [now];
                     }
-                    // Store all taps, no limit
-                    return [...prevTaps, now];
+                    // Store all taps, with reasonable upper limit to prevent memory issues
+                    const newTaps = [...prevTaps, now];
+                    return newTaps.length > 1000 ? newTaps.slice(-1000) : newTaps;
                 });
             }, []);
 
@@ -393,7 +394,7 @@
 
                     <div className="controls">
                         <div className="ma-control">
-                            <label>Taps to display:</label>
+                            <label>Analysis window:</label>
                             <input
                                 type="range"
                                 min="0"
