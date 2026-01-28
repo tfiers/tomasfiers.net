@@ -263,6 +263,19 @@
                 return () => window.removeEventListener('keydown', handleKeyDown);
             }, [handleTap]);
 
+            useEffect(() => {
+                const handleClick = (e) => {
+                    // Don't register tap if clicking on interactive controls or graph
+                    const target = e.target;
+                    if (target.closest('.controls') || target.closest('.graph-container')) {
+                        return;
+                    }
+                    handleTap();
+                };
+                document.addEventListener('click', handleClick);
+                return () => document.removeEventListener('click', handleClick);
+            }, [handleTap]);
+
             const reset = () => {
                 setTaps([]);
                 setIntervals([]);
@@ -307,7 +320,7 @@
                         <div className="bpm-label">BPM (moving average)</div>
                     </div>
 
-                    <button className="tap-button" onClick={handleTap}>
+                    <button className="tap-button">
                         Tap
                     </button>
 
@@ -367,7 +380,7 @@
                         <button className="reset-button" onClick={reset}>Reset</button>
                     </div>
 
-                    <p className="hint">Press Space, Enter, or T to tap</p>
+                    <p className="hint">Click anywhere, or press Space, Enter, or T to tap</p>
                 </div>
             );
         }
