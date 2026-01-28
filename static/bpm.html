@@ -18,6 +18,10 @@
             color: #333;
             margin: 0;
             padding: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .container {
             max-width: 500px;
@@ -222,10 +226,15 @@
             const [taps, setTaps] = useState([]);
             const [intervals, setIntervals] = useState([]);
             const [maWindow, setMaWindow] = useState(10);
+            const [displayLimit, setDisplayLimit] = useState(50);
 
             // Exponential slider: slider value 0-100 maps to MA window 2-50
             const sliderToMa = (v) => Math.round(2 * Math.pow(50/2, v / 100));
             const maToSlider = (ma) => Math.round(100 * Math.log(ma / 2) / Math.log(50 / 2));
+
+            // Linear slider for display limit: slider value 0-100 maps to 2-100
+            const sliderToDisplay = (v) => Math.round(2 + (98 * v / 100));
+            const displayToSlider = (d) => Math.round(((d - 2) / 98) * 100);
 
             const MAX_INTERVAL = 2000;
 
@@ -235,8 +244,8 @@
                     if (prevTaps.length > 0 && now - prevTaps[prevTaps.length - 1] > MAX_INTERVAL) {
                         return [now];
                     }
-                    const newTaps = [...prevTaps, now];
-                    return newTaps.length > 50 ? newTaps.slice(1) : newTaps;
+                    // Store all taps, no limit
+                    return [...prevTaps, now];
                 });
             }, []);
 
@@ -245,12 +254,14 @@
                     setIntervals([]);
                     return;
                 }
+                // Use only the last displayLimit taps for calculations
+                const limitedTaps = taps.slice(-displayLimit);
                 const newIntervals = [];
-                for (let i = 1; i < taps.length; i++) {
-                    newIntervals.push(taps[i] - taps[i - 1]);
+                for (let i = 1; i < limitedTaps.length; i++) {
+                    newIntervals.push(limitedTaps[i] - limitedTaps[i - 1]);
                 }
                 setIntervals(newIntervals);
-            }, [taps]);
+            }, [taps, displayLimit]);
 
             useEffect(() => {
                 const handleKeyDown = (e) => {
@@ -378,6 +389,20 @@
                             <span className="ma-value">{maWindow}</span>
                         </div>
                         <button className="reset-button" onClick={reset}>Reset</button>
+                    </div>
+
+                    <div className="controls">
+                        <div className="ma-control">
+                            <label>Taps to display:</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={displayToSlider(displayLimit)}
+                                onChange={(e) => setDisplayLimit(sliderToDisplay(parseInt(e.target.value)))}
+                            />
+                            <span className="ma-value">{displayLimit}</span>
+                        </div>
                     </div>
 
                     <p className="hint">Click anywhere, or press Space, Enter, or T to tap</p>
