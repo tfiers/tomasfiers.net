@@ -547,7 +547,6 @@
       };
       color.oninput = () => { m.color = color.value; update(); };
       del.onclick = () => {
-        if (!confirm(`Remove "${m.name}"?`)) return;
         state.mics = state.mics.filter(x => x !== m);
         if (state.settings.ref === m.id) state.settings.ref = '';
         update();
@@ -727,7 +726,7 @@
   const shared = location.hash.startsWith('#d=');
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
-    if (!hadSaved && !shared) LIBRARY.filter(e => e.auto !== false).forEach(addFromLibrary);
+    if (!hadSaved && !shared) LIBRARY.filter(e => e.auto).forEach(addFromLibrary);
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
