@@ -55,6 +55,7 @@
     border-radius: 12px; padding: 16px;
   }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
+  .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr); } }
 
   .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
@@ -79,7 +80,7 @@
   .chart-wrap { position: relative; }
   svg#chart { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
-  svg .direct { font-size: 11px; fill: var(--ink-2); }
+  svg .direct { font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   .tip {
     position: absolute; pointer-events: none; background: var(--surface); color: var(--ink);
     border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.8rem;
@@ -128,7 +129,8 @@
   <p class="sub">Paste or drop frequency-response data for each mic and overlay the curves. Everything stays in your browser.</p>
 
   <div class="layout">
-    <section class="panel">
+    <div class="main-col">
+    <section class="panel" id="chartPanel">
       <div class="controls">
         <label>Level
           <select id="normMode">
@@ -170,6 +172,12 @@
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
+    <section class="panel" id="specPanel" hidden>
+      <h2>Specs</h2>
+      <div class="table-wrap" id="specWrap" style="margin-top:0"></div>
+      <p class="hint">From the manufacturers' data sheets. Sensitivity: output voltage for 1 Pa (94 dB SPL); ~16 dB between a condenser and a dynamic mic means that much more preamp gain. Self-noise is A-weighted; – = not published.</p>
+    </section>
+    </div>
     <aside>
       <div class="panel">
         <h2>Mics</h2>
@@ -217,11 +225,6 @@
       </div>
     </aside>
   </div>
-  <section class="panel" id="specPanel" style="margin-top:16px" hidden>
-    <h2>Specs</h2>
-    <div class="table-wrap" id="specWrap" style="margin-top:0"></div>
-    <p class="hint">From the manufacturers' data sheets. Sensitivity: output voltage for 1 Pa (94 dB SPL); ~16 dB between a condenser and a dynamic mic means that much more preamp gain. Self-noise is A-weighted; – = not published.</p>
-  </section>
 </main>
 
 <script src="mics-library.js"></script>
@@ -445,11 +448,11 @@
       if (last !== null) ends.push({ m, y: yOf(c[last]), x: xOf(GRID[last]) });
     }
     // Direct labels at line ends when there are few series (placed inside, right-aligned, de-overlapped)
-    if (visible.length <= 4 && ends.length && W >= 520) {
+    if (visible.length <= 8 && ends.length && W >= 520) {
       ends.sort((a, b) => a.y - b.y);
       for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 13) ends[k].y = ends[k - 1].y + 13;
       for (const e of ends) {
-        const t = el('text', { x: Math.min(e.x, M.l + PW) - 4, y: e.y - 6, 'text-anchor': 'end', class: 'direct' }, svg);
+        const t = el('text', { x: Math.min(e.x, M.l + PW) - 4, y: e.y - 6, 'text-anchor': 'end', class: 'direct', style: `fill:${colorOf(e.m)}` }, svg);
         t.textContent = e.m.name;
       }
     }
@@ -508,13 +511,13 @@
     $('specPanel').hidden = !withSpecs.length;
     if (!withSpecs.length) { wrap.innerHTML = ''; return; }
     const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    const mv = dbv => typeof dbv === 'number' ? ` <span class="meta">(${(1000 * 10 ** (dbv / 20)).toFixed(1)} mV/Pa)</span>` : '';
-    let h = `<table><thead><tr><th>Mic</th><th style="text-align:left">Type</th><th style="text-align:left">Pattern</th>
+    const mv = dbv => typeof dbv === 'number' ? `<br><span class="meta">${(1000 * 10 ** (dbv / 20)).toFixed(1)} mV/Pa</span>` : '';
+    let h = `<table><thead><tr><th>Mic</th><th style="text-align:left">Type · pattern</th>
       <th>Sensitivity</th><th>Self-noise</th><th>Max SPL</th><th>Impedance</th><th>Range</th></tr></thead><tbody>`;
     for (const m of withSpecs) {
       const sp = m.specs;
       h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>
-        <td style="text-align:left">${esc(sp.type || '–')}</td><td style="text-align:left">${esc(sp.pattern || '–')}</td>
+        <td style="text-align:left;white-space:normal;min-width:9em">${esc(sp.type || '–')}<br><span class="meta">${esc(sp.pattern || '')}</span></td>
         <td>${num(sp.sens, ' dBV')}${mv(sp.sens)}</td><td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td>
         <td>${num(sp.imp, ' Ω')}</td><td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td></tr>`;
     }
@@ -544,7 +547,6 @@
       };
       color.oninput = () => { m.color = color.value; update(); };
       del.onclick = () => {
-        if (!confirm(`Remove "${m.name}"?`)) return;
         state.mics = state.mics.filter(x => x !== m);
         if (state.settings.ref === m.id) state.settings.ref = '';
         update();
@@ -724,7 +726,7 @@
   const shared = location.hash.startsWith('#d=');
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
-    if (!hadSaved && !shared) LIBRARY.filter(e => e.auto !== false).forEach(addFromLibrary);
+    if (!hadSaved && !shared) LIBRARY.filter(e => e.auto).forEach(addFromLibrary);
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
