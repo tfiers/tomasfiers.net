@@ -100,6 +100,7 @@
   .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
   #libList .name { white-space: normal; }
+  #libList .lib-head { border-bottom: none; padding: 10px 0 0; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 55%; }
   .lib-btns button { font-size: 0.78rem; padding: 3px 7px; }
   button:disabled { color: var(--muted); cursor: default; }
@@ -624,7 +625,16 @@
     const ul = $('libList');
     ul.innerHTML = '';
     const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
-    for (const model of models) {
+    const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
+    let lastOwned = null;
+    for (const model of [...models.filter(owned), ...models.filter(m => !owned(m))]) {
+      if (owned(model) !== lastOwned && models.some(m => !owned(m))) {
+        lastOwned = owned(model);
+        const h = document.createElement('li');
+        h.className = 'lib-head';
+        h.textContent = lastOwned ? 'My mics' : 'Other mics (window shopping)';
+        ul.appendChild(h);
+      }
       const entries = LIBRARY.filter(e => (e.model || e.name) === model);
       const li = document.createElement('li');
       li.style.alignItems = 'flex-start';
