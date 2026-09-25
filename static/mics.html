@@ -449,7 +449,8 @@
         pen = true; last = i;
       }
       if (!d) continue;
-      const dim = highlight && highlight !== m.id;
+      // Only dim the others while the hovered mic is actually on the chart.
+      const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
       el('path', {
         d, fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
         'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dashOf(m),
@@ -561,8 +562,9 @@
         if (state.settings.ref === m.id) state.settings.ref = '';
         update();
       };
-      li.onmouseenter = () => { highlight = m.id; draw(); };
-      li.onmouseleave = () => { highlight = null; draw(); };
+      // Hover-highlight with a real mouse only; touch has no "leave", so it would stick.
+      li.onpointerenter = e => { if (e.pointerType === 'mouse') { highlight = m.id; draw(); } };
+      li.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
       ul.appendChild(li);
     }
     const sel = $('refMic');
