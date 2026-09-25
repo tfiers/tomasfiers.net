@@ -127,13 +127,14 @@
   <div class="layout">
     <section class="panel">
       <div class="controls">
-        <label>Normalize at
+        <label>Level
           <select id="normMode">
-            <option value="freq">frequency</option>
-            <option value="none">off (absolute)</option>
-            <option value="mean">band average</option>
+            <option value="freq">0 dB at</option>
+            <option value="mean">0 dB = 200–5k average</option>
+            <option value="sens">output (sensitivity, dBV/Pa)</option>
+            <option value="none">as in the source</option>
           </select>
-          <input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz
+          <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
         </label>
         <label>Smoothing
           <select id="smooth">
@@ -163,6 +164,7 @@
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <div class="table-wrap" id="tableWrap"></div>
+      <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
     <aside>
@@ -173,7 +175,7 @@
         <details id="libBox" open>
           <summary>Library (spec-sheet curves)</summary>
           <ul class="mics" id="libList"></ul>
-          <p class="hint">Traced from manufacturer graphs, so approximate (±0.5 dB or so), and each maker measures differently.</p>
+          <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these.</p>
         </details>
 
         <details id="addBox" open>
@@ -212,6 +214,11 @@
       </div>
     </aside>
   </div>
+  <section class="panel" id="specPanel" style="margin-top:16px" hidden>
+    <h2>Specs</h2>
+    <div class="table-wrap" id="specWrap" style="margin-top:0"></div>
+    <p class="hint">From the manufacturers' data sheets. Sensitivity: output voltage for 1 Pa (94 dB SPL); ~16 dB between a condenser and a dynamic mic means that much more preamp gain. Self-noise is A-weighted; – = not published.</p>
+  </section>
 </main>
 
 <script src="mics-library.js"></script>
@@ -314,9 +321,13 @@
     const i = gridIndex(f);
     return i >= 0 && i < arr.length ? arr[i] : null;
   }
-  function offsetFor(arr) {
+  function offsetFor(arr, m) {
     const s = state.settings;
     if (s.normMode === 'none') return 0;
+    if (s.normMode === 'sens') {
+      const sens = m.specs && m.specs.sens, v = valueAt(arr, 1000);
+      return typeof sens === 'number' && v !== null ? v - sens : null;
+    }
     if (s.normMode === 'mean') {
       let sum = 0, n = 0;
       for (let i = gridIndex(200); i <= gridIndex(5000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
@@ -330,8 +341,8 @@
     const curves = new Map();
     for (const m of state.mics) {
       const c = smooth(resample(m.points), Number(s.smooth));
-      const off = offsetFor(c);
-      curves.set(m.id, c.map(v => v === null ? null : v - off));
+      const off = offsetFor(c, m);
+      curves.set(m.id, c.map(v => v === null || off === null ? null : v - off));
     }
     const ref = s.ref && curves.get(s.ref);
     if (ref) {
@@ -405,7 +416,7 @@
       const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
       t.textContent = d > 0 ? '+' + d : d < 0 ? '−' + -d : '0';
     }
-    const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = 'dB';
+    const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = state.settings.normMode === 'sens' && !state.settings.ref ? 'dBV' : 'dB';
     const hz = el('text', { x: M.l + PW, y: H - 1, 'text-anchor': 'end' }, grid); hz.textContent = 'Hz';
 
     el('clipPath', { id: 'plotClip' }, svg).appendChild(el('rect', { x: M.l, y: M.t, width: PW, height: PH }));
@@ -485,6 +496,26 @@
         TABLE_FREQS.map(f => { const v = valueAt(c, f); return `<td>${v === null ? '–' : fmtD(v)}</td>`; }).join('') + '</tr>';
     }
     wrap.innerHTML = h + '</tbody></table>';
+    drawSpecs(visible);
+  }
+
+  function drawSpecs(visible) {
+    const withSpecs = visible.filter(m => m.specs);
+    const wrap = $('specWrap');
+    $('specPanel').hidden = !withSpecs.length;
+    if (!withSpecs.length) { wrap.innerHTML = ''; return; }
+    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+    const mv = dbv => typeof dbv === 'number' ? ` <span class="meta">(${(1000 * 10 ** (dbv / 20)).toFixed(1)} mV/Pa)</span>` : '';
+    let h = `<table><thead><tr><th>Mic</th><th style="text-align:left">Type</th><th style="text-align:left">Pattern</th>
+      <th>Sensitivity</th><th>Self-noise</th><th>Max SPL</th><th>Impedance</th><th>Range</th></tr></thead><tbody>`;
+    for (const m of withSpecs) {
+      const sp = m.specs;
+      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>
+        <td style="text-align:left">${esc(sp.type || '–')}</td><td style="text-align:left">${esc(sp.pattern || '–')}</td>
+        <td>${num(sp.sens, ' dBV')}${mv(sp.sens)}</td><td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td>
+        <td>${num(sp.imp, ' Ω')}</td><td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td></tr>`;
+    }
+    wrap.innerHTML = h + '</tbody></table>';
   }
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -541,7 +572,8 @@
   function syncControls() {
     const s = state.settings;
     $('normMode').value = s.normMode; $('normFreq').value = s.normFreq;
-    $('normFreq').disabled = s.normMode !== 'freq';
+    $('normFreqBox').hidden = s.normMode !== 'freq';
+    $('sensHint').hidden = s.normMode !== 'sens';
     $('smooth').value = s.smooth; $('yRange').value = s.yRange;
   }
   $('normMode').onchange = e => { state.settings.normMode = e.target.value; syncControls(); update(); };
@@ -583,6 +615,7 @@
   function addFromLibrary(entry) {
     const m = addMic(entry.name, entry.points.map(p => [p[0], p[1]]));
     m.lib = entry.name;
+    if (entry.specs) m.specs = { ...entry.specs };
     return m;
   }
   function drawLibrary() {
@@ -608,6 +641,8 @@
       if (!Array.isArray(m.points)) continue;
       const nm = addMic(String(m.name || 'Mic'), m.points.filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1])));
       if (m.color) nm.color = m.color;
+      if (m.lib) nm.lib = String(m.lib);
+      if (m.specs && typeof m.specs === 'object') nm.specs = m.specs;
       if (m.visible === false) nm.visible = false;
       idMap[m.id] = nm.id;
     }
@@ -667,6 +702,11 @@
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
     if (!hadSaved && !shared) LIBRARY.forEach(addFromLibrary);
+    // Keep specs of library mics up to date with the library file.
+    for (const m of state.mics) {
+      const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
+      if (entry && entry.specs) m.specs = { ...entry.specs };
+    }
     syncControls();
     update();
     if (state.mics.length) $('addBox').open = false;
