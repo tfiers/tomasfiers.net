@@ -102,7 +102,9 @@
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
   #libList .name { white-space: normal; }
   #libList .lib-head { border-bottom: none; padding: 10px 0 0; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 55%; }
+  .lib-desc { font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; display: inline-block; margin: 2px 0; }
+  #libList .lib-item { display: block; }
+  .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .lib-btns button { font-size: 0.78rem; padding: 3px 7px; }
   button:disabled { color: var(--muted); cursor: default; }
 
@@ -156,6 +158,8 @@
         </label>
         <label>Y range
           <select id="yRange">
+            <option value="-10,5">+5 / −10 dB</option>
+            <option value="5">±5 dB</option>
             <option value="auto">auto</option>
             <option value="10">±10 dB</option>
             <option value="20">±20 dB</option>
@@ -184,7 +188,7 @@
         <ul class="mics" id="micList"></ul>
 
         <details id="libBox" open>
-          <summary>Library (spec-sheet curves)</summary>
+          <summary>Library</summary>
           <ul class="mics" id="libList"></ul>
           <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these.</p>
         </details>
@@ -242,7 +246,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: 'auto' } };
+  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5' } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -385,8 +389,14 @@
   let curves = new Map();
 
   function computeYRange() {
-    const r = state.settings.yRange;
-    if (r !== 'auto') { yLo = -Number(r); yHi = Number(r); return; }
+    const s = state.settings, r = s.yRange;
+    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves.
+    const centred = s.ref || (s.normMode !== 'sens' && s.normMode !== 'none');
+    if (r !== 'auto' && centred) {
+      // "lo,hi" for an asymmetric range, or a single number n for ±n
+      const [lo, hi] = r.includes(',') ? r.split(',').map(Number) : [-Number(r), Number(r)];
+      yLo = lo; yHi = hi; return;
+    }
     let lo = Infinity, hi = -Infinity;
     const i0 = gridIndex(FMIN), i1 = gridIndex(FMAX);
     for (const m of state.mics) {
@@ -416,7 +426,7 @@
       const t = el('text', { x: xOf(f), y: H - 12, 'text-anchor': f === 20 ? 'start' : f === 20000 ? 'end' : 'middle' }, grid);
       t.textContent = fmtF(f);
     }
-    const step = (yHi - yLo) > 40 ? 10 : 5;
+    const step = (yHi - yLo) > 40 ? 10 : (yHi - yLo) > 12 ? 5 : 1;
     for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
       el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
       const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
@@ -439,7 +449,8 @@
         pen = true; last = i;
       }
       if (!d) continue;
-      const dim = highlight && highlight !== m.id;
+      // Only dim the others while the hovered mic is actually on the chart.
+      const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
       el('path', {
         d, fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
         'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dashOf(m),
@@ -551,8 +562,9 @@
         if (state.settings.ref === m.id) state.settings.ref = '';
         update();
       };
-      li.onmouseenter = () => { highlight = m.id; draw(); };
-      li.onmouseleave = () => { highlight = null; draw(); };
+      // Hover-highlight with a real mouse only; touch has no "leave", so it would stick.
+      li.onpointerenter = e => { if (e.pointerType === 'mouse') { highlight = m.id; draw(); } };
+      li.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
       ul.appendChild(li);
     }
     const sel = $('refMic');
@@ -639,8 +651,9 @@
       }
       const entries = LIBRARY.filter(e => (e.model || e.name) === model);
       const li = document.createElement('li');
-      li.style.alignItems = 'flex-start';
-      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}<br><span class="meta">${esc(entries[0].source || '')}</span></span>
+      li.className = 'lib-item';
+      const desc = entries[0].desc ? `<br><span class="lib-desc">${esc(entries[0].desc)}</span>` : '';
+      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(entries[0].source || '')}</span></span>
         <span class="lib-btns"></span>`;
       const box = li.querySelector('.lib-btns');
       for (const entry of entries) {
