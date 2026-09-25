@@ -99,6 +99,8 @@
   .mics li.off .name { color: var(--muted); text-decoration: line-through; }
   .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
+  #libList .name { white-space: normal; }
+  button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
   summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
@@ -158,7 +160,7 @@
       <div class="chart-wrap" id="chartWrap">
         <svg id="chart" viewBox="0 0 800 440" role="img" aria-label="Frequency response curves"></svg>
         <div class="tip" id="tip"></div>
-        <div class="empty" id="empty" hidden>No mics yet. Add one on the right, or <button class="link" id="loadExamples" style="color:var(--accent)">load example curves</button>.</div>
+        <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <div class="table-wrap" id="tableWrap"></div>
     </section>
@@ -168,8 +170,14 @@
         <h2>Mics</h2>
         <ul class="mics" id="micList"></ul>
 
+        <details id="libBox" open>
+          <summary>Library (spec-sheet curves)</summary>
+          <ul class="mics" id="libList"></ul>
+          <p class="hint">Traced from manufacturer graphs, so approximate (±0.5 dB or so), and each maker measures differently.</p>
+        </details>
+
         <details id="addBox" open>
-          <summary>Add a mic</summary>
+          <summary>Add your own data</summary>
           <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
           <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
           <div class="row-gap">
@@ -206,6 +214,7 @@
   </div>
 </main>
 
+<script src="mics-library.js"></script>
 <script>
 (() => {
   'use strict';
@@ -230,8 +239,9 @@
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(STORE_KEY));
-      if (s && Array.isArray(s.mics)) { state.mics = s.mics; Object.assign(state.settings, s.settings || {}); }
+      if (s && Array.isArray(s.mics)) { state.mics = s.mics; Object.assign(state.settings, s.settings || {}); return true; }
     } catch (e) { /* ignore */ }
+    return false;
   }
 
   // ---------- parsing ----------
@@ -524,7 +534,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); draw(); drawTable();
+    drawList(); drawLibrary(); draw(); drawTable();
   }
 
   // ---------- controls ----------
@@ -568,22 +578,26 @@
   ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', e => addFiles([...e.dataTransfer.files]));
 
-  // ---------- examples (synthetic, not real products) ----------
-  function synth(fn) {
-    const pts = [];
-    for (let i = 0; i <= 120; i++) { const f = 20 * 1000 ** (i / 120); pts.push([+f.toFixed(1), +fn(f).toFixed(2)]); }
-    return pts;
+  // ---------- library (spec-sheet curves, see mics-library.js) ----------
+  const LIBRARY = Array.isArray(window.MIC_LIBRARY) ? window.MIC_LIBRARY : [];
+  function addFromLibrary(entry) {
+    const m = addMic(entry.name, entry.points.map(p => [p[0], p[1]]));
+    m.lib = entry.name;
+    return m;
   }
-  const bell = (f, f0, gain, q) => gain / (1 + (q * (f / f0 - f0 / f)) ** 2);
-  const hp = (f, fc, order) => -10 * Math.log10(1 + (fc / f) ** (2 * order));
-  const lp = (f, fc, order) => -10 * Math.log10(1 + (f / fc) ** (2 * order));
-  $('loadExamples').onclick = () => {
-    addMic('Example: dynamic vocal', synth(f => hp(f, 90, 2) + lp(f, 13000, 3) + bell(f, 4500, 5, 1.2) + bell(f, 200, 1.5, 0.7)));
-    addMic('Example: large-diaphragm condenser', synth(f => hp(f, 25, 2) + lp(f, 19000, 2) + bell(f, 10000, 3.5, 1.5) + bell(f, 120, 1, 0.8)));
-    addMic('Example: small-diaphragm condenser', synth(f => hp(f, 35, 1) + lp(f, 20000, 2) + bell(f, 12000, 1.5, 2)));
-    addMic('Example: ribbon', synth(f => hp(f, 40, 1) + lp(f, 9000, 2) + bell(f, 100, 1.5, 0.6)));
-    update();
-  };
+  function drawLibrary() {
+    const ul = $('libList');
+    ul.innerHTML = '';
+    for (const entry of LIBRARY) {
+      const added = state.mics.some(m => m.lib === entry.name);
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="name" style="cursor:default" title="${esc(entry.source || '')}">${esc(entry.name)}<br><span class="meta">${esc(entry.source || '')}</span></span>
+        <button ${added ? 'disabled' : ''}>${added ? 'Added' : 'Add'}</button>`;
+      li.querySelector('button').onclick = () => { addFromLibrary(entry); update(); };
+      ul.appendChild(li);
+    }
+    $('libBox').hidden = !LIBRARY.length;
+  }
 
   // ---------- save / share ----------
   const exportObj = () => ({ app: 'mic-compare', version: 1, settings: state.settings, mics: state.mics });
@@ -648,8 +662,11 @@
   }
 
   // ---------- init ----------
-  load();
+  const hadSaved = load();
+  const shared = location.hash.startsWith('#d=');
   loadFromHash().then(() => {
+    // First visit: start with the whole library on screen.
+    if (!hadSaved && !shared) LIBRARY.forEach(addFromLibrary);
     syncControls();
     update();
     if (state.mics.length) $('addBox').open = false;
