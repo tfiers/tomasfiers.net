@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mic Response Compare</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --grid-minor: #efeee9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --danger: #d03b3b;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+    --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+      --muted: #898781; --grid: #2c2c2a; --grid-minor: #222221; --axis: #383835;
+      --border: rgba(255,255,255,0.10); --accent: #3987e5;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+      --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --grid-minor: #222221; --axis: #383835;
+    --border: rgba(255,255,255,0.10); --accent: #3987e5;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  h2 { font-size: 1rem; margin: 0 0 10px; }
+  .sub { color: var(--ink-2); margin: 0 0 20px; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr); } }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
+  select, input[type=number], input[type=text], textarea {
+    font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--page);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
+  }
+  select { max-width: 100%; min-width: 0; }
+  .controls label { max-width: 100%; }
+  input[type=number] { width: 5.5em; }
+  textarea { width: 100%; min-height: 140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; }
+  button {
+    font: inherit; font-size: 0.9rem; cursor: pointer; color: var(--ink);
+    background: var(--page); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  button.link { border: none; background: none; padding: 2px 4px; color: var(--muted); }
+  button.link:hover { color: var(--ink); }
+
+  .chart-wrap { position: relative; }
+  svg#chart { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  svg .direct { font-size: 11px; fill: var(--ink-2); }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.8rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; display: none; z-index: 2;
+  }
+  .tip .f { font-weight: 600; margin-bottom: 4px; }
+  .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
+
+  .empty { text-align: center; color: var(--muted); padding: 60px 16px; }
+
+  .mics { list-style: none; margin: 0; padding: 0; }
+  .mics li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .mics li:last-child { border-bottom: none; }
+  .mics .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
+  .mics li.off .name { color: var(--muted); text-decoration: line-through; }
+  .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
+  .mics .meta { color: var(--muted); font-size: 0.75rem; }
+
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
+  .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
+  .row-gap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+  .drop { border: 1.5px dashed var(--axis); border-radius: 8px; padding: 10px; text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+  .drop.over { border-color: var(--accent); color: var(--ink); }
+  .msg { font-size: 0.8rem; color: var(--ink-2); min-height: 1.2em; }
+  .msg.err { color: var(--danger); }
+
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table { border-collapse: collapse; font-size: 0.82rem; width: 100%; }
+  th, td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Microphone frequency response compare</h1>
+  <p class="sub">Paste or drop frequency-response data for each mic and overlay the curves. Everything stays in your browser.</p>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="controls">
+        <label>Normalize at
+          <select id="normMode">
+            <option value="freq">frequency</option>
+            <option value="none">off (absolute)</option>
+            <option value="mean">band average</option>
+          </select>
+          <input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz
+        </label>
+        <label>Smoothing
+          <select id="smooth">
+            <option value="0">none</option>
+            <option value="24">1/24 oct</option>
+            <option value="12">1/12 oct</option>
+            <option value="6">1/6 oct</option>
+            <option value="3">1/3 oct</option>
+            <option value="1">1 oct</option>
+          </select>
+        </label>
+        <label>Relative to
+          <select id="refMic"><option value="">— nothing —</option></select>
+        </label>
+        <label>Y range
+          <select id="yRange">
+            <option value="auto">auto</option>
+            <option value="10">±10 dB</option>
+            <option value="20">±20 dB</option>
+            <option value="30">±30 dB</option>
+          </select>
+        </label>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <svg id="chart" viewBox="0 0 800 440" role="img" aria-label="Frequency response curves"></svg>
+        <div class="tip" id="tip"></div>
+        <div class="empty" id="empty" hidden>No mics yet. Add one on the right, or <button class="link" id="loadExamples" style="color:var(--accent)">load example curves</button>.</div>
+      </div>
+      <div class="table-wrap" id="tableWrap"></div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h2>Mics</h2>
+        <ul class="mics" id="micList"></ul>
+
+        <details id="addBox" open>
+          <summary>Add a mic</summary>
+          <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
+          <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
+          <div class="row-gap">
+            <button class="primary" id="addBtn">Add</button>
+            <span class="msg" id="addMsg"></span>
+          </div>
+          <div class="drop" id="drop">Or drop CSV/TXT files here (one mic per file) —
+            <label style="color:var(--accent);cursor:pointer">browse<input type="file" id="fileIn" accept=".csv,.txt,.frd,.tsv,text/plain" multiple hidden></label>
+          </div>
+          <p class="hint">Two columns: frequency (Hz) and level (dB). Commas, tabs, semicolons or spaces all work; header and comment lines are skipped. REW exports, <code>.frd</code> files and WebPlotDigitizer CSVs load as-is.</p>
+        </details>
+
+        <details>
+          <summary>Where do I get the data?</summary>
+          <p class="hint"><strong>From a spec sheet graph:</strong> screenshot the manufacturer's curve, open it in <a href="https://automeris.io/WebPlotDigitizer/" target="_blank" rel="noopener">WebPlotDigitizer</a>, set a log X axis, trace the line, and export CSV.</p>
+          <p class="hint"><strong>Measure it yourself:</strong> put each mic in the same spot in front of a speaker, run a sweep in <a href="https://www.roomeqwizard.com/" target="_blank" rel="noopener">REW</a>, and export "measurement as text". A shared room and speaker cancel out once you use "Relative to" against one reference mic.</p>
+        </details>
+
+        <details>
+          <summary>Save / share</summary>
+          <div class="row-gap">
+            <button id="shareBtn">Copy share link</button>
+            <button id="exportBtn">Export JSON</button>
+            <label><button id="importBtnProxy" type="button">Import JSON</button><input type="file" id="importIn" accept=".json,application/json" hidden></label>
+          </div>
+          <div class="row-gap">
+            <button id="clearBtn" style="color:var(--danger)">Remove all mics</button>
+          </div>
+          <p class="msg" id="shareMsg"></p>
+          <p class="hint">Your mics are also stored in this browser automatically.</p>
+        </details>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const STORE_KEY = 'mic-compare-v1';
+  const NSLOTS = 8;
+  const FMIN = 20, FMAX = 20000;
+  // Analysis grid: 1/48 octave from 10 Hz to 40 kHz.
+  const GRID_STEP = 48;
+  const GRID = [];
+  for (let i = 0; ; i++) { const f = 10 * 2 ** (i / GRID_STEP); if (f > 40000) break; GRID.push(f); }
+  const TABLE_FREQS = [50, 100, 200, 500, 1000, 2000, 5000, 8000, 10000, 15000];
+  const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
+
+  const $ = id => document.getElementById(id);
+  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: 'auto' } };
+  let highlight = null;
+
+  // ---------- persistence ----------
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (s && Array.isArray(s.mics)) { state.mics = s.mics; Object.assign(state.settings, s.settings || {}); }
+    } catch (e) { /* ignore */ }
+  }
+
+  // ---------- parsing ----------
+  function parseData(text) {
+    const pts = [];
+    for (let line of text.split(/\r?\n/)) {
+      line = line.trim();
+      if (!line) continue;
+      let cells;
+      if (line.includes(';')) cells = line.split(';').map(c => c.replace(',', '.'));
+      else if (line.includes('\t')) cells = line.split('\t').map(c => c.replace(',', '.'));
+      else cells = line.split(/[,\s]+/);
+      const nums = cells.map(c => c.trim()).filter(c => c !== '').map(Number);
+      if (nums.length < 2 || !isFinite(nums[0]) || !isFinite(nums[1]) || nums[0] <= 0) continue;
+      pts.push([nums[0], nums[1]]);
+    }
+    pts.sort((a, b) => a[0] - b[0]);
+    // collapse duplicate frequencies
+    const out = [];
+    for (const p of pts) {
+      const last = out[out.length - 1];
+      if (last && Math.abs(last[0] - p[0]) < 1e-9) last[1] = (last[1] + p[1]) / 2; else out.push(p);
+    }
+    return out;
+  }
+
+  // ---------- slots & colors ----------
+  function nextSlot() {
+    const used = state.mics.map(m => m.slot);
+    for (let i = 0; i < 64; i++) if (!used.includes(i)) return i;
+    return used.length;
+  }
+  const colorOf = m => m.color || `var(--s${(m.slot % NSLOTS) + 1})`;
+  const dashOf = m => DASHES[Math.floor(m.slot / NSLOTS) % DASHES.length];
+
+  function addMic(name, points) {
+    const m = { id: Math.random().toString(36).slice(2, 9), name, points, visible: true, slot: nextSlot() };
+    state.mics.push(m);
+    return m;
+  }
+
+  // ---------- processing ----------
+  function resample(points) {
+    // linear interpolation in log-frequency; null outside the data's range
+    const out = new Array(GRID.length).fill(null);
+    if (points.length < 2) return out;
+    let j = 0;
+    for (let i = 0; i < GRID.length; i++) {
+      const f = GRID[i];
+      if (f < points[0][0] || f > points[points.length - 1][0]) continue;
+      while (j < points.length - 2 && points[j + 1][0] < f) j++;
+      const [f0, d0] = points[j], [f1, d1] = points[j + 1];
+      const t = f1 === f0 ? 0 : Math.log(f / f0) / Math.log(f1 / f0);
+      out[i] = d0 + t * (d1 - d0);
+    }
+    return out;
+  }
+  function smooth(arr, frac) {
+    if (!frac) return arr;
+    const half = Math.max(1, Math.round(GRID_STEP / frac / 2));
+    return arr.map((v, i) => {
+      if (v === null) return null;
+      let s = 0, n = 0;
+      for (let k = i - half; k <= i + half; k++) if (k >= 0 && k < arr.length && arr[k] !== null) { s += arr[k]; n++; }
+      return s / n;
+    });
+  }
+  const gridIndex = f => Math.round(Math.log2(f / 10) * GRID_STEP);
+  function valueAt(arr, f) {
+    const i = gridIndex(f);
+    return i >= 0 && i < arr.length ? arr[i] : null;
+  }
+  function offsetFor(arr) {
+    const s = state.settings;
+    if (s.normMode === 'none') return 0;
+    if (s.normMode === 'mean') {
+      let sum = 0, n = 0;
+      for (let i = gridIndex(200); i <= gridIndex(5000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
+      return n ? sum / n : 0;
+    }
+    const v = valueAt(arr, s.normFreq);
+    return v === null ? 0 : v;
+  }
+  function processAll() {
+    const s = state.settings;
+    const curves = new Map();
+    for (const m of state.mics) {
+      const c = smooth(resample(m.points), Number(s.smooth));
+      const off = offsetFor(c);
+      curves.set(m.id, c.map(v => v === null ? null : v - off));
+    }
+    const ref = s.ref && curves.get(s.ref);
+    if (ref) {
+      for (const [id, c] of curves) curves.set(id, c.map((v, i) => v === null || ref[i] === null ? null : v - ref[i]));
+    }
+    return curves;
+  }
+
+  // ---------- chart ----------
+  // Chart is drawn at its real pixel size so text stays readable on phones.
+  const M = { l: 44, r: 16, t: 24, b: 32 };
+  let W = 800, H = 440, PW, PH;
+  function sizeChart() {
+    W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
+    H = Math.round(Math.min(460, Math.max(300, W * 0.55)));
+    PW = W - M.l - M.r; PH = H - M.t - M.b;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  }
+  const svg = $('chart');
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const xOf = f => M.l + (Math.log10(f / FMIN) / Math.log10(FMAX / FMIN)) * PW;
+  const fOfX = x => FMIN * 10 ** (((x - M.l) / PW) * Math.log10(FMAX / FMIN));
+  let yLo = -20, yHi = 10;
+  const yOf = d => M.t + (1 - (d - yLo) / (yHi - yLo)) * PH;
+  const fmtF = f => f >= 1000 ? (+(f / 1000).toFixed(f >= 10000 ? 1 : 2)).toString() + 'k' : Math.round(f).toString();
+  const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
+
+  let curves = new Map();
+
+  function computeYRange() {
+    const r = state.settings.yRange;
+    if (r !== 'auto') { yLo = -Number(r); yHi = Number(r); return; }
+    let lo = Infinity, hi = -Infinity;
+    const i0 = gridIndex(FMIN), i1 = gridIndex(FMAX);
+    for (const m of state.mics) {
+      if (!m.visible) continue;
+      const c = curves.get(m.id);
+      for (let i = i0; i <= i1; i++) if (c[i] !== null) { lo = Math.min(lo, c[i]); hi = Math.max(hi, c[i]); }
+    }
+    if (!isFinite(lo)) { lo = -10; hi = 10; }
+    lo = Math.floor((lo - 1) / 5) * 5; hi = Math.ceil((hi + 1) / 5) * 5;
+    if (hi - lo < 20) { const mid = (hi + lo) / 2; lo = Math.floor((mid - 10) / 5) * 5; hi = lo + 20; }
+    yLo = lo; yHi = hi;
+  }
+
+  function draw() {
+    sizeChart();
+    svg.textContent = '';
+    computeYRange();
+    const grid = el('g', {}, svg);
+    // minor vertical gridlines
+    for (let dec = 10; dec <= 10000; dec *= 10) for (let k = 2; k <= 9; k++) {
+      const f = dec * k; if (f < FMIN || f > FMAX) continue;
+      el('line', { x1: xOf(f), x2: xOf(f), y1: M.t, y2: M.t + PH, stroke: 'var(--grid-minor)', 'stroke-width': 1 }, grid);
+    }
+    for (const f of [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
+      el('line', { x1: xOf(f), x2: xOf(f), y1: M.t, y2: M.t + PH, stroke: 'var(--grid)', 'stroke-width': 1 }, grid);
+      if (PW < 450 && ![20, 100, 1000, 10000].includes(f)) continue;
+      const t = el('text', { x: xOf(f), y: H - 12, 'text-anchor': f === 20 ? 'start' : f === 20000 ? 'end' : 'middle' }, grid);
+      t.textContent = fmtF(f);
+    }
+    const step = (yHi - yLo) > 40 ? 10 : 5;
+    for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
+      el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
+      const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
+      t.textContent = d > 0 ? '+' + d : d < 0 ? '−' + -d : '0';
+    }
+    const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = 'dB';
+    const hz = el('text', { x: M.l + PW, y: H - 1, 'text-anchor': 'end' }, grid); hz.textContent = 'Hz';
+
+    el('clipPath', { id: 'plotClip' }, svg).appendChild(el('rect', { x: M.l, y: M.t, width: PW, height: PH }));
+    const plot = el('g', { 'clip-path': 'url(#plotClip)' }, svg);
+    const i0 = Math.max(0, gridIndex(FMIN) - 1), i1 = Math.min(GRID.length - 1, gridIndex(FMAX) + 1);
+    const visible = state.mics.filter(m => m.visible);
+    const ends = [];
+    for (const m of visible) {
+      const c = curves.get(m.id);
+      let d = '', pen = false, last = null;
+      for (let i = i0; i <= i1; i++) {
+        if (c[i] === null) { pen = false; continue; }
+        d += (pen ? 'L' : 'M') + xOf(GRID[i]).toFixed(1) + ',' + yOf(c[i]).toFixed(1);
+        pen = true; last = i;
+      }
+      if (!d) continue;
+      const dim = highlight && highlight !== m.id;
+      el('path', {
+        d, fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
+        'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dashOf(m),
+        opacity: dim ? 0.2 : 1
+      }, plot);
+      if (last !== null) ends.push({ m, y: yOf(c[last]), x: xOf(GRID[last]) });
+    }
+    // Direct labels at line ends when there are few series (placed inside, right-aligned, de-overlapped)
+    if (visible.length <= 4 && ends.length && W >= 520) {
+      ends.sort((a, b) => a.y - b.y);
+      for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 13) ends[k].y = ends[k - 1].y + 13;
+      for (const e of ends) {
+        const t = el('text', { x: Math.min(e.x, M.l + PW) - 4, y: e.y - 6, 'text-anchor': 'end', class: 'direct' }, svg);
+        t.textContent = e.m.name;
+      }
+    }
+    // hover layer
+    const cross = el('line', { y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const dots = el('g', { visibility: 'hidden' }, svg);
+    const hit = el('rect', { x: M.l, y: M.t, width: PW, height: PH, fill: 'transparent' }, svg);
+    const onMove = ev => {
+      if (!visible.length) return;
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const f = Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
+      const x = xOf(f);
+      cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
+      dots.textContent = ''; dots.setAttribute('visibility', 'visible');
+      const rows = [];
+      for (const m of visible) {
+        const v = valueAt(curves.get(m.id), f);
+        if (v === null) continue;
+        rows.push({ m, v });
+        el('circle', { cx: x, cy: yOf(v), r: 4, fill: colorOf(m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots);
+      }
+      rows.sort((a, b) => b.v - a.v);
+      const tip = $('tip');
+      tip.innerHTML = `<div class="f">${fmtF(f)} Hz</div>` + (rows.length ? rows.map(r =>
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v">${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
+      tip.style.display = 'block';
+      const wrap = $('chartWrap').getBoundingClientRect();
+      const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
+      tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
+      tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
+    };
+    const onLeave = () => { cross.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; };
+    hit.addEventListener('pointermove', onMove);
+    hit.addEventListener('pointerdown', onMove);
+    hit.addEventListener('pointerleave', onLeave);
+  }
+
+  function drawTable() {
+    const wrap = $('tableWrap');
+    const visible = state.mics.filter(m => m.visible);
+    if (!visible.length) { wrap.innerHTML = ''; return; }
+    let h = '<table><thead><tr><th>dB at</th>' + TABLE_FREQS.map(f => `<th>${fmtF(f)}</th>`).join('') + '</tr></thead><tbody>';
+    for (const m of visible) {
+      const c = curves.get(m.id);
+      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>` +
+        TABLE_FREQS.map(f => { const v = valueAt(c, f); return `<td>${v === null ? '–' : fmtD(v)}</td>`; }).join('') + '</tr>';
+    }
+    wrap.innerHTML = h + '</tbody></table>';
+  }
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- mic list ----------
+  function drawList() {
+    const ul = $('micList');
+    ul.innerHTML = '';
+    for (const m of state.mics) {
+      const li = document.createElement('li');
+      if (!m.visible) li.className = 'off';
+      li.innerHTML = `
+        <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
+        <input type="color" title="Change color" value="${resolvedHex(m)}">
+        <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
+        <span class="meta">${m.points.length} pts</span>
+        <button class="link" title="Remove">✕</button>`;
+      const [cb, color, name, , del] = li.children;
+      cb.onchange = () => { m.visible = cb.checked; update(); };
+      name.onclick = () => {
+        const n = prompt('Rename mic', m.name);
+        if (n && n.trim()) { m.name = n.trim(); update(); }
+      };
+      color.oninput = () => { m.color = color.value; update(); };
+      del.onclick = () => {
+        if (!confirm(`Remove "${m.name}"?`)) return;
+        state.mics = state.mics.filter(x => x !== m);
+        if (state.settings.ref === m.id) state.settings.ref = '';
+        update();
+      };
+      li.onmouseenter = () => { highlight = m.id; draw(); };
+      li.onmouseleave = () => { highlight = null; draw(); };
+      ul.appendChild(li);
+    }
+    const sel = $('refMic');
+    sel.innerHTML = '<option value="">— nothing —</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
+    sel.value = state.settings.ref;
+  }
+  function resolvedHex(m) {
+    if (m.color) return m.color;
+    const v = getComputedStyle(document.documentElement).getPropertyValue(`--s${(m.slot % NSLOTS) + 1}`).trim();
+    return /^#[0-9a-f]{6}$/i.test(v) ? v : '#888888';
+  }
+
+  function update() {
+    save();
+    curves = processAll();
+    $('empty').hidden = state.mics.length > 0;
+    svg.style.display = state.mics.length ? '' : 'none';
+    drawList(); draw(); drawTable();
+  }
+
+  // ---------- controls ----------
+  function syncControls() {
+    const s = state.settings;
+    $('normMode').value = s.normMode; $('normFreq').value = s.normFreq;
+    $('normFreq').disabled = s.normMode !== 'freq';
+    $('smooth').value = s.smooth; $('yRange').value = s.yRange;
+  }
+  $('normMode').onchange = e => { state.settings.normMode = e.target.value; syncControls(); update(); };
+  $('normFreq').onchange = e => { const v = Number(e.target.value); if (v > 0) state.settings.normFreq = v; update(); };
+  $('smooth').onchange = e => { state.settings.smooth = e.target.value; update(); };
+  $('refMic').onchange = e => { state.settings.ref = e.target.value; update(); };
+  $('yRange').onchange = e => { state.settings.yRange = e.target.value; update(); };
+
+  function msg(id, text, err) { const m = $(id); m.textContent = text; m.classList.toggle('err', !!err); }
+
+  $('addBtn').onclick = () => {
+    const pts = parseData($('newData').value);
+    if (pts.length < 2) return msg('addMsg', 'Need at least two "freq dB" rows.', true);
+    const name = $('newName').value.trim() || `Mic ${state.mics.length + 1}`;
+    addMic(name, pts);
+    $('newName').value = ''; $('newData').value = '';
+    msg('addMsg', `Added ${name} (${pts.length} points).`);
+    update();
+  };
+
+  async function addFiles(files) {
+    const added = [], failed = [];
+    for (const file of files) {
+      const pts = parseData(await file.text());
+      const name = file.name.replace(/\.[^.]+$/, '');
+      if (pts.length < 2) failed.push(file.name); else { addMic(name, pts); added.push(name); }
+    }
+    msg('addMsg', (added.length ? `Added ${added.join(', ')}. ` : '') + (failed.length ? `Couldn't read: ${failed.join(', ')}.` : ''), failed.length && !added.length);
+    update();
+  }
+  $('fileIn').onchange = e => { addFiles([...e.target.files]); e.target.value = ''; };
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => addFiles([...e.dataTransfer.files]));
+
+  // ---------- examples (synthetic, not real products) ----------
+  function synth(fn) {
+    const pts = [];
+    for (let i = 0; i <= 120; i++) { const f = 20 * 1000 ** (i / 120); pts.push([+f.toFixed(1), +fn(f).toFixed(2)]); }
+    return pts;
+  }
+  const bell = (f, f0, gain, q) => gain / (1 + (q * (f / f0 - f0 / f)) ** 2);
+  const hp = (f, fc, order) => -10 * Math.log10(1 + (fc / f) ** (2 * order));
+  const lp = (f, fc, order) => -10 * Math.log10(1 + (f / fc) ** (2 * order));
+  $('loadExamples').onclick = () => {
+    addMic('Example: dynamic vocal', synth(f => hp(f, 90, 2) + lp(f, 13000, 3) + bell(f, 4500, 5, 1.2) + bell(f, 200, 1.5, 0.7)));
+    addMic('Example: large-diaphragm condenser', synth(f => hp(f, 25, 2) + lp(f, 19000, 2) + bell(f, 10000, 3.5, 1.5) + bell(f, 120, 1, 0.8)));
+    addMic('Example: small-diaphragm condenser', synth(f => hp(f, 35, 1) + lp(f, 20000, 2) + bell(f, 12000, 1.5, 2)));
+    addMic('Example: ribbon', synth(f => hp(f, 40, 1) + lp(f, 9000, 2) + bell(f, 100, 1.5, 0.6)));
+    update();
+  };
+
+  // ---------- save / share ----------
+  const exportObj = () => ({ app: 'mic-compare', version: 1, settings: state.settings, mics: state.mics });
+  function applyImport(obj) {
+    if (!obj || !Array.isArray(obj.mics)) throw new Error('Not a mic-compare file');
+    const idMap = {};
+    for (const m of obj.mics) {
+      if (!Array.isArray(m.points)) continue;
+      const nm = addMic(String(m.name || 'Mic'), m.points.filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1])));
+      if (m.color) nm.color = m.color;
+      if (m.visible === false) nm.visible = false;
+      idMap[m.id] = nm.id;
+    }
+    if (obj.settings) {
+      Object.assign(state.settings, obj.settings);
+      state.settings.ref = idMap[obj.settings.ref] || '';
+    }
+    syncControls();
+  }
+  $('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(exportObj(), null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'mic-responses.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  $('importBtnProxy').onclick = () => $('importIn').click();
+  $('importIn').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try { applyImport(JSON.parse(await f.text())); msg('shareMsg', 'Imported.'); update(); }
+    catch (err) { msg('shareMsg', 'Import failed: ' + err.message, true); }
+  };
+  $('clearBtn').onclick = () => {
+    if (!state.mics.length || !confirm('Remove all mics?')) return;
+    state.mics = []; state.settings.ref = ''; update();
+  };
+
+  // Share link: deflate-compressed JSON in the URL hash (never sent to a server).
+  const b64u = bytes => { let s = ''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+  const unb64u = str => Uint8Array.from(atob(str.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  async function pipe(bytes, stream) { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
+  $('shareBtn').onclick = async () => {
+    if (!state.mics.length) return msg('shareMsg', 'Add some mics first.', true);
+    try {
+      const obj = exportObj();
+      // round values to keep the link short
+      obj.mics = obj.mics.map(m => ({ ...m, points: m.points.map(([f, d]) => [+f.toPrecision(5), +d.toFixed(2)]) }));
+      const packed = await pipe(new TextEncoder().encode(JSON.stringify(obj)), new CompressionStream('deflate-raw'));
+      const url = location.href.split('#')[0] + '#d=' + b64u(packed);
+      await navigator.clipboard.writeText(url);
+      msg('shareMsg', `Link copied (${Math.round(url.length / 1000)}k chars). Opening it adds these mics to the viewer's list.`);
+    } catch (err) { msg('shareMsg', 'Could not create link: ' + err.message, true); }
+  };
+  async function loadFromHash() {
+    const m = location.hash.match(/^#d=([\w-]+)/);
+    if (!m) return;
+    try {
+      const json = new TextDecoder().decode(await pipe(unb64u(m[1]), new DecompressionStream('deflate-raw')));
+      applyImport(JSON.parse(json));
+      history.replaceState(null, '', location.pathname + location.search);
+    } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
+  }
+
+  // ---------- init ----------
+  load();
+  loadFromHash().then(() => {
+    syncControls();
+    update();
+    if (state.mics.length) $('addBox').open = false;
+  });
+  let lastW = 0;
+  new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); } }).observe($('chartWrap'));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawList);
+})();
+</script>
+</body>
+</html>
