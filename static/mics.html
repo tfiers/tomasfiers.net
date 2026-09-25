@@ -54,7 +54,7 @@
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 12px; padding: 16px;
   }
-  .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; }
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
   @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr); } }
 
   .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
@@ -100,6 +100,8 @@
   .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
   #libList .name { white-space: normal; }
+  .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 55%; }
+  .lib-btns button { font-size: 0.78rem; padding: 3px 7px; }
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
@@ -621,12 +623,23 @@
   function drawLibrary() {
     const ul = $('libList');
     ul.innerHTML = '';
-    for (const entry of LIBRARY) {
-      const added = state.mics.some(m => m.lib === entry.name);
+    const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
+    for (const model of models) {
+      const entries = LIBRARY.filter(e => (e.model || e.name) === model);
       const li = document.createElement('li');
-      li.innerHTML = `<span class="name" style="cursor:default" title="${esc(entry.source || '')}">${esc(entry.name)}<br><span class="meta">${esc(entry.source || '')}</span></span>
-        <button ${added ? 'disabled' : ''}>${added ? 'Added' : 'Add'}</button>`;
-      li.querySelector('button').onclick = () => { addFromLibrary(entry); update(); };
+      li.style.alignItems = 'flex-start';
+      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}<br><span class="meta">${esc(entries[0].source || '')}</span></span>
+        <span class="lib-btns"></span>`;
+      const box = li.querySelector('.lib-btns');
+      for (const entry of entries) {
+        const added = state.mics.some(m => m.lib === entry.name);
+        const btn = document.createElement('button');
+        btn.textContent = (added ? '✓ ' : '+ ') + (entry.pattern || 'Add');
+        btn.disabled = added;
+        btn.title = added ? 'Already on the chart' : `Add ${entry.name}`;
+        btn.onclick = () => { addFromLibrary(entry); update(); };
+        box.appendChild(btn);
+      }
       ul.appendChild(li);
     }
     $('libBox').hidden = !LIBRARY.length;
@@ -701,7 +714,7 @@
   const shared = location.hash.startsWith('#d=');
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
-    if (!hadSaved && !shared) LIBRARY.forEach(addFromLibrary);
+    if (!hadSaved && !shared) LIBRARY.filter(e => e.auto !== false).forEach(addFromLibrary);
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
