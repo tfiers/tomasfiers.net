@@ -156,6 +156,7 @@
         </label>
         <label>Y range
           <select id="yRange">
+            <option value="5">±5 dB</option>
             <option value="auto">auto</option>
             <option value="10">±10 dB</option>
             <option value="20">±20 dB</option>
@@ -242,7 +243,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: 'auto' } };
+  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: '5' } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -385,8 +386,10 @@
   let curves = new Map();
 
   function computeYRange() {
-    const r = state.settings.yRange;
-    if (r !== 'auto') { yLo = -Number(r); yHi = Number(r); return; }
+    const s = state.settings, r = s.yRange;
+    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves.
+    const centred = s.ref || (s.normMode !== 'sens' && s.normMode !== 'none');
+    if (r !== 'auto' && centred) { yLo = -Number(r); yHi = Number(r); return; }
     let lo = Infinity, hi = -Infinity;
     const i0 = gridIndex(FMIN), i1 = gridIndex(FMAX);
     for (const m of state.mics) {
@@ -416,7 +419,7 @@
       const t = el('text', { x: xOf(f), y: H - 12, 'text-anchor': f === 20 ? 'start' : f === 20000 ? 'end' : 'middle' }, grid);
       t.textContent = fmtF(f);
     }
-    const step = (yHi - yLo) > 40 ? 10 : 5;
+    const step = (yHi - yLo) > 40 ? 10 : (yHi - yLo) > 12 ? 5 : 1;
     for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
       el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
       const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
