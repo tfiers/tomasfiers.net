@@ -125,7 +125,8 @@
   }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .mic-table td.type { white-space: normal; min-width: 7.5em; max-width: 9.5em; font-size: 0.85rem; line-height: 1.3; }
+  .mic-table td.type { white-space: normal; min-width: 13em; max-width: 16em; line-height: 1.3; }
+  .mic-table td.type div { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .mic-table .mcell .name { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: pointer; }
   dialog#infoCard { width: min(520px, calc(100% - 32px)); max-height: calc(100% - 48px); border: 1px solid var(--border); border-radius: 14px;
     padding: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
@@ -669,7 +670,7 @@
         <td class="toggle"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
         <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>
         <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
-        <td class="type">${esc(sp.type || '–')}</td>
+        <td class="type"><div title="${esc(sp.type || '')}">${esc(sp.type || '–')}</div></td>
         <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
         <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
         <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>`;
