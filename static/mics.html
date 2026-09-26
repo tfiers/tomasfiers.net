@@ -260,6 +260,7 @@
   .type-legend i { display: inline-block; width: 12px; height: 2px; margin-right: 4px; vertical-align: 3px; }
   .cap-tip li { margin: 3px 0; }
   .cap-tip a { color: var(--accent); }
+  .cap-tip.wide { max-width: min(92vw, 560px); max-height: 80vh; }
   .cap-tip { position: absolute; z-index: 6; max-width: min(92vw, 360px); max-height: 70vh; overflow-y: auto; padding: 8px 10px; white-space: pre-line;
     background: var(--surface); color: var(--ink-2); font-size: 0.8rem; line-height: 1.4;
     border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
@@ -1739,7 +1740,7 @@
       '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Its pickup pattern changes more with frequency, so sound arriving from the sides or back has a different tone (often duller) than from the front; see the diagram below.</li>' +
       '<li><b>Small diaphragm</b> (“pencil”, about ½″): more neutral, with quick transients, and nearly the same pattern at all frequencies, so off-axis sound keeps its tone; for acoustic instruments, overheads, and stereo pairs.</li>' +
       '<li><b>Electret</b>: a condenser whose charge is built into the diaphragm or plate material, so the capsule itself needs no polarising voltage. The tiny amplifier right behind it still needs a little power, though: it turns the capsule\'s very weak signal into one that can travel down a cable. XLR electret mics (like the AT2020) take it from phantom power; small ones from a battery, or from the “plug-in power” of a phone or recorder. Common in affordable and miniature mics.</li></ul>%DIAGRAM%</li>' +
-      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8. Its highs roll off gently from about 8–10 kHz, which softens sibilance, bright strings, and cymbals; that\'s why ribbons are often called “smooth” or “warm”. Low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives, and check before sending phantom power to an older passive one.</li></ul>',
+      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8. Its highs roll off gently from about 8–10 kHz, which softens sibilance, bright strings, and cymbals; that\'s why ribbons are often called “smooth” or “warm”. Low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives. Most ribbons are passive and don\'t use phantom power (the 48 V a preamp can send up the mic cable for condensers). With a good cable it doesn\'t reach the ribbon, but a faulty cable or patch bay, or plugging in while phantom is on, can send a jolt through the ribbon and stretch it. So, especially with older ribbons, switch phantom off before connecting. Newer active ribbons have a small built-in amplifier and do need phantom power.</li></ul>',
     'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
     'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
     'Max SPL': 'The loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies, typically 0.5–1 %).',
@@ -1762,7 +1763,7 @@
         for (let a = 0; a <= 360; a += 5) { const r = rad(polarDb(oa, f, a > 180 ? 360 - a : a)), th = a * Math.PI / 180; pts.push(`${(c + r * Math.sin(th)).toFixed(1)},${(c - r * Math.cos(th)).toFixed(1)}`); }
         g += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.6"/>`;
       }
-      return `<figure><svg viewBox="0 0 120 118" width="120" height="118">${g}<text x="${c}" y="7" text-anchor="middle" font-size="7" fill="var(--muted)">front</text></svg><figcaption>${label}</figcaption></figure>`;
+      return `<figure><svg viewBox="0 -4 120 122" width="120" height="122">${g}<text x="${c}" y="7" text-anchor="middle" font-size="7" fill="var(--muted)">front</text></svg><figcaption>${label}</figcaption></figure>`;
     };
     return `<div class="type-diagram">${plot('Neumann U 87 Ai (cardioid)', 'Large diaphragm<br><span>U 87 Ai, cardioid</span>')}${plot('Schoeps MK 4', 'Small diaphragm<br><span>Schoeps MK 4</span>')}</div>`
       + `<div class="type-legend">${FREQS.map(([, col, l]) => `<span><i style="background:${col}"></i>${l}</span>`).join('')} · rings every 10 dB</div>`;
@@ -2003,6 +2004,7 @@
     const tip = $('capTip');
     if (!tip.hidden && tip.dataset.for === key) { tip.hidden = true; return; }
     tip.innerHTML = html; tip.dataset.for = key; tip.hidden = false;
+    tip.classList.toggle('wide', key === 'Type');   // the mic-type explanation gets more room
     const r = anchor.getBoundingClientRect();
     tip.style.top = (r.bottom + scrollY + 4) + 'px';
     tip.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - tip.offsetWidth - 8)) + scrollX + 'px';
