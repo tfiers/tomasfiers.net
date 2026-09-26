@@ -209,6 +209,7 @@
   .chip-group::-webkit-scrollbar { display: none; }
   .chip-group.more { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
   .chip-group .chip { padding: 2px 8px; font-size: 0.8rem; flex: none; }
+  .chip, .chip-model { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .chip-model { font-size: 0.85rem; color: var(--ink-2); margin: 0 4px 0 2px; white-space: nowrap; flex: none; }
   button:disabled { color: var(--muted); cursor: default; }
 
@@ -300,7 +301,7 @@
 
     <section class="panel" id="micPanel">
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card.</p>
+      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press).</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -852,7 +853,28 @@
   }
   // width/height attributes let the browser reserve the image's space before it loads.
   const dims = sz => Array.isArray(sz) ? ` width="${sz[0]}" height="${sz[1]}" style="aspect-ratio:${sz[0]}/${sz[1]}"` : '';
-  function renderCard({ title, swatch, e, specsList, mic, variants }) {
+  // Long press (touch or mouse): run fn, and swallow the click that follows the release.
+  function onLongPress(el, fn) {
+    let timer = null, x0 = 0, y0 = 0, fired = false;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    el.addEventListener('pointerdown', ev => {
+      fired = false; x0 = ev.clientX; y0 = ev.clientY;
+      timer = setTimeout(() => { fired = true; timer = null; fn(); }, 500);
+    });
+    el.addEventListener('pointermove', ev => { if (timer && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) cancel(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => el.addEventListener(t, cancel));
+    el.addEventListener('click', ev => { if (fired) { fired = false; ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);
+    el.addEventListener('contextmenu', ev => ev.preventDefault());
+  }
+  // Card for a library entry, from the library (long press): the model card, or this mic's own card.
+  function openLibEntry(entry) {
+    const model = entry.model || entry.name;
+    if (LIBRARY.filter(x => (x.model || x.name) === model).length > 1) return openModel(model);
+    const mic = state.mics.find(x => x.lib === entry.name);
+    if (mic) return openInfo(mic);
+    renderCard({ title: esc(entry.name), e: entry, specsList: [[entry, entry.specs || {}]], addEntry: entry });
+  }
+  function renderCard({ title, swatch, e, specsList, mic, variants, addEntry }) {
     const dlg = $('infoCard');
     // Specs: one value if all variants agree, else one line per variant.
     const specRow = ([label, f]) => {
@@ -888,7 +910,9 @@
       ${links ? `<div class="card-links">${links}</div>` : ''}
       <div class="card-actions">
         ${mic ? '<button class="rename">Rename</button>' : ''}
-        <button class="remove" style="color:var(--danger)">${variants ? 'Remove all from chart' : 'Remove from chart'}</button>
+        ${addEntry ? '<button class="add primary">Add to chart</button>'
+          : variants && !state.mics.some(x => variants.some(v => v.name === x.lib)) ? ''
+          : `<button class="remove" style="color:var(--danger)">${variants ? 'Remove all from chart' : 'Remove from chart'}</button>`}
       </div>
       ${e.polar ? `<figure class="card-graph card-polar"><a href="${esc(e.polar)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.polar)}" alt="Manufacturer's polar diagram for ${esc(e.model || title)}"${dims(e.polarSize)}></a><figcaption>Polar pattern (from the manufacturer)</figcaption></figure>` : ''}
       ${e.graph ? `<figure class="card-graph"><a href="${esc(e.graph)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(e.model || title)}"${dims(e.graphSize)}></a><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
@@ -918,11 +942,13 @@
       const n = prompt('Rename mic', mic.name);
       if (n && n.trim()) { mic.name = n.trim(); update(); openInfo(mic); }
     };
-    dlg.querySelector('.remove').onclick = () => {
+    const rm = dlg.querySelector('.remove'), add = dlg.querySelector('.add');
+    if (rm) rm.onclick = () => {
       const gone = variants ? state.mics.filter(x => variants.some(v => v.name === x.lib)) : [mic];
       state.mics = state.mics.filter(x => !gone.includes(x));
       dlg.close(); update();
     };
+    if (add) add.onclick = () => { addFromLibrary(addEntry); dlg.close(); update(); };
     if (!dlg.open) dlg.showModal();
   }
   function drawList() {
@@ -1097,6 +1123,7 @@
         } else addFromLibrary(entry);
         update();
       };
+      onLongPress(btn, () => openLibEntry(entry));
       return btn;
     };
     for (const group of [models.filter(owned), models.filter(m => !owned(m))]) {
@@ -1121,6 +1148,7 @@
         const g = document.createElement('div');
         g.className = 'chip-group';
         g.innerHTML = `<span class="chip-model">${esc(model)}</span>`;
+        onLongPress(g.firstChild, () => openModel(model));
         for (const e of variants(model)) g.appendChild(chip(e, VARIANT_SHORT[e.pattern] || e.pattern, false, patternIcon(e.pattern)));
         chips.appendChild(g);
         // Fade the right edge while there is more to scroll to.
