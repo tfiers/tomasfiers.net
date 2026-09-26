@@ -260,8 +260,12 @@
   .play-opts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
   .play-opt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .play-opt select { max-width: 220px; }
+  /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
   .stop-tone[hidden] { display: none; }
-  .stop-tone { align-self: flex-end; }
+  .stop-tone { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; height: 30px; padding: 0 12px 0 10px;
+    border: 1.5px solid var(--note, var(--accent)); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 0.85rem; }
+  .stop-tone .sq { width: 10px; height: 10px; border-radius: 2px; background: var(--note, var(--accent)); animation: glow 1.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .stop-tone .sq { animation: none; } }
   /* The playable-piano hint: a soft, pulsing light until the first note is played. */
   svg .play-hint { fill: var(--accent); font-size: 11px; animation: glow 2.4s ease-in-out infinite; }
   @keyframes glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
@@ -270,6 +274,7 @@
   #chartWrap, #rangesBox svg, .controls { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   svg .rta { fill-opacity: 0.18; stroke-opacity: 0.6; stroke-width: 1; stroke-linejoin: round; }
   svg .rta-label { fill: var(--muted); font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  svg .ranges-legend { fill: var(--muted); font-size: 9.5px; opacity: 0.85; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   svg .ot-num { fill: var(--muted); font-size: 9.5px; }
   .tip .ots { color: var(--muted); font-size: 0.72rem; margin: -2px 0 4px; }
   svg .rl-name { fill: var(--ink-2); font-weight: 500; }
@@ -392,6 +397,7 @@
         <div class="ranges-bar">
           <button type="button" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
           <div class="play-opts">
+            <button type="button" id="stopTone" class="stop-tone" hidden title="Stop the held tone"><span class="sq"></span><span class="lbl"></span></button>
             <div class="field play-opt" title="Piano: a struck note that rings out. Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the angle) while listening. Tap the key again, or Stop, to end it.">
               <span class="cap">Sound</span>
               <div class="seg small" id="soundSeg" role="radiogroup" aria-label="Sound">
@@ -403,7 +409,6 @@
               <span class="cap">Through</span>
               <select id="through" aria-label="Play through"></select>
             </div>
-            <button type="button" id="stopTone" class="stop-tone" hidden></button>
           </div>
         </div>
         <div id="instChips" class="inst-chips" hidden></div>
@@ -781,7 +786,11 @@
     }
     rtaColor = noteColor(((n % 12) + 12) % 12);
     rtaUntil = hold ? Infinity : Math.max(rtaUntil, t + len);
-    if (hold) { $('stopTone').hidden = false; $('stopTone').innerHTML = '■ Stop ' + noteNameHtml(nearestNote(f).name); }
+    if (hold) {
+      const b = $('stopTone'), nn = nearestNote(f);
+      b.hidden = false; b.style.setProperty('--note', noteColor(nn.pc));
+      b.querySelector('.lbl').innerHTML = 'Stop ' + noteNameHtml(nn.name);
+    }
     if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
   // The mic the piano is heard through (if it's still on the chart), and the menu to pick it.
@@ -1269,7 +1278,8 @@
     const g = $('ranges');
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
     const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
-    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 34, h = kbY + kbH + 51;
+    // The first row starts below the legend line at the top right.
+    const rowH = 25, top = 32, kbY = rows.length ? top + (rows.length - 1) * rowH + 13 : 22, kbH = 34, h = kbY + kbH + 33;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
@@ -1280,7 +1290,7 @@
     const defs = el('defs', {}, g);
     const fmtHzShort = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + ' kHz' : Math.round(f) + ' Hz';
     rows.forEach(([, label, lo, hi, softLo, softHi, color], i) => {
-      const y = 16 + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
+      const y = top + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
       const xa = xOf(mf(softLo ? lo - FADE : lo)), xb = xOf(Math.min(FMAX, mf(hi) * 8));
       const at = x => ((x - xa) / (xb - xa)).toFixed(4);
       // One bar per row; a gradient gives the solid notes, the faint overtones, and the soft ends.
@@ -1365,9 +1375,9 @@
         return b ? Number(b[0]) : null;
       },
     };
-    const k = el('text', { x: W - Math.max(M.r, 6), y: h - 4, 'text-anchor': 'end' }, g);
+    const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
     k.textContent = 'Faded top end: approximate instrument limit, and overtones up to the 8th harmonic';
-    if (k.getComputedTextLength() > W - 12) k.textContent = 'Faded top end: approx. limit, and overtones to the 8th harmonic';
+    if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top end: approx. limit, and overtones to the 8th harmonic';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
   {
