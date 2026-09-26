@@ -121,6 +121,7 @@
   @media (max-width: 860px) {
     /* Phones: the table runs to the screen edges. */
     #micPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding-left: 0; padding-right: 0; }
+    #chartPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding: 12px 10px; }
     #micPanel > h2, #micPanel > .hint { padding: 0 16px; }
   }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
@@ -200,8 +201,8 @@
           <span class="cap">Level</span>
           <div class="row">
             <select id="normMode">
-              <option value="freq">0 dB at</option>
               <option value="mean">0 dB = 300 Hz–1 kHz average</option>
+              <option value="freq">0 dB at</option>
               <option value="sens">Output (sensitivity, dBV/Pa)</option>
               <option value="none">As in the source</option>
             </select>
@@ -315,7 +316,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5' } };
+  const state = { mics: [], settings: { normMode: 'mean', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5' } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -440,7 +441,7 @@
 
   // ---------- chart ----------
   // Chart is drawn at its real pixel size so text stays readable on phones.
-  const M = { l: 44, r: 16, t: 24, b: 32 };
+  const M = { l: 34, r: 8, t: 22, b: 30 };
   let W = 800, H = 440, PW, PH;
   function sizeChart() {
     W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
@@ -504,6 +505,12 @@
       t.textContent = fmtF(f);
     }
     const step = (yHi - yLo) > 40 ? 10 : (yHi - yLo) > 12 ? 5 : 1;
+    // Unlabeled minor dB lines between the labelled ones.
+    const minor = step === 10 ? 5 : step === 5 ? 1 : 0;
+    if (minor) for (let d = Math.ceil(yLo / minor) * minor; d <= yHi; d += minor) {
+      if (d % step === 0) continue;
+      el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: 'var(--grid-minor)', 'stroke-width': 1 }, grid);
+    }
     for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
       el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
       const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
