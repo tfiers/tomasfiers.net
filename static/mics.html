@@ -251,10 +251,10 @@
           <span class="cap">Level</span>
           <div class="row">
             <select id="normMode">
-              <option value="mean">0 dB = 300 Hz–1 kHz average</option>
-              <option value="freq">0 dB at</option>
-              <option value="sens">Output (sensitivity, dBV/Pa)</option>
               <option value="none">As in the source</option>
+              <option value="sens">Output (sensitivity, dBV/Pa)</option>
+              <option value="freq">0 dB at</option>
+              <option value="mean">0 dB = 300 Hz–1 kHz average</option>
             </select>
             <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
           </div>
@@ -313,7 +313,7 @@
         </details>
 
         <details id="addBox" open>
-          <summary>Add your own data</summary>
+          <summary>Add your own mic</summary>
           <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
           <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
           <div class="row-gap">
@@ -366,7 +366,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'mean', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2 } };
+  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2 } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -557,8 +557,14 @@
 
   function computeYRange() {
     const s = state.settings, r = s.yRange;
-    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves.
-    const centred = s.ref || (s.normMode !== 'sens' && s.normMode !== 'none');
+    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves. The makers' graphs
+    // (as in the source) are 0 dB around 1 kHz too; own data in absolute dB (e.g. SPL) gets the auto range.
+    const nearZero = () => state.mics.every(m => {
+      if (!m.visible) return true;
+      const v = valueAt(curves.get(m.id), 1000);
+      return v === null || Math.abs(v) < 10;
+    });
+    const centred = s.ref || (s.normMode !== 'sens' && (s.normMode !== 'none' || nearZero()));
     if (r !== 'auto' && centred) {
       // "lo,hi" for an asymmetric range, or a single number n for ±n
       const [lo, hi] = r.includes(',') ? r.split(',').map(Number) : [-Number(r), Number(r)];
