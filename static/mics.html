@@ -280,12 +280,21 @@
   /* Choose instruments: on the section's heading line, at the right (only while it's open). */
   #rangesBox { position: relative; }
   button.inst-edit { position: absolute; top: 9px; right: 0; font-size: 0.8rem; padding: 3px 10px; }
-  /* Chord: one small button that cycles through the chord types. */
-  .chord-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; font-size: 0.85rem; color: var(--ink-2); align-self: flex-end; }
-  .chord-pill .ic { font-size: 1rem; line-height: 1; color: var(--muted); transition: transform 0.2s; }
-  .chord-pill.on { border-color: var(--accent); color: var(--ink); }
-  .chord-pill.on .ic { color: var(--accent); }
-  .chord-pill.bump .ic { transform: rotate(-14deg) scale(1.2); }
+  #chordField[hidden] { display: none; }
+  #chordSeg button { padding: 2px 7px; min-width: 28px; }
+  /* The peeking note: a little note with eyes behind the top keys. Tap it for chords. */
+  svg .peep { cursor: pointer; }
+  svg .peep .body { fill: var(--ink); }
+  svg .peep .sclera { fill: var(--surface); }
+  svg .peep .pupil { fill: var(--ink); }
+  svg .peep .eyes { transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
+  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+  svg .peep .pupils { transition: transform 0.25s; }
+  svg .peep.arrive .rise { animation: peep-in 0.7s ease-out; }
+  @keyframes peep-in { 0% { transform: translateY(16px); } 70% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+  svg .peep.hop .rise { animation: peep-hop 0.4s ease-out; }
+  @keyframes peep-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { svg .peep .eyes, svg .peep .rise { animation: none !important; } }
   /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
   .stop-tone[hidden] { display: none; }
   .stop-tone { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; height: 30px; padding: 0 12px 0 10px;
@@ -437,7 +446,10 @@
               <select id="through" aria-label="Play through"></select>
             </div>
           </div>
-          <button type="button" id="chordBtn" class="chord-pill" title="Tap to change: each key then plays a chord built on it (off → major → minor → 7th → major 7th → minor 7th → power chord → off). Several fingers also play several keys at once."><span class="ic">♫</span><span class="lbl"></span></button>
+          <div class="field play-opt chord-opt" id="chordField" hidden title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave).">
+            <span class="cap">Chord</span>
+            <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
+          </div>
         </div>
       </details>
       <p class="hint" id="polarWarn" hidden></p>
@@ -773,17 +785,25 @@
   // All harmonics up to 20 kHz sound, as in a real tone (the overtone lines only go to the 16th).
   let held = null;   // { roots: the keys tapped, notes: all that sound, voices: [{ f, osc, g, lfo }] }
   const fingers = new Map();   // each finger (pointer) down on the keyboard → the key it's on (or null)
-  // Chords: the key you tap is the root. [id, name in the menu, short name on the Stop button, semitones]
-  // [id, label on the chord button, (unused), suffix on the Stop button, semitones]
-  const CHORDS = [['', 'Chords off', '', '', [0]], ['maj', 'Major', '', 'major', [0, 4, 7]], ['min', 'Minor', '', 'minor', [0, 3, 7]],
-    ['7', '7th', '', '7', [0, 4, 7, 10]], ['maj7', 'Major 7th', '', 'maj7', [0, 4, 7, 11]], ['m7', 'Minor 7th', '', 'm7', [0, 3, 7, 10]],
-    ['5', 'Power chord', '', '5', [0, 7, 12]]];
-  const chordOf = () => CHORDS.find(c => c[0] === state.settings.chord) || CHORDS[0];
-  $('chordBtn').onclick = () => {
-    const i = CHORDS.indexOf(chordOf());
-    state.settings.chord = CHORDS[(i + 1) % CHORDS.length][0]; save(); syncControls();
-    const b = $('chordBtn'); b.classList.add('bump'); setTimeout(() => b.classList.remove('bump'), 180);
-  };
+  // Chords (an easter egg: the switch appears after tapping the peeking note). The key you tap is the root.
+  // [id, button, name (tooltip), suffix on the Stop button, semitones]
+  const CHORDS = [['', 'Off', 'Off: single notes', '', [0]], ['maj', 'M', 'Major', 'major', [0, 4, 7]], ['min', 'm', 'Minor', 'minor', [0, 3, 7]],
+    ['7', '7', 'Dominant 7th', '7', [0, 4, 7, 10]], ['maj7', 'M7', 'Major 7th', 'maj7', [0, 4, 7, 11]], ['m7', 'm7', 'Minor 7th', 'm7', [0, 3, 7, 10]],
+    ['5', '5', 'Power chord: root, 5th, and octave', '5', [0, 7, 12]]];
+  const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
+  $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
+  $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
+  // Tapping the peeking note: it hops and sings a little arpeggio, and the chord switch appears (or goes away).
+  function peepTapped(peep) {
+    const st = state.settings;
+    st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
+    peep.classList.remove('hop', 'arrive'); void peep.getBoundingClientRect(); peep.classList.add('hop');
+    audio();
+    const t = actx.currentTime;
+    (st.chords ? [72, 76, 79, 84] : [84, 79, 76, 72]).forEach((n, i) => setTimeout(() => playOne(n, false, 0.45), i * 90));
+    rtaColor = noteColor(0); rtaUntil = Math.max(rtaUntil, t + 2.5);
+    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
+  }
   const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
   // One oscillator playing harmonics k0…k1 of f at the given amplitudes (a custom waveform; the browser
   // band-limits it, so there's no aliasing).
@@ -816,7 +836,11 @@
   // ('add'), a held tone joins the ones sounding instead of replacing them.
   function playNote(n, add) {
     audio();
-    if (!state.settings.played) { state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove()); }
+    if (!state.settings.played) {
+      state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove());
+      setTimeout(() => { if (rangesHover) rangesHover.addPeep(true); }, 900);
+    }
+    if (rangesHover) rangesHover.look(n);
     const hold = state.settings.sound === 'held';
     if (!(hold && add && held)) releaseHeld();
     const [, , , short, steps] = chordOf(), notes = steps.map(d => n + d).filter(m => m >= 21 && m <= 108);
@@ -1448,6 +1472,37 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
+      // The peeking note, behind the top keys (once a note has been played). Its body is clipped at the
+      // keyboard's top edge; its hands hold on to it. It blinks, and looks towards the key you play.
+      addPeep(arrive) {
+        if (kb.querySelector('.peep')) return;
+        const cx = keys[108][4] - 2, pg = el('g', { class: 'peep' + (arrive ? ' arrive' : ''), transform: `translate(${cx.toFixed(1)} ${kbY})` }, kb);
+        el('title', {}, pg).textContent = '♫';
+        const clip = el('clipPath', { id: 'peepClip' }, pg);
+        el('rect', { x: -30, y: -60, width: 60, height: 60.5 }, clip);
+        const rise = el('g', { class: 'rise' }, el('g', { 'clip-path': 'url(#peepClip)' }, pg));
+        el('ellipse', { class: 'body', cx: -2, cy: -2, rx: 9.5, ry: 7.5, transform: 'rotate(-18 -2 -2)' }, rise);
+        el('rect', { class: 'body', x: 6, y: -30, width: 2.2, height: 27 }, rise);
+        el('path', { d: 'M8.2 -30 q8 3 8.5 12 q-2 -4 -8.5 -6 z', class: 'body' }, rise);
+        const eyes = el('g', { class: 'eyes' }, rise);
+        el('circle', { cx: -5.5, cy: -4.5, r: 2.7, class: 'sclera' }, eyes);
+        el('circle', { cx: 1, cy: -6.3, r: 2.7, class: 'sclera' }, eyes);
+        const pupils = el('g', { class: 'pupils' }, eyes);
+        el('circle', { cx: -5.5, cy: -4.3, r: 1.3, class: 'pupil' }, pupils);
+        el('circle', { cx: 1, cy: -6.1, r: 1.3, class: 'pupil' }, pupils);
+        // little hands on the edge
+        el('path', { d: 'M-11 0.5 q1.8 -3.2 3.6 0 M1.5 0.5 q1.8 -3.2 3.6 0', fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, pg);
+        el('rect', { x: -14, y: -34, width: 32, height: 36, fill: 'transparent' }, pg);   // easier to tap
+        pg.addEventListener('pointerdown', ev => ev.stopPropagation());
+        pg.addEventListener('pointermove', ev => ev.stopPropagation());
+        pg.addEventListener('click', ev => { ev.stopPropagation(); peepTapped(pg); });
+        this.peepPupils = pupils; this.peepX = cx;
+      },
+      look(n) {
+        if (!this.peepPupils || !keys[n]) return;
+        const dx = Math.max(-1.2, Math.min(1.2, (keys[n][2] - this.peepX) / 40));
+        this.peepPupils.style.transform = `translate(${dx.toFixed(2)}px, ${Math.abs(dx) > 1 ? 0.4 : 0}px)`;
+      },
       // Mark the keys that sound: a bar in each one's note colour at the bottom of the key, or, when
       // playing with several fingers ('full'), the whole key in its note colour.
       press(notes, full) {
@@ -1470,6 +1525,7 @@
       },
     };
     if (held) rangesHover.press(held.notes);
+    if (state.settings.played) rangesHover.addPeep(false);
     const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
     k.textContent = 'Faded top ends: approx. instrument limits, and overtones (up to the 8th harmonic)';
     if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top ends: approx. limits, and overtones (up to the 8th harmonic)';
@@ -1799,8 +1855,8 @@
     document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
     document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
     document.querySelectorAll('#soundSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sound === (s.sound || 'piano'))));
-    $('chordBtn').querySelector('.lbl').textContent = chordOf()[1];
-    $('chordBtn').classList.toggle('on', !!chordOf()[0]);
+    $('chordField').hidden = !s.chords;
+    document.querySelectorAll('#chordSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.chord === chordOf()[0])));
     $('sensHint').hidden = polar || s.normMode !== 'sens';
     $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
     $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
