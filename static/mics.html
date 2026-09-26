@@ -282,19 +282,20 @@
   button.inst-edit { position: absolute; top: 9px; right: 0; font-size: 0.8rem; padding: 3px 10px; }
   #chordField[hidden] { display: none; }
   #chordSeg button { padding: 2px 7px; min-width: 28px; }
-  /* The peeking note: a little note with eyes behind the top keys. Tap it for chords. */
-  svg .peep { cursor: pointer; }
-  svg .peep .body { fill: var(--ink); }
-  svg .peep .sclera { fill: var(--surface); }
-  svg .peep .pupil { fill: var(--ink); }
-  svg .peep .eyes { transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
-  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
-  svg .peep .pupils { transition: transform 0.25s; }
-  svg .peep.arrive .rise { animation: peep-in 0.7s ease-out; }
-  @keyframes peep-in { 0% { transform: translateY(16px); } 70% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
-  svg .peep.hop .rise { animation: peep-hop 0.4s ease-out; }
-  @keyframes peep-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
-  @media (prefers-reduced-motion: reduce) { svg .peep .eyes, svg .peep .rise { animation: none !important; } }
+  /* The three dots: C, E, and G stacked like a chord, next to the keyboard's top end. Tap them for chords. */
+  svg .triad { cursor: pointer; }
+  svg .triad circle.dot { transform-box: fill-box; transform-origin: center; animation: breathe 3.2s ease-in-out infinite; }
+  svg .triad circle.dot:nth-of-type(2) { animation-delay: 0.4s; }
+  svg .triad circle.dot:nth-of-type(3) { animation-delay: 0.8s; }
+  @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.75; } 50% { transform: scale(1.15); opacity: 1; } }
+  svg .triad.on circle.dot { animation: none; opacity: 1; }
+  svg .triad.arrive circle.dot { animation: triad-in 0.5s ease-out backwards; }
+  svg .triad.hop circle.dot { animation: triad-hop 0.35s ease-out; }
+  svg .triad.arrive circle.dot:nth-of-type(2), svg .triad.hop circle.dot:nth-of-type(2) { animation-delay: 0.09s; }
+  svg .triad.arrive circle.dot:nth-of-type(3), svg .triad.hop circle.dot:nth-of-type(3) { animation-delay: 0.18s; }
+  @keyframes triad-in { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 0.75; } }
+  @keyframes triad-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px) scale(1.2); } }
+  @media (prefers-reduced-motion: reduce) { svg .triad circle.dot { animation: none !important; } }
   /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
   .stop-tone[hidden] { display: none; }
   .stop-tone { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; height: 30px; padding: 0 12px 0 10px;
@@ -793,11 +794,13 @@
   const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
   $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
   $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
-  // Tapping the peeking note: it hops and sings a little arpeggio, and the chord switch appears (or goes away).
-  function peepTapped(peep) {
+  // Tapping the three dots: they hop one by one with a little arpeggio, and the chord switch appears (or goes away).
+  function triadTapped(tg) {
     const st = state.settings;
     st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
-    peep.classList.remove('hop', 'arrive'); void peep.getBoundingClientRect(); peep.classList.add('hop');
+    tg.classList.toggle('on', !!st.chords);
+    tg.classList.remove('hop', 'arrive'); void tg.getBoundingClientRect(); tg.classList.add('hop');
+    setTimeout(() => tg.classList.remove('hop'), 700);
     audio();
     const t = actx.currentTime;
     (st.chords ? [72, 76, 79, 84] : [84, 79, 76, 72]).forEach((n, i) => setTimeout(() => playOne(n, false, 0.45), i * 90));
@@ -838,9 +841,8 @@
     audio();
     if (!state.settings.played) {
       state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove());
-      setTimeout(() => { if (rangesHover) rangesHover.addPeep(true); }, 900);
+      setTimeout(() => { if (rangesHover) rangesHover.addTriad(true); }, 900);
     }
-    if (rangesHover) rangesHover.look(n);
     const hold = state.settings.sound === 'held';
     if (!(hold && add && held)) releaseHeld();
     const [, , , short, steps] = chordOf(), notes = steps.map(d => n + d).filter(m => m >= 21 && m <= 108);
@@ -1472,36 +1474,19 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
-      // The peeking note, behind the top keys (once a note has been played). Its body is clipped at the
-      // keyboard's top edge; its hands hold on to it. It blinks, and looks towards the key you play.
-      addPeep(arrive) {
-        if (kb.querySelector('.peep')) return;
-        const cx = keys[108][4] - 2, pg = el('g', { class: 'peep' + (arrive ? ' arrive' : ''), transform: `translate(${cx.toFixed(1)} ${kbY})` }, kb);
-        el('title', {}, pg).textContent = '♫';
-        const clip = el('clipPath', { id: 'peepClip' }, pg);
-        el('rect', { x: -30, y: -60, width: 60, height: 60.5 }, clip);
-        const rise = el('g', { class: 'rise' }, el('g', { 'clip-path': 'url(#peepClip)' }, pg));
-        el('ellipse', { class: 'body', cx: -2, cy: -2, rx: 9.5, ry: 7.5, transform: 'rotate(-18 -2 -2)' }, rise);
-        el('rect', { class: 'body', x: 6, y: -30, width: 2.2, height: 27 }, rise);
-        el('path', { d: 'M8.2 -30 q8 3 8.5 12 q-2 -4 -8.5 -6 z', class: 'body' }, rise);
-        const eyes = el('g', { class: 'eyes' }, rise);
-        el('circle', { cx: -5.5, cy: -4.5, r: 2.7, class: 'sclera' }, eyes);
-        el('circle', { cx: 1, cy: -6.3, r: 2.7, class: 'sclera' }, eyes);
-        const pupils = el('g', { class: 'pupils' }, eyes);
-        el('circle', { cx: -5.5, cy: -4.3, r: 1.3, class: 'pupil' }, pupils);
-        el('circle', { cx: 1, cy: -6.1, r: 1.3, class: 'pupil' }, pupils);
-        // little hands on the edge
-        el('path', { d: 'M-11 0.5 q1.8 -3.2 3.6 0 M1.5 0.5 q1.8 -3.2 3.6 0', fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, pg);
-        el('rect', { x: -14, y: -34, width: 32, height: 36, fill: 'transparent' }, pg);   // easier to tap
-        pg.addEventListener('pointerdown', ev => ev.stopPropagation());
-        pg.addEventListener('pointermove', ev => ev.stopPropagation());
-        pg.addEventListener('click', ev => { ev.stopPropagation(); peepTapped(pg); });
-        this.peepPupils = pupils; this.peepX = cx;
-      },
-      look(n) {
-        if (!this.peepPupils || !keys[n]) return;
-        const dx = Math.max(-1.2, Math.min(1.2, (keys[n][2] - this.peepX) / 40));
-        this.peepPupils.style.transform = `translate(${dx.toFixed(2)}px, ${Math.abs(dx) > 1 ? 0.4 : 0}px)`;
+      // The three dots (once a note has been played): C, E, and G stacked like a chord in their note
+      // colours, just right of the keyboard's top end. Tap them for the chord switch.
+      addTriad(arrive) {
+        if (kb.querySelector('.triad')) return;
+        const x = keys[108][5] + 12, y = kbY + kbH;
+        const tg = el('g', { class: 'triad' + (arrive ? ' arrive' : '') + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
+        el('title', {}, tg).textContent = '♫';
+        const r = Math.min(4, kbH / 7.5), st = r * 2.25;   // sized to fit the keys' height
+        el('rect', { x: -12, y: -kbH - 6, width: 28, height: kbH + 8, fill: 'transparent' }, tg);   // easier to tap
+        [[0, 0], [r, 4], [0, 7]].forEach(([dx, pc], i) => el('circle', { class: 'dot', cx: dx, cy: -r - 1.5 - i * st, r, fill: noteColor(pc) }, tg));
+        tg.addEventListener('pointerdown', ev => ev.stopPropagation());
+        tg.addEventListener('pointermove', ev => ev.stopPropagation());
+        tg.addEventListener('click', ev => { ev.stopPropagation(); triadTapped(tg); });
       },
       // Mark the keys that sound: a bar in each one's note colour at the bottom of the key, or, when
       // playing with several fingers ('full'), the whole key in its note colour.
@@ -1525,7 +1510,7 @@
       },
     };
     if (held) rangesHover.press(held.notes);
-    if (state.settings.played) rangesHover.addPeep(false);
+    if (state.settings.played) rangesHover.addTriad(false);
     const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
     k.textContent = 'Faded top ends: approx. instrument limits, and overtones (up to the 8th harmonic)';
     if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top ends: approx. limits, and overtones (up to the 8th harmonic)';
