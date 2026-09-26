@@ -1418,6 +1418,7 @@
     }
     // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
     const pressG = el('g', {}, kb);   // marks on the keys that are sounding
+    let filled = [];                  // keys coloured in fully (several fingers)
     const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
     const harm = el('g', {}, g);
     let lit = null;
@@ -1439,11 +1440,15 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
-      // Mark the keys that sound: a bar in each one's note colour at the bottom of the key.
-      press(notes) {
+      // Mark the keys that sound: a bar in each one's note colour at the bottom of the key, or, when
+      // playing with several fingers ('full'), the whole key in its note colour.
+      press(notes, full) {
         pressG.textContent = '';
+        for (const k of filled) k[0].setAttribute('fill', k[1]);
+        filled = [];
         for (const m of notes) {
           const k = keys[m]; if (!k) continue;
+          if (full) { k[0].setAttribute('fill', noteColor(((m % 12) + 12) % 12)); filled.push(k); continue; }
           const bh = k[3] ? kbH * 0.6 : kbH, w = Math.max(2, k[5] - k[4] - 3);
           el('rect', { x: k[2] - w / 2, y: kbY + bh - 6, width: w, height: 4, rx: 1.5, fill: noteColor(((m % 12) + 12) % 12), stroke: '#fff', 'stroke-width': 0.8 }, pressG);
         }
@@ -1488,13 +1493,14 @@
     const markFingers = () => {
       rangesHover.hide(); if (chartHover) chartHover.hide();
       const steps = chordOf()[4];
-      rangesHover.press(held ? held.notes : [...fingers.values()].filter(k => k !== null).flatMap(k => steps.map(d => k + d)));
+      rangesHover.press(held ? held.notes : [...fingers.values()].filter(k => k !== null).flatMap(k => steps.map(d => k + d)), true);
     };
     const lift = ev => {
       fingers.delete(ev.pointerId);
       if (!rangesHover) return;
       if (fingers.size > 1) markFingers();
-      else if (!fingers.size && !held) setTimeout(() => { if (!fingers.size && !held && rangesHover) rangesHover.press([]); }, 250);
+      else if (held) rangesHover.press(held.notes);
+      else if (!fingers.size) setTimeout(() => { if (!fingers.size && !held && rangesHover) rangesHover.press([]); }, 250);
     };
     const onLeave = ev => { lift(ev); if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
     $('ranges').addEventListener('pointermove', onMove);
