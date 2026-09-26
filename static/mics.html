@@ -440,7 +440,7 @@
         </details>
 
         <details id="addBox" open>
-          <summary>Add Your Own Mics</summary>
+          <summary>Add Microphone</summary>
           <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
           <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
           <div class="row-gap">
@@ -754,7 +754,7 @@
     return actx.createPeriodicWave(re, im, { disableNormalization: true });
   }
   // Warm rather than buzzy: the harmonics fall off faster than a sawtooth's 1/k, with a subtle vibrato
-  // (5 Hz, ±5 cents) that sets in over the first second.
+  // (4.5 Hz, ±2 cents, barely there) that sets in over the first second.
   const heldWave = (f, gainAt) => harmonicWave(1, topHarmonic(f), k => 0.36 / k ** 1.6 * gainAt(k * f));
   function releaseHeld() {
     if (!held) return;
@@ -777,8 +777,8 @@
     if (hold) {
       const osc = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), depth = ctx.createGain();
       osc.frequency.value = f; osc.setPeriodicWave(heldWave(f, gainAt));
-      lfo.frequency.value = 5; lfo.connect(depth); depth.connect(osc.detune);
-      depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(0, t + 0.3); depth.gain.linearRampToValueAtTime(5, t + 1.2);
+      lfo.frequency.value = 4.5; lfo.connect(depth); depth.connect(osc.detune);
+      depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(0, t + 0.3); depth.gain.linearRampToValueAtTime(2, t + 1.2);
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.08);
       osc.connect(g); g.connect(master);
       osc.start(t); lfo.start(t);

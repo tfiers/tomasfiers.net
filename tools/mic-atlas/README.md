@@ -85,5 +85,5 @@ data sheet or manual (PDF), and ask it to add the mic to Mic Atlas along these l
    `build_library.py`, then run it.
 4. Check the traced points against the original graph (the `chk_*.png` overlays) before trusting them.
 
-For a one-off comparison, no code is needed: the page's "Add your own mics" section takes pasted or dropped
+For a one-off comparison, no code is needed: the page's "Add Microphone" section takes pasted or dropped
 `[frequency, dB]` data.
