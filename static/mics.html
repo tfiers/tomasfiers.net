@@ -322,7 +322,7 @@
       <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
       </div>
       <div class="hint note src-note" id="srcNote" hidden>
-        <p>All curves come from the manufacturers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Selected microphones table to see its original graphs.</p>
+        <p>All curves come from the manufacturers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Selected Microphones table to see its original graphs.</p>
         <ul>
           <li>Manufacturers measure in different ways (distance, room, smoothing), so take small differences between brands with a grain of salt.</li>
           <li class="resp-only">A curve is drawn faded outside the mic's rated frequency range.</li>
@@ -392,7 +392,7 @@
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <details id="rangesBox" class="resp-only">
-        <summary>Notes &amp; instruments</summary>
+        <summary>Notes &amp; Instruments</summary>
         <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
         <div class="ranges-bar">
           <button type="button" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
@@ -419,7 +419,7 @@
     </section>
 
     <section class="panel" id="micPanel">
-      <h2 class="with-info">Selected microphones <button type="button" class="info-btn sm" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About this table">i</button></h2>
+      <h2 class="with-info">Selected Microphones <button type="button" class="info-btn sm" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About this table">i</button></h2>
       <div class="hint note mic-note" id="micNote" hidden>
         <ul>
           <li>Tap a mic's name for its photo, full specs, links, and original graphs.</li>
@@ -440,7 +440,7 @@
         </details>
 
         <details id="addBox" open>
-          <summary>Add your own mics</summary>
+          <summary>Add Your Own Mics</summary>
           <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
           <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
           <div class="row-gap">
@@ -460,7 +460,7 @@
         </details>
 
         <details>
-          <summary>Save / share</summary>
+          <summary>Save / Share</summary>
           <div class="row-gap">
             <button id="shareBtn">Copy share link</button>
             <button id="exportBtn">Export JSON</button>
