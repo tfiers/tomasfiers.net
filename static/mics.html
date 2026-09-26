@@ -111,7 +111,15 @@
   .mic-table th, .mic-table td { text-align: left; vertical-align: top; }
   .mic-table td { padding-top: 6px; padding-bottom: 6px; }
   .mic-table .sticky { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
-  .mic-table .mcell { display: flex; align-items: center; gap: 6px; width: 12.5em; }
+  .mic-table .mcell { display: flex; align-items: center; gap: 6px; width: 8.5em; }
+  .mic-table .tight { padding-left: 4px; padding-right: 4px; width: 1px; }
+  .mic-table th.sticky, .mic-table td.sticky { padding-left: 8px; padding-right: 6px; }
+  .mic-table input[type=checkbox] { width: 18px; height: 18px; margin: 2px 0 0; }
+  @media (max-width: 860px) {
+    /* Phones: the table runs to the screen edges. */
+    #micPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding-left: 0; padding-right: 0; }
+    #micPanel > h2, #micPanel > .hint { padding: 0 16px; }
+  }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .mic-table td.about { min-width: 24em; max-width: 30em; white-space: normal; }
@@ -578,8 +586,8 @@
     $('micEmpty').hidden = state.mics.length > 0;
     table.hidden = !state.mics.length;
     const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
-      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th></tr></thead>`;
+    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="tight" aria-label="Show"></th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
+      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th><th class="tight" aria-label="Remove"></th></tr></thead>`;
     const tbody = document.createElement('tbody');
     for (const m of state.mics) {
       const sp = m.specs || {};
@@ -593,18 +601,18 @@
       if (!m.visible) tr.className = 'off';
       tr.innerHTML = `
         <td class="sticky"><div class="mcell">
-          <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
           <input type="color" title="Change color" value="${resolvedHex(m)}">
           <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
-          <button class="link" title="Remove">✕</button>
         </div></td>
+        <td class="tight"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
         <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
         <td>${esc(sp.type || '–')}</td>
         <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
         <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
         <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>
         <td class="about"><div class="clamp" title="${esc(e.desc || '')}">${esc(e.desc || '–')}</div></td>
-        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>`;
+        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>
+        <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>`;
       const cb = tr.querySelector('input[type=checkbox]'), color = tr.querySelector('input[type=color]');
       const name = tr.querySelector('.name'), del = tr.querySelector('button.link');
       cb.onchange = () => { m.visible = cb.checked; update(); };
