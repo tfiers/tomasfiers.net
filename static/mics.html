@@ -817,6 +817,16 @@
       if (!shown.some(m => offaxisOf(m))) w += 'All library mics have polar data; your own curves don\'t. ';
     }
     $('polarWarn').textContent = w; $('polarWarn').hidden = !w;
+    // The off-axis note (behind the ⓘ next to Angle / Frequency). Same at every angle; it names only
+    // shown mics whose polar plot covers less than the usual 250 Hz–16 kHz.
+    const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
+    const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
+    $('polarNote').innerHTML =
+      '<p>Off axis, a curve is an estimate: the on-axis curve minus the drop the maker\'s polar plot shows at that angle.</p><ul>' +
+      '<li>Polar plots give only a few frequencies, mostly 250 Hz–16 kHz' +
+      (narrow.length ? ' (' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') +
+      '. In between, they are interpolated; outside, the nearest one is used and the curve is faded.</li>' +
+      '<li>Read from the PDF where possible, otherwise traced (±1 dB).</li></ul>';
   }
 
   function drawTable() {
@@ -1269,19 +1279,7 @@
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
 
-  // The off-axis note (behind the ⓘ next to Angle / Frequency) is the same whatever the angle; it names the library mics whose polar plot covers less.
-  {
-    const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
-    const narrow = new Map();
-    for (const e of LIBRARY) if (e.offaxis && (e.offaxis.f[0] > 250 || e.offaxis.f[e.offaxis.f.length - 1] < 16000)) narrow.set(e.model || e.name, span(e.offaxis));
-    $('polarNote').innerHTML =
-      '<p>Off axis, a curve is an estimate: the on-axis curve minus the drop the maker\'s polar plot shows at that angle.</p><ul>' +
-      '<li>Polar plots give only a few frequencies, mostly 250 Hz–16 kHz' +
-      (narrow.size ? ' (' + [...narrow].map(([m, sp]) => `${esc(m)}: ${sp}`).join('; ') + ')' : '') +
-      '. In between, they are interpolated; outside, the nearest one is used and the curve is faded.</li>' +
-      '<li>Read from the PDF where possible, otherwise traced (±1 dB).</li>' +
-      '<li>Your own curves have no polar data, so they are hidden off axis.</li></ul>';
-  }
+
 
   // Every ⓘ button shows/hides the note it controls (the Angle and Frequency ones share one).
   document.querySelectorAll('.info-btn[aria-controls]').forEach(b => b.onclick = () => {
