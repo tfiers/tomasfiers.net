@@ -1,0 +1,7 @@
+# The manufacturers' PDFs and images (not redistributed; see README.md)
+sources/
+# Check images and intermediates written by the tracing scripts
+chk_*.png
+check_*.png
+c414f_*.png
+__pycache__/
