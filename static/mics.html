@@ -253,6 +253,8 @@
   details { margin-top: 4px; }
   #rangesBox { margin-top: 4px; }
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
+  .through { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink-2); margin: 2px 0 4px; }
+  .through select { flex: 1 1 0; min-width: 0; max-width: 260px; }
   svg .rta { fill-opacity: 0.18; stroke-opacity: 0.6; stroke-width: 1; stroke-linejoin: round; }
   svg .rta-label { fill: var(--muted); font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   svg .ot-num { fill: var(--muted); font-size: 9.5px; }
@@ -369,6 +371,10 @@
       </div>
       <details id="rangesBox" class="resp-only">
         <summary>Instrument ranges</summary>
+        <div class="through" title="Plays the piano as that mic would pick it up: each overtone made louder or quieter by the mic's curve at its frequency, at the angle set above. The level is relative to the mic's on-axis 1 kHz level, so mics don't differ in overall loudness, but off axis the sound gets quieter.">
+          <label for="through">Play the piano through</label>
+          <select id="through"></select>
+        </div>
         <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
         <button type="button" class="link inst-edit" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
         <div id="instChips" class="inst-chips" hidden></div>
@@ -459,7 +465,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, dim: '2d', overtones: false, instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
+  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, dim: '2d', overtones: false, through: '', instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -678,7 +684,8 @@
     if (!actx) {
       actx = new (window.AudioContext || window.webkitAudioContext)();
       master = actx.createGain(); master.gain.value = 0.3;
-      const comp = actx.createDynamicsCompressor();
+      // Only against clipping when many notes ring together; it shouldn't even out a mic's level differences.
+      const comp = actx.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 4;
       analyser = actx.createAnalyser(); analyser.fftSize = 16384; analyser.smoothingTimeConstant = 0.5;
       master.connect(comp); comp.connect(analyser); analyser.connect(actx.destination);
     }
@@ -688,11 +695,16 @@
   function playNote(n) {
     const ctx = audio(), f = midiFreq(n), t = ctx.currentTime;
     const len = 1.2 + 3.5 * (108 - n) / 87;   // low notes ring longer
+    // Through a mic: each harmonic gets the mic's curve at its frequency (at the chosen angle), relative to
+    // its on-axis level at 1 kHz; so from the side or behind, the sound also gets quieter.
+    const mic = throughMic(), c = mic && curves.get(mic.id), oa = mic && offaxisOf(mic), angle = Number(state.settings.angle) || 0;
+    const ref = c && valueAt(c, 1000) !== null ? valueAt(c, 1000) - (angle && oa ? polarDb(oa, 1000, angle) : 0) : null;
+    const gainAt = fk => { if (!c) return 1; const v = valueAt(c, fk); return v === null || ref === null ? 1 : 10 ** (Math.min(12, v - ref) / 20); };
     for (let k = 1; k <= 16 && k * f < 18000; k++) {
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.frequency.value = k * f;
       // The lowest notes' fundamentals are weak on a real piano, too.
-      const amp = 0.5 / k ** 1.3 * (k === 1 && f < 110 ? 0.5 : 1);
+      const amp = 0.5 / k ** 1.3 * (k === 1 && f < 110 ? 0.5 : 1) * gainAt(k * f);
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(amp, t + 0.006);
       g.gain.exponentialRampToValueAtTime(0.0001, t + len / Math.sqrt(k));
@@ -703,6 +715,15 @@
     rtaUntil = Math.max(rtaUntil, t + len);
     if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
+  // The mic the piano is heard through (if it's still on the chart), and the menu to pick it.
+  const throughMic = () => state.mics.find(m => m.visible && m.id === state.settings.through) || null;
+  function syncThrough() {
+    const sel = $('through'), mic = throughMic();
+    sel.innerHTML = '<option value="">No mic (the plain sound)</option>' +
+      state.mics.filter(m => m.visible).map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
+    sel.value = mic ? mic.id : '';
+  }
+  $('through').onchange = ev => { state.settings.through = ev.target.value; save(); };
   // One frame of the spectrum: per pixel column, the loudest FFT bin in it, from −110 dB (bottom of the
   // chart) to −20 dB (three quarters up). Its own scale, independent of the mics' dB axis.
   let rtaBuf = null;
@@ -1527,7 +1548,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); drawLibrary(); draw(); drawRanges(); drawTable(); drawPolarHint();
+    drawList(); drawLibrary(); draw(); drawRanges(); syncThrough(); drawTable(); drawPolarHint();
   }
 
   // ---------- controls ----------
