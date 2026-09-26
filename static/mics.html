@@ -233,6 +233,7 @@
   /* A control's caption can be tapped to show its tooltip text (phones have no hover). */
   .controls .field > .cap, .mic-table th.help { cursor: help; }
   .cap-tip b { color: var(--ink); font-weight: 600; }
+  .cap-tip p, .cap-tip ul { margin: 0; white-space: normal; }
   .cap-tip a { color: var(--accent); }
   .cap-tip { position: absolute; z-index: 6; max-width: min(88vw, 320px); padding: 8px 10px; white-space: pre-line;
     background: var(--surface); color: var(--ink-2); font-size: 0.8rem; line-height: 1.4;
@@ -245,7 +246,7 @@
 
   details { margin-top: 12px; }
   #rangesBox { margin-top: 4px; }
-  svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; }
+  svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
   svg .rl-name { fill: var(--ink-2); font-weight: 500; }
   svg .rl-range { fill: var(--muted); font-size: 9.5px; opacity: 0.85; }
   button.inst-edit { display: block; width: max-content; color: var(--accent); font-size: 0.82rem; padding: 0; margin-top: -18px; position: relative; }
@@ -326,11 +327,11 @@
           </select>
         </div>
         <div class="field field-wide resp-only" title="Where the sound comes from, relative to the front of the mic: 0° is straight on, 90° from the side, 180° from behind.">
-          <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
+          <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" title="About the off-axis data">i</button></span>
           <input type="range" id="angle" min="0" max="180" step="15" value="0" aria-label="Angle">
         </div>
         <div class="field field-wide polar-only" title="Which frequency's polar pattern to show.">
-          <span class="cap with-info">Frequency <span id="polarFLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
+          <span class="cap with-info">Frequency <span id="polarFLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" title="About the off-axis data">i</button></span>
           <input type="range" id="polarF" min="0" max="6" step="1" value="2" aria-label="Frequency">
           <div class="ticks" aria-hidden="true"><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>16k</span></div>
         </div>
@@ -644,6 +645,8 @@
   const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
 
   let curves = new Map();
+  // Linked hover between the chart and the instrument ranges: each sets these when drawn.
+  let chartHover = null, rangesHover = null;
 
   function computeYRange() {
     const s = state.settings, r = s.yRange;
@@ -751,11 +754,11 @@
     const cross = el('line', { y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, svg);
     const dots = el('g', { visibility: 'hidden' }, svg);
     const hit = el('rect', { x: M.l, y: M.t, width: PW, height: PH, fill: 'transparent' }, svg);
-    const onMove = ev => {
+    // Show the readout for frequency f. From a mouse on the chart, the tooltip follows the pointer; from a
+    // finger (or from the instrument ranges below) it sits at the top of the chart, on the other side, so
+    // it isn't hidden under the finger.
+    const show = (f, ev, pinned) => {
       if (!visible.length) return;
-      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      const f = Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       const x = xOf(f);
       cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
       dots.textContent = ''; dots.setAttribute('visibility', 'visible');
@@ -772,12 +775,26 @@
       tip.innerHTML = `<div class="f">${fmtF(f)} Hz${noteHtml(f)}${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` + (rows.length ? rows.map(r =>
         `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range or polar data"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
-      const wrap = $('chartWrap').getBoundingClientRect();
-      const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
-      tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
-      tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
+      const wrap = $('chartWrap').getBoundingClientRect(), tw = tip.offsetWidth;
+      const px = x * wrap.width / W;
+      if (pinned) {
+        tip.style.left = (px > wrap.width / 2 ? 4 : wrap.width - tw - 4) + 'px';
+        tip.style.top = '0px';
+      } else {
+        tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
+        tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
+      }
     };
-    const onLeave = () => { cross.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; };
+    const hide = () => { cross.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; };
+    chartHover = { show, hide };
+    const onMove = ev => {
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const f = Math.min(FMAX, Math.max(FMIN, fOfX(pt.matrixTransform(svg.getScreenCTM().inverse()).x)));
+      show(f, ev, ev.pointerType !== 'mouse');
+      if (rangesHover) rangesHover.show(f);
+    };
+    // A finger lifting also 'leaves': keep the readout then, until a tap elsewhere (below).
+    const onLeave = ev => { if (ev.pointerType !== 'mouse') return; hide(); if (rangesHover) rangesHover.hide(); };
     hit.addEventListener('pointermove', onMove);
     hit.addEventListener('pointerdown', onMove);
     hit.addEventListener('pointerleave', onLeave);
@@ -786,6 +803,7 @@
   // ---------- polar view: the shown mics' polar patterns at one frequency, overlaid ----------
   const P_LO = -30, P_HI = 5;
   function drawPolar() {
+    chartHover = null;
     W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
     const visible = state.mics.filter(m => m.visible && offaxisOf(m));
     const legend = W >= 560;
@@ -1085,14 +1103,16 @@
     // The 88 piano keys under the piano row, at their frequencies. C's labelled; middle C and A4 = 440 Hz marked.
     const isBlack = n => [1, 3, 6, 8, 10].includes(n % 12);
     const kb = el('g', {}, g);
+    const keys = {};   // MIDI note -> [rect, its own fill]
     for (const black of [false, true]) for (let n = 21; n <= 108; n++) {
       if (isBlack(n) !== black) continue;
       // A white key reaches halfway to its white neighbours' own edges; a black key spans ±½ semitone.
       const lo = black || isBlack(n - 1) ? n - 0.5 - (black ? 0 : 0.5) : n - 0.5, hi = black || isBlack(n + 1) ? n + 0.5 + (black ? 0 : 0.5) : n + 0.5;
       const xa = xOf(mf(Math.max(lo, 20.5))), xb = xOf(mf(Math.min(hi, 108.5)));
       const mark = n === 60 ? 'var(--accent)' : n === 69 ? 'var(--s2)' : null;
-      el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
-        fill: mark || (black ? '#2b2b29' : '#f6f5f1'), stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb);
+      const fill = mark || (black ? '#2b2b29' : '#f6f5f1');
+      keys[n] = [el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
+        fill, stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb), fill];
     }
     for (let o = 1; o <= 8; o++) {
       const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
@@ -1102,11 +1122,38 @@
     mc.textContent = 'middle C';
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
     a4.textContent = 'A4 = 440 Hz';
+    // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
+    const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
+    let lit = null;
+    const unlight = () => { if (lit) { lit[0].setAttribute('fill', lit[1]); lit = null; } };
+    rangesHover = {
+      show(f) {
+        const x = xOf(f);
+        line.setAttribute('x1', x); line.setAttribute('x2', x); line.setAttribute('visibility', 'visible');
+        const nn = nearestNote(f), n = Math.round(69 + 12 * Math.log2(f / 440));
+        unlight();
+        if (keys[n]) { lit = keys[n]; lit[0].setAttribute('fill', noteColor(nn.pc)); }
+      },
+      hide() { line.setAttribute('visibility', 'hidden'); unlight(); },
+    };
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
-    k.textContent = 'Faded top end: overtones (up to the 8th harmonic) · ±: approximate limit';
-    if (k.getComputedTextLength() > PW) k.textContent = 'Faded top end: overtones (to the 8th harmonic) · ±: approx. limit';
+    k.textContent = 'Faded top end: approximate instrument limit (±), and overtones up to the 8th harmonic';
+    if (k.getComputedTextLength() > PW) k.textContent = 'Faded top end: approx. limit (±), overtones to the 8th harmonic';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
+  {
+    const onMove = ev => {
+      if (!rangesHover) return;
+      const pt = $('ranges').createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const f = Math.min(FMAX, Math.max(FMIN, fOfX(pt.matrixTransform($('ranges').getScreenCTM().inverse()).x)));
+      rangesHover.show(f);
+      if (chartHover) chartHover.show(f, ev, true);
+    };
+    const onLeave = ev => { if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
+    $('ranges').addEventListener('pointermove', onMove);
+    $('ranges').addEventListener('pointerdown', onMove);
+    $('ranges').addEventListener('pointerleave', onLeave);
+  }
   $('instEdit').onclick = () => {
     const box = $('instChips'), open = box.hidden;
     box.hidden = !open; $('instEdit').setAttribute('aria-expanded', open);
@@ -1521,13 +1568,21 @@
     const text = cap.closest('.field').title;
     if (text) showTip(cap, esc(text), text);
   }));
+  // Touch: a readout left after lifting the finger goes away with a tap anywhere else.
+  document.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'mouse' || ev.target.closest('#chart, #ranges')) return;
+    if (chartHover) chartHover.hide();
+    if (rangesHover) rangesHover.hide();
+  });
+  // The (i) next to Angle / Frequency: the off-axis note, as a popover.
+  document.querySelectorAll('.polar-info').forEach(b => b.addEventListener('click', () => showTip(b, $('polarNote').innerHTML, 'polarNote')));
   // Tap a table column header: what that column means.
   $('micTable').addEventListener('click', ev => {
     const th = ev.target.closest('th[data-help]');
     if (th) showTip(th, COL_HELP[th.dataset.help], th.dataset.help);
   });
   document.addEventListener('pointerdown', ev => {
-    if (!ev.target.closest('.controls .field > .cap, th[data-help], #capTip')) $('capTip').hidden = true;
+    if (!ev.target.closest('.controls .field > .cap, th[data-help], .polar-info, #capTip')) $('capTip').hidden = true;
   });
 
   // Close the picker on a tap elsewhere (its own chip toggles it), or with Esc.
