@@ -84,6 +84,7 @@
   #chartPanel.polar .controls { grid-template-columns: minmax(0, 360px) auto; }
   .seg.small { margin: 0; align-self: start; }
   .seg.small button { padding: 2px 12px; }
+  #harmSeg button { padding: 2px 9px; }
   /* 3D polar view: one rotatable balloon per mic. */
   .p3d { display: grid; gap: 8px 12px; justify-content: center; padding: 4px 0; }
   .p3d[hidden] { display: none; }
@@ -287,7 +288,7 @@
 <body>
 <main>
   <h1>Mic Atlas</h1>
-  <p class="sub">Frequency responses and polar patterns</p>
+  <p class="sub">Microphone frequency responses and polar patterns · Instrument ranges, notes and overtones</p>
 
   <div class="layout">
     <div class="main-col">
@@ -338,11 +339,14 @@
             <option value="auto">Auto</option>
           </select>
         </div>
-        <div class="field resp-only" title="While you point at a frequency, also mark its overtones: 2, 3, … 8 times that frequency. A note's timbre depends on how loud these come through, so this shows which parts of each mic's curve colour that note.">
+        <div class="field resp-only" title="While you point at a frequency, also mark its overtones: 2, 3, 4, … times that frequency, up to the harmonic you choose here (the 1st harmonic is the note itself). A note's timbre depends on how loud these come through, so this shows which parts of each mic's curve colour that note. Higher overtones are drawn fainter.">
           <span class="cap">Overtones</span>
           <div class="seg small" id="harmSeg" role="radiogroup" aria-label="Overtones">
-            <button type="button" role="radio" data-h="off">Off</button>
-            <button type="button" role="radio" data-h="on">On</button>
+            <button type="button" role="radio" data-h="0">Off</button>
+            <button type="button" role="radio" data-h="4" title="Up to the 4th harmonic">4</button>
+            <button type="button" role="radio" data-h="8" title="Up to the 8th harmonic">8</button>
+            <button type="button" role="radio" data-h="12" title="Up to the 12th harmonic">12</button>
+            <button type="button" role="radio" data-h="16" title="Up to the 16th harmonic">16</button>
           </div>
         </div>
         <div class="field field-wide resp-only" title="Where the sound comes from, relative to the front of the mic: 0° is straight on, 90° from the side, 180° from behind.">
@@ -465,7 +469,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, dim: '2d', overtones: false, through: '', instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
+  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, dim: '2d', overtones: 0, through: '', instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -719,7 +723,7 @@
   const throughMic = () => state.mics.find(m => m.visible && m.id === state.settings.through) || null;
   function syncThrough() {
     const sel = $('through'), mic = throughMic();
-    sel.innerHTML = '<option value="">No mic (the plain sound)</option>' +
+    sel.innerHTML = '<option value="">No mic</option>' +
       state.mics.filter(m => m.visible).map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
     sel.value = mic ? mic.id : '';
   }
@@ -750,8 +754,12 @@
     }
     if (done) rtaRunning = false; else requestAnimationFrame(rtaFrame);
   }
-  // The overtones of frequency f, when shown: [[2, 2f], [3, 3f], … up to the 8th harmonic], within the chart.
-  const overtonesOf = f => state.settings.overtones ? [2, 3, 4, 5, 6, 7, 8].map(k => [k, k * f]).filter(([, fk]) => fk <= FMAX) : [];
+  // The overtones of frequency f, when shown: [[2, 2f], [3, 3f], … up to the chosen harmonic], within the chart.
+  // (Saved settings from before could hold true/false: that was 'up to the 8th'.)
+  const overtoneCount = () => { const o = state.settings.overtones; return o === true ? 8 : Number(o) || 0; };
+  const overtonesOf = f => Array.from({ length: Math.max(0, overtoneCount() - 1) }, (_, i) => [i + 2, (i + 2) * f]).filter(([, fk]) => fk <= FMAX);
+  // Higher overtones are drawn fainter.
+  const overtoneOpacity = k => Math.max(0.25, 0.75 - 0.5 * (k - 2) / 14);
 
   function computeYRange() {
     const s = state.settings, r = s.yRange;
@@ -880,11 +888,12 @@
       let lastLabel = x;
       for (const [k, fk] of overtonesOf(f)) {
         const xk = xOf(fk);
-        el('line', { x1: xk, x2: xk, y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: 0.7 }, harm);
-        if (xk - lastLabel >= 14) { el('text', { x: xk, y: M.t + 10, 'text-anchor': 'middle', class: 'ot-num' }, harm).textContent = k; lastLabel = xk; }
+        const op = overtoneOpacity(k);
+        el('line', { x1: xk, x2: xk, y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: op }, harm);
+        if (xk - lastLabel >= 14) { el('text', { x: xk, y: M.t + 10, 'text-anchor': 'middle', class: 'ot-num', opacity: op / 0.75 }, harm).textContent = k; lastLabel = xk; }
         for (const m of visible) {
           const v = valueAt(curves.get(m.id), fk);
-          if (v !== null) el('circle', { cx: xk, cy: yOf(v), r: 3, fill: 'var(--surface)', stroke: colorOf(m), 'stroke-width': 1.5 }, harm);
+          if (v !== null) el('circle', { cx: xk, cy: yOf(v), r: 3, fill: 'var(--surface)', stroke: colorOf(m), 'stroke-width': 1.5, opacity: Math.min(1, op / 0.75 + 0.1) }, harm);
         }
       }
       const rows = [];
@@ -899,7 +908,8 @@
       const tip = $('tip');
       const ots = overtonesOf(f);
       tip.innerHTML = `<div class="f">${fmtF(f)} Hz${noteHtml(f)}${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` +
-        (ots.length ? `<div class="ots">Overtones: ${ots.map(([, fk]) => nearestNote(fk).name).join(' ')}</div>` : '') + (rows.length ? rows.map(r =>
+        // Only the first few overtones' notes, to keep the readout small.
+        (ots.length ? `<div class="ots">Overtones: ${ots.slice(0, 7).map(([, fk]) => nearestNote(fk).name).join(' ')}${ots.length > 7 ? ' …' : ''}</div>` : '') + (rows.length ? rows.map(r =>
         `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range or polar data"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect(), tw = tip.offsetWidth;
@@ -1270,9 +1280,9 @@
         if (keys[n]) { lit = keys[n]; lit[0].setAttribute('fill', noteColor(nn.pc)); }
         // Overtones (if on): dashed lines, and a dot in its note colour on each overtone's nearest key.
         harm.textContent = '';
-        for (const [, fk] of overtonesOf(f)) {
+        for (const [k, fk] of overtonesOf(f)) {
           const xk = xOf(fk), key = keys[Math.round(69 + 12 * Math.log2(fk / 440))];
-          el('line', { x1: xk, x2: xk, y1: 0, y2: kbY - 3, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: 0.7 }, harm);
+          el('line', { x1: xk, x2: xk, y1: 0, y2: kbY - 3, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: overtoneOpacity(k) }, harm);
           if (key) el('circle', { cx: key[2], cy: key[3] ? kbY + kbH * 0.6 - 3.5 : kbY + kbH - 4, r: 2.6,
             fill: noteColor(nearestNote(fk).pc), stroke: '#fff', 'stroke-width': 0.8 }, harm);
         }
@@ -1562,7 +1572,7 @@
     $('chartPanel').classList.toggle('polar', polar);
     document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === s.view));
     document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
-    document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.h === (s.overtones ? 'on' : 'off'))));
+    document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
     $('tableBox').classList.toggle('resp-only', true);
     $('sensHint').hidden = polar || s.normMode !== 'sens';
     $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
@@ -1592,7 +1602,7 @@
   $('polarF').oninput = e => { state.settings.polarF = Number(e.target.value); syncControls(); update(); };
   document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => { state.settings.view = b.dataset.view; syncControls(); update(); });
   document.querySelectorAll('#dimSeg button').forEach(b => b.onclick = () => { state.settings.dim = b.dataset.dim; syncControls(); update(); });
-  document.querySelectorAll('#harmSeg button').forEach(b => b.onclick = () => { state.settings.overtones = b.dataset.h === 'on'; save(); syncControls(); });
+  document.querySelectorAll('#harmSeg button').forEach(b => b.onclick = () => { state.settings.overtones = Number(b.dataset.h); save(); syncControls(); });
 
   function msg(id, text, err) { const m = $(id); m.textContent = text; m.classList.toggle('err', !!err); }
 
