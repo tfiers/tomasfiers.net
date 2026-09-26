@@ -201,7 +201,7 @@
           <div class="row">
             <select id="normMode">
               <option value="freq">0 dB at</option>
-              <option value="mean">0 dB = 200 Hz–5 kHz average</option>
+              <option value="mean">0 dB = 300 Hz–1 kHz average</option>
               <option value="sens">Output (sensitivity, dBV/Pa)</option>
               <option value="none">As in the source</option>
             </select>
@@ -417,7 +417,7 @@
     }
     if (s.normMode === 'mean') {
       let sum = 0, n = 0;
-      for (let i = gridIndex(200); i <= gridIndex(5000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
+      for (let i = gridIndex(300); i <= gridIndex(1000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
       return n ? sum / n : 0;
     }
     const v = valueAt(arr, s.normFreq);
