@@ -299,7 +299,7 @@
             <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
           </div>
         </div>
-        <div class="field resp-only" title="Averages each curve over a fraction of an octave, to hide small wiggles and focus on the overall shape.">
+        <div class="field resp-only" title="Averages each curve horizontally, over a small frequency range, to hide small wiggles and show the overall shape.">
           <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
           <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
         </div>
@@ -363,7 +363,7 @@
       <div class="panel">
         <details id="libBox" open>
           <summary>Library</summary>
-          <p class="hint lib-hint">Tap to show a mic; press and hold for its details.</p>
+          <p class="hint lib-hint">Tap to display a mic; press and hold for its details.</p>
           <div id="libChips"></div>
         </details>
 
@@ -981,7 +981,8 @@
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
     a4.textContent = 'A4 = 440 Hz';
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
-    k.textContent = 'Light: overtones · fading end (±): approximate limit';
+    k.textContent = 'Faded top end: overtones (up to the 8th harmonic) · ±: approximate limit';
+    if (k.getComputedTextLength() > PW) k.textContent = 'Faded top end: overtones (to the 8th harmonic) · ±: approx. limit';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
   $('instEdit').onclick = () => {
