@@ -65,8 +65,16 @@
     .layout > aside { order: 3; }
   }
 
-  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(2, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
-  @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level { grid-column: 1 / -1; } }
+  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
+  @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level, .field-wide { grid-column: 1 / -1; } }
+  /* Response / Polar view switch; each view shows only its own controls. */
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; margin-bottom: 12px; background: var(--page); }
+  .seg button { border: none; background: none; border-radius: 6px; padding: 3px 12px; font-size: 0.85rem; color: var(--ink-2); }
+  .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  #chartPanel:not(.polar) .polar-only, #chartPanel.polar .resp-only { display: none; }
+  #chartPanel.polar .controls { grid-template-columns: minmax(0, 360px); }
+  .field input[type=range] { width: 100%; height: 30px; margin: 0; accent-color: var(--accent); }
+  .ticks { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); margin-top: -4px; padding: 0 2px; font-variant-numeric: tabular-nums; }
   .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .dots { display: flex; align-items: center; justify-content: space-between; height: 30px; max-width: 190px; }
   .dot-btn { width: 30px; height: 30px; padding: 0; border: none; background: none; display: grid; place-items: center; border-radius: 50%; }
@@ -225,8 +233,12 @@
   <div class="layout">
     <div class="main-col">
     <section class="panel" id="chartPanel">
+      <div class="seg" id="viewSeg" role="tablist" aria-label="View">
+        <button type="button" role="tab" data-view="resp">Frequency response</button>
+        <button type="button" role="tab" data-view="polar">Polar</button>
+      </div>
       <div class="controls">
-        <div class="field field-level">
+        <div class="field field-level resp-only">
           <span class="cap">Level</span>
           <div class="row">
             <select id="normMode">
@@ -238,11 +250,11 @@
             <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
           </div>
         </div>
-        <div class="field">
+        <div class="field resp-only">
           <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
           <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
         </div>
-        <label class="field">
+        <label class="field resp-only">
           <span class="cap">Y range</span>
           <select id="yRange">
             <option value="-10,5">+5 / −10 dB</option>
@@ -252,6 +264,15 @@
             <option value="30">±30 dB</option>
             <option value="auto">Auto</option>
           </select>
+        </label>
+        <label class="field field-wide resp-only">
+          <span class="cap">Angle <span id="angleLabel" class="cap-val"></span></span>
+          <input type="range" id="angle" min="0" max="180" step="15" value="0">
+        </label>
+        <label class="field field-wide polar-only">
+          <span class="cap">Frequency <span id="polarFLabel" class="cap-val"></span></span>
+          <input type="range" id="polarF" min="0" max="6" step="1" value="2">
+          <div class="ticks" aria-hidden="true"><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>16k</span></div>
         </label>
       </div>
       <div class="chart-wrap" id="chartWrap">
@@ -263,6 +284,7 @@
         <summary>Values at standard frequencies</summary>
         <div class="table-wrap" id="tableWrap"></div>
       </details>
+      <p class="hint" id="polarHint" hidden></p>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
@@ -334,7 +356,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'mean', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5' } };
+  const state = { mics: [], settings: { normMode: 'mean', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2 } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -442,12 +464,39 @@
     const v = valueAt(arr, s.normFreq);
     return v === null ? 0 : v;
   }
+  // ---------- off-axis (polar) data ----------
+  // Library entries may carry offaxis = {f: [Hz…], db: [[dB at 0°, 5°, …, 180°] per f]}, relative to on-axis.
+  const POLAR_FREQS = [250, 500, 1000, 2000, 4000, 8000, 16000];
+  const offaxisOf = m => { const e = m.lib && LIBRARY.find(x => x.name === m.lib); return e && e.offaxis || null; };
+  // dB at one angle for each traced frequency (linear between the 5° steps).
+  const atAngle = (oa, a) => oa.db.map(row => {
+    const x = Math.min(180, Math.max(0, a)) / 5, i = Math.min(row.length - 2, Math.floor(x));
+    return row[i] + (x - i) * (row[i + 1] - row[i]);
+  });
+  // Interpolate between traced frequencies in log-f; beyond the first/last one, hold its value.
+  function interpF(fs, vals, f) {
+    if (f <= fs[0]) return vals[0];
+    const n = fs.length - 1;
+    if (f >= fs[n]) return vals[n];
+    let k = 0; while (fs[k + 1] < f) k++;
+    return vals[k] + Math.log(f / fs[k]) / Math.log(fs[k + 1] / fs[k]) * (vals[k + 1] - vals[k]);
+  }
+  const polarDb = (oa, f, a) => interpF(oa.f, atAngle(oa, a), f);
+
   function processAll() {
     const s = state.settings;
     const curves = new Map();
+    const angle = Number(s.angle) || 0;
     for (const m of state.mics) {
-      const c = smooth(resample(m.points), Number(s.smooth));
+      let c = smooth(resample(m.points), Number(s.smooth));
+      // Level from the on-axis curve, so off-axis curves show their drop.
       const off = offsetFor(c, m);
+      if (angle) {
+        const oa = offaxisOf(m);
+        if (!oa) { curves.set(m.id, c.map(() => null)); continue; }
+        const vals = atAngle(oa, angle);
+        c = c.map((v, i) => v === null ? null : v + interpF(oa.f, vals, GRID[i]));
+      }
       curves.set(m.id, c.map(v => v === null || off === null ? null : v - off));
     }
     const ref = s.ref && curves.get(s.ref);
@@ -507,6 +556,7 @@
   }
 
   function draw() {
+    if (state.settings.view === 'polar') return drawPolar();
     sizeChart();
     svg.textContent = '';
     computeYRange();
@@ -598,7 +648,7 @@
       }
       rows.sort((a, b) => b.v - a.v);
       const tip = $('tip');
-      tip.innerHTML = `<div class="f">${fmtF(f)} Hz</div>` + (rows.length ? rows.map(r =>
+      tip.innerHTML = `<div class="f">${fmtF(f)} Hz${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` + (rows.length ? rows.map(r =>
         `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect();
@@ -610,6 +660,110 @@
     hit.addEventListener('pointermove', onMove);
     hit.addEventListener('pointerdown', onMove);
     hit.addEventListener('pointerleave', onLeave);
+  }
+
+  // ---------- polar view: the shown mics' polar patterns at one frequency, overlaid ----------
+  const P_LO = -30, P_HI = 5;
+  function drawPolar() {
+    W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
+    const visible = state.mics.filter(m => m.visible && offaxisOf(m));
+    const legend = W >= 560;
+    H = Math.round(legend ? Math.min(460, Math.max(320, W * 0.55)) : Math.min(W, 460));
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.textContent = '';
+    const R = Math.min((H - 44) / 2, W / 2 - 34), cx = legend ? Math.min(W / 2, W - 215 - R) : W / 2, cy = H / 2 + 2;
+    const f = POLAR_FREQS[state.settings.polarF] || 1000;
+    const rOf = d => Math.max(0, (Math.max(P_LO, d) - P_LO) / (P_HI - P_LO)) * R;
+    const pt = (a, d, side) => { const r = rOf(d), t = a * Math.PI / 180; return [cx + side * r * Math.sin(t), cy - r * Math.cos(t)]; };
+    const grid = el('g', {}, svg);
+    for (let d = P_LO + 5; d <= P_HI; d += 5) {
+      el('circle', { cx, cy, r: rOf(d), fill: 'none', stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
+    }
+    for (let a = 0; a < 180; a += 30) {
+      const [x1, y1] = pt(a, P_HI, 1), [x2, y2] = pt(a, P_HI, -1);
+      el('line', { x1, y1, x2: 2 * cx - x1, y2: 2 * cy - y1, stroke: 'var(--grid)', 'stroke-width': 1 }, grid);
+      if (a) el('line', { x1: x2, y1: y2, x2: 2 * cx - x2, y2: 2 * cy - y2, stroke: 'var(--grid)', 'stroke-width': 1 }, grid);
+    }
+    for (let a = 0; a <= 180; a += 30) {
+      const t = a * Math.PI / 180, r = R + 11;
+      const lab = el('text', { x: cx + r * Math.sin(t), y: cy - r * Math.cos(t) + 4, 'text-anchor': a === 0 || a === 180 ? 'middle' : 'start' }, grid);
+      lab.textContent = a + '°';
+    }
+    for (const d of [0, -10, -20]) {
+      const lab = el('text', { x: cx - 3, y: cy - rOf(d) + 12, 'text-anchor': 'end' }, grid);
+      lab.textContent = d ? '−' + -d : '0 dB';
+    }
+    const fl = el('text', { x: 4, y: 14, 'text-anchor': 'start', style: 'font-weight:600;fill:var(--ink-2)' }, grid);
+    fl.textContent = fmtF(f) + 'Hz';
+    // Curves: 0–180° on the right, mirrored on the left.
+    const plot = el('g', {}, svg);
+    const shapes = [];
+    for (const m of visible) {
+      const oa = offaxisOf(m);
+      const ang = []; for (let a = 0; a <= 180; a += 2.5) ang.push(a);
+      const ds = ang.map(a => polarDb(oa, f, a));
+      const pts = [...ang.map((a, i) => pt(a, ds[i], 1)), ...ang.slice().reverse().map((a, i) => pt(a, ds[ds.length - 1 - i], -1))];
+      const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
+      el('path', { d: 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L') + 'Z', fill: 'none', stroke: colorOf(m),
+        'stroke-width': highlight === m.id ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-dasharray': dashOf(m), opacity: dim ? 0.2 : 1 }, plot);
+      shapes.push({ m, oa });
+    }
+    if (legend && shapes.length) {
+      const x0 = cx + R + 40;
+      shapes.forEach(({ m }, k) => {
+        const y = 30 + k * 18;
+        el('line', { x1: x0, x2: x0 + 16, y1: y - 4, y2: y - 4, stroke: colorOf(m), 'stroke-width': 3, 'stroke-dasharray': dashOf(m) }, svg);
+        const t = el('text', { x: x0 + 22, y, class: 'direct', style: `fill:${colorOf(m)}` }, svg);
+        t.textContent = m.name;
+      });
+    }
+    // Hover: the angle under the pointer and each mic's level there.
+    const spoke = el('line', { x1: cx, y1: cy, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const dots = el('g', { visibility: 'hidden' }, svg);
+    const hit = el('circle', { cx, cy, r: R, fill: 'transparent' }, svg);
+    const onMove = ev => {
+      if (!shapes.length) return;
+      const q = svg.createSVGPoint(); q.x = ev.clientX; q.y = ev.clientY;
+      const p = q.matrixTransform(svg.getScreenCTM().inverse());
+      const side = p.x < cx ? -1 : 1;
+      const a = Math.round(Math.atan2(Math.abs(p.x - cx), cy - p.y) * 180 / Math.PI / 5) * 5;
+      const [ex, ey] = pt(a, P_HI, side);
+      spoke.setAttribute('x2', ex); spoke.setAttribute('y2', ey); spoke.setAttribute('visibility', 'visible');
+      dots.textContent = ''; dots.setAttribute('visibility', 'visible');
+      const rows = shapes.map(({ m, oa }) => ({ m, v: polarDb(oa, f, a) })).sort((x, y) => y.v - x.v);
+      for (const r of rows) { const [x, y] = pt(a, r.v, side); el('circle', { cx: x, cy: y, r: 4, fill: colorOf(r.m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots); }
+      const tip = $('tip');
+      tip.innerHTML = `<div class="f">${a}° · ${fmtF(f)} Hz</div>` + rows.map(r =>
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v">${fmtD(r.v)} dB</span></div>`).join('');
+      tip.style.display = 'block';
+      const wrap = $('chartWrap').getBoundingClientRect();
+      const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
+      tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
+      tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
+    };
+    hit.addEventListener('pointermove', onMove);
+    hit.addEventListener('pointerdown', onMove);
+    hit.addEventListener('pointerleave', () => { spoke.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; });
+  }
+
+  // Which shown mics have no polar data (hidden off-axis / in the polar view), and which lack this frequency.
+  function drawPolarHint() {
+    const s = state.settings, hint = $('polarHint');
+    const polar = s.view === 'polar', angle = Number(s.angle) || 0;
+    const shown = state.mics.filter(m => m.visible);
+    const none = shown.filter(m => !offaxisOf(m)).map(m => m.name);
+    let t = '';
+    if ((polar || angle) && none.length) t += `No polar data for ${none.join(', ')}` + (polar ? '. ' : ' (hidden off axis). ');
+    if (polar) {
+      const f = POLAR_FREQS[s.polarF];
+      const edge = shown.filter(m => { const oa = offaxisOf(m); return oa && (f < oa.f[0] || f > oa.f[oa.f.length - 1]); });
+      if (edge.length) t += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtF(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}Hz`; }).join('; ') + '. ';
+      if (!shown.some(m => offaxisOf(m))) t += 'Polar data: sE V7, sE V7 X, sE8, sE4400, DPA 4099, Schoeps MK 4. ';
+    } else if (angle) {
+      t += 'Off axis = on-axis curve + the maker\'s polar plot, which covers 250 Hz–16 kHz (below and above: held). ';
+    }
+    if (polar || angle) t += 'Polar data traced from the manufacturers\' plots, roughly ±1 dB.';
+    hint.textContent = t; hint.hidden = !t;
   }
 
   function drawTable() {
@@ -799,7 +953,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); drawLibrary(); draw(); drawTable();
+    drawList(); drawLibrary(); draw(); drawTable(); drawPolarHint();
   }
 
   // ---------- controls ----------
@@ -809,6 +963,13 @@
     $('normFreqBox').hidden = s.normMode !== 'freq';
     $('sensHint').hidden = s.normMode !== 'sens';
     $('yRange').value = s.yRange;
+    const polar = s.view === 'polar';
+    $('chartPanel').classList.toggle('polar', polar);
+    document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === s.view));
+    $('tableBox').classList.toggle('resp-only', true);
+    $('sensHint').hidden = polar || s.normMode !== 'sens';
+    $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
+    $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
     drawSmoothDots();
   }
   // Smoothing: five tap dots, growing with the amount of smoothing.
@@ -830,6 +991,9 @@
   $('normMode').onchange = e => { state.settings.normMode = e.target.value; syncControls(); update(); };
   $('normFreq').onchange = e => { const v = Number(e.target.value); if (v > 0) state.settings.normFreq = v; update(); };
   $('yRange').onchange = e => { state.settings.yRange = e.target.value; update(); };
+  $('angle').oninput = e => { state.settings.angle = Number(e.target.value); syncControls(); update(); };
+  $('polarF').oninput = e => { state.settings.polarF = Number(e.target.value); syncControls(); update(); };
+  document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => { state.settings.view = b.dataset.view; syncControls(); update(); });
 
   function msg(id, text, err) { const m = $(id); m.textContent = text; m.classList.toggle('err', !!err); }
 
@@ -1022,6 +1186,10 @@
     // The 'Relative to' control is gone; don't keep a hidden reference from older saves or links.
     state.settings.ref = '';
     if (!SMOOTH_STEPS.some(([v]) => v === state.settings.smooth)) state.settings.smooth = '12';
+    const st = state.settings;
+    if (st.view !== 'polar') st.view = 'resp';
+    st.angle = Math.min(180, Math.max(0, Math.round((Number(st.angle) || 0) / 15) * 15));
+    if (!(st.polarF >= 0 && st.polarF < POLAR_FREQS.length)) st.polarF = 2;
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
