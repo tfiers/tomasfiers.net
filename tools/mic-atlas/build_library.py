@@ -52,10 +52,10 @@ PAT={'card':'Cardioid','omni':'Omni','hyper':'Hypercardioid','fig8':'Figure-8','
 lib=[
  dict(model='AT2020', points=resample(vec['AT2020'], clean=False), auto=False,
       source='Audio-Technica spec sheet, 12″ or more on axis (vector data from the PDF)',
-      specs=dict(type='Condenser (electret), 16 mm', pattern='Cardioid', sens=-37, noise=20, maxspl=144, imp=100, range='20–20k')),
+      specs=dict(type='Condenser, 16 mm', electret=True, pattern='Cardioid', sens=-37, noise=20, maxspl=144, imp=100, range='20–20k')),
  dict(model='Behringer C-2', points=resample(vec['C-2'], clean=False), auto=False,
       source='Behringer C-2 manual (vector data from the PDF)',
-      specs=dict(type='Condenser, 16 mm', pattern='Cardioid', sens=-38, noise=19, maxspl=136, imp=75, range='20–20k')),
+      specs=dict(type='Condenser, 16 mm', electret=True, pattern='Cardioid', sens=-38, noise=19, maxspl=136, imp=75, range='20–20k')),
  dict(model='sE V7', points=resample(v7), auto=True,
       source='sE V7 manual, 60 cm (2 ft) curve (traced from image)',
       specs=dict(type='Dynamic', pattern='Supercardioid', sens=-54, noise=None, maxspl=None, imp=300, range='40–19k')),
@@ -64,7 +64,7 @@ lib=[
       specs=dict(type='Dynamic', pattern='Supercardioid', sens=-54, noise=None, maxspl=None, imp=300, range='30–19k')),
  dict(model='Ovid CC 100', points=ovid_pts, auto=False,
       source='the t.bone datasheet: ARTA measurement, 1/6-oct smoothed; near-field (blue) below 400 Hz joined to far-field (orange) above 800 Hz (traced from image); shifted from dB SPL so that 1 kHz = 0 dB, like the other graphs',
-      specs=dict(type='Condenser clip-on (mini XLR)', pattern='Cardioid', sens=-41.3, noise=20.3, maxspl=110, imp=1500, range='')),
+      specs=dict(type='Condenser clip-on (mini XLR)', electret=True, pattern='Cardioid', sens=-41.3, noise=20.3, maxspl=110, imp=1500, range='')),
  dict(model='sE8', points=resample(se['se8']), auto=False,
       source='sE8 manual, low cut off (traced from image)', specs=SSE8, owned=False),
 ]
@@ -72,7 +72,7 @@ for k,auto in [('card',False),('omni',False),('hyper',False),('fig8',False)]:
     lib.append(dict(model='sE4400', pattern=PAT[k], points=resample(se['se4400_'+k]), auto=auto, owned=False,
         source='sE4400 manual, low cut off (traced from image)', specs=dict(S4400, pattern=PAT[k])))
 dpa=json.load(open('dpa.json'))
-SDPA=dict(type='Condenser (electret) clip-on, 5.4 mm', pattern='Supercardioid', sens=-44.5, noise=23, maxspl=142, imp=50, range='80–15k')
+SDPA=dict(type='Condenser clip-on, 5.4 mm', electret=True, pattern='Supercardioid', sens=-44.5, noise=23, maxspl=142, imp=50, range='80–15k')
 # Other distances: the 20 cm curve plus the bass change from DPA's proximity-effect graph (10 and 100 cm vs 20 cm).
 prox=json.load(open('dpa_prox.json'))
 def at_dist(pts, d):
@@ -251,8 +251,8 @@ js="""// Mic Atlas (mics.html): the built-in microphones. One entry per curve (a
 //   auto          true = shown on a first visit
 //   points        on-axis frequency response: [[freq_hz, dB], ...], any number of points, any dB offset
 //   offaxis       polar data: {f: [freqs], db: [[dB at 0°, 5°, 10°, ..., 180°] per freq]}, 0 dB at 0°
-//   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k")};
-//                 null = not published
+//   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k"),
+//                 electret (true for electret condensers; shown in the mic's details)}; null = not published
 //   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from)
 //   url, pdf      product page and manual / data sheet
 //   photo, photosExtra, graph, polar (+ …Size = [w, h] in px): images in mics-photos/, mics-sources/, mics-polar/

@@ -268,8 +268,13 @@
   .ts-mag { fill: var(--muted); opacity: 0.55; }
   .ts-plate { fill: var(--ink-2); opacity: 0.7; }
   .ts-hole { fill: var(--surface); }
+  .ts-fold { stroke: var(--accent); stroke-width: 0.6; opacity: 0.6; }
+  .type-schematics figure.wide { flex-grow: 1.6; }
+  .type-schematics figure.wide svg { max-width: 250px; }
+  .type-card .type-schematics figure.wide svg { max-width: 300px; }
+  .type-card h4.type-h { margin: 16px 0 4px; font-size: 1rem; color: var(--ink); }
+  .type-card p { margin: 4px 0; }
   .ts-field { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 2 2; }
-  .type-p { margin: 8px 0 0; }
   .ts-t { font-size: 7px; fill: var(--muted); }
   .ts-pole { font-size: 9px; font-weight: 600; fill: var(--ink-2); }
   .type-diagram { display: flex; gap: 10px; justify-content: center; margin: 8px 0 2px; }
@@ -1605,7 +1610,7 @@
   // Info card (modal) for one mic: description, specs, source graph, links, rename/remove.
   const fmtNum = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
   const SPEC_ROWS = [
-    ['Type', sp => esc(sp.type || '–')],
+    ['Type', sp => esc(sp.type || '–') + (sp.electret ? ' <span class="per">(electret)</span>' : '')],
     ['Sensitivity', sp => typeof sp.sens === 'number' ? `${fmtNum(sp.sens, ' dBV')} · ${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa` : '–'],
     ['Self-noise', sp => fmtNum(sp.noise, ' dB(A)')],
     ['Max SPL', sp => fmtNum(sp.maxspl, ' dB')],
@@ -1752,13 +1757,13 @@
   // What each column of the Selected microphones table means (header tooltip, and popup on tap).
   const COL_HELP = {
     'Pattern': 'The polar pattern: the directions the mic picks up from. <b>Cardioid</b>: mostly from the front. <b>Super- / hypercardioid</b>: narrower, with a small lobe at the back. <b>Omni</b>: all around. <b>Figure-8</b>: front and back, not the sides.',
-    'Type': 'How the mic turns sound into a signal.%TYPES%<ul>' +
-      '<li><b>Dynamic</b>: a light coil on the diaphragm moves in a magnet. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</li>' +
-      '<li><b>Condenser</b>: a very thin diaphragm next to a fixed plate, together a charged capacitor; sound changes the gap and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).<ul>' +
+    'Type': 'How the mic turns sound into a signal.%TYPES%' +
+      '<h4 class="type-h">Dynamic</h4><p>A light coil on the diaphragm moves in a magnet. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</p>' +
+      '<h4 class="type-h">Condenser</h4><p>A very thin diaphragm next to a fixed plate, together a charged capacitor; sound changes the gap and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).</p><ul>' +
       '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Its pickup pattern changes more with frequency, so sound arriving from the sides or back has a different tone (often duller) than from the front; see the diagram below.</li>' +
       '<li><b>Small diaphragm</b> (“pencil”, about ½″): more neutral, with quick transients, and nearly the same pattern at all frequencies, so off-axis sound keeps its tone; for acoustic instruments, overheads, and stereo pairs.</li>' +
-      '</ul>%DIAGRAM%<p class="type-p"><b>Electret</b> is a separate question from size: it\'s about how the capsule gets its charge. A “true” (externally polarised) condenser gets it from phantom power; in an electret, it\'s built into the diaphragm or plate material. Either way, a condenser capsule has a tiny amplifier right behind it that needs a little power, to turn its very weak signal into one that can travel down a cable: from phantom power for XLR mics (like the AT2020, or the DPA 4099 with its XLR adapter), or from a battery or the “plug-in power” of a phone or recorder for small ones. Electrets can be large or small; they\'re common in affordable and miniature mics.</p></li>' +
-      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8. Its highs roll off gently from about 8–10 kHz, which softens sibilance, bright strings, and cymbals; that\'s why ribbons are often called “smooth” or “warm”. Low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives. Most ribbons are passive and don\'t need phantom power (the 48 V a preamp sends up the mic cable for condensers); with a correctly wired cable it can\'t reach the ribbon anyway. But a faulty cable or patch bay, or plugging in while phantom is on, can send a jolt through the ribbon and stretch it. So switch phantom off before connecting a ribbon, especially an older one. Newer active ribbons have a small built-in amplifier and do need phantom power.</li></ul>',
+      '</ul>%DIAGRAM%<p><b>Electret condensers</b> (of any size): in a “true”, externally polarised condenser, the capsule\'s charge comes from phantom power; in an electret, it\'s built into the diaphragm or plate material. Both have a tiny amplifier right behind the capsule, which turns its very weak signal into one that can travel down a cable, and that amplifier needs a little power: from phantom power for XLR mics, or from a battery or the “plug-in power” of a phone or recorder for small ones. Electrets are common in affordable and miniature mics; here, the AT2020, Behringer C-2, DPA 4099, and Ovid CC 100.</p>' +
+      '<h4 class="type-h">Ribbon</h4><p>A thin metal ribbon hanging in a magnetic field. Naturally figure-8. Its highs roll off gently from about 8–10 kHz, which softens sibilance, bright strings, and cymbals; that\'s why ribbons are often called “smooth” or “warm”. Low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives.</p><p>Most ribbons are passive and don\'t need phantom power (the 48 V a preamp sends up the mic cable for condensers); with a correctly wired cable it can\'t reach the ribbon anyway. But a faulty cable or patch bay, or plugging in while phantom is on, can send a jolt through the ribbon and stretch it. So switch phantom off before connecting a ribbon, especially an older one. Newer active ribbons have a small built-in amplifier and do need phantom power.</p>',
     'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
     'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
     'Max SPL': 'The loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies, typically 0.5–1 %).',
@@ -1795,14 +1800,19 @@
       <path d="M40 18 v-6 h40 M55 18 v-2 h25" class="ts-thin"/><text x="84" y="16" class="ts-t">+ V</text>
       <text x="40" y="93" class="ts-t" text-anchor="middle">diaphragm</text><text x="84" y="52" class="ts-t">back-</text><text x="84" y="61" class="ts-t">plate</text>`,
       '<b>Condenser</b><br><span>diaphragm and plate form a charged capacitor; sound changes the gap</span>');
-    const rib = svg(`${waves(6)}
-      <rect x="34" y="12" width="52" height="22" class="ts-mag"/><rect x="34" y="66" width="52" height="22" class="ts-mag"/>
-      <text x="60" y="27" class="ts-t ts-pole" text-anchor="middle">N</text><text x="60" y="81" class="ts-t ts-pole" text-anchor="middle">S</text>
-      <path d="M47 36 v28 M73 36 v28" class="ts-field"/>
-      <path d="M58 34 q4 16 0 32" class="ts-dia"/>
-      <text x="89" y="53" class="ts-t">ribbon</text>
-      <text x="60" y="97" class="ts-t" text-anchor="middle">seen from above</text>`,
-      '<b>Ribbon</b><br><span>a thin metal ribbon moves in the field between two magnet poles</span>');
+    const pleats = x => `M${x} 18 ` + Array.from({ length: 16 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 4`).join(' ');
+    const rib = `<figure class="wide"><svg viewBox="0 0 190 100">${waves(4)}
+      <rect x="28" y="12" width="48" height="22" class="ts-mag"/><rect x="28" y="66" width="48" height="22" class="ts-mag"/>
+      <text x="52" y="27" class="ts-t ts-pole" text-anchor="middle">N</text><text x="52" y="81" class="ts-t ts-pole" text-anchor="middle">S</text>
+      <path d="M40 36 v28 M64 36 v28" class="ts-field"/>
+      <path d="M50 34 q4 16 0 32" class="ts-dia"/>
+      <text x="52" y="97" class="ts-t" text-anchor="middle">from above</text>
+      <rect x="104" y="18" width="20" height="64" class="ts-mag"/><rect x="154" y="18" width="20" height="64" class="ts-mag"/>
+      <text x="114" y="54" class="ts-t ts-pole" text-anchor="middle">N</text><text x="164" y="54" class="ts-t ts-pole" text-anchor="middle">S</text>
+      <path d="${pleats(132)}" class="ts-dia"/><path d="${pleats(143)}" class="ts-dia"/>
+      ${Array.from({ length: 16 }, (_, i) => `<path d="M${132 + (i % 2 ? 2.5 : 0)} ${18 + i * 4} h11" class="ts-fold"/>`).join('')}
+      <text x="139" y="97" class="ts-t" text-anchor="middle">from the front</text></svg>
+      <figcaption><b>Ribbon</b><br><span>a thin, pleated metal ribbon moves in the field between two magnet poles</span></figcaption></figure>`;
     return `<div class="type-schematics">${dyn}${con}${rib}</div>`;
   }
   function typeDiagram() {

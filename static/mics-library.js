@@ -9,8 +9,8 @@
 //   auto          true = shown on a first visit
 //   points        on-axis frequency response: [[freq_hz, dB], ...], any number of points, any dB offset
 //   offaxis       polar data: {f: [freqs], db: [[dB at 0°, 5°, 10°, ..., 180°] per freq]}, 0 dB at 0°
-//   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k")};
-//                 null = not published
+//   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k"),
+//                 electret (true for electret condensers; shown in the mic's details)}; null = not published
 //   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from)
 //   url, pdf      product page and manual / data sheet
 //   photo, photosExtra, graph, polar (+ …Size = [w, h] in px): images in mics-photos/, mics-sources/, mics-polar/
@@ -59,7 +59,8 @@ window.MIC_LIBRARY = [
     "auto":false,
     "source":"Audio-Technica spec sheet, 12″ or more on axis (vector data from the PDF)",
     "specs":{
-      "type":"Condenser (electret), 16 mm",
+      "type":"Condenser, 16 mm",
+      "electret":true,
       "pattern":"Cardioid",
       "sens":-37,
       "noise":20,
@@ -111,6 +112,7 @@ window.MIC_LIBRARY = [
     "source":"Behringer C-2 manual (vector data from the PDF)",
     "specs":{
       "type":"Condenser, 16 mm",
+      "electret":true,
       "pattern":"Cardioid",
       "sens":-38,
       "noise":19,
@@ -376,6 +378,7 @@ window.MIC_LIBRARY = [
     "source":"the t.bone datasheet: ARTA measurement, 1/6-oct smoothed; near-field (blue) below 400 Hz joined to far-field (orange) above 800 Hz (traced from image); shifted from dB SPL so that 1 kHz = 0 dB, like the other graphs",
     "specs":{
       "type":"Condenser clip-on (mini XLR)",
+      "electret":true,
       "pattern":"Cardioid",
       "sens":-41.3,
       "noise":20.3,
@@ -905,7 +908,8 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, at 10 cm: the 20 cm curve plus the proximity-effect graph's bass boost (vector data from the PDF)",
     "specs":{
-      "type":"Condenser (electret) clip-on, 5.4 mm",
+      "type":"Condenser clip-on, 5.4 mm",
+      "electret":true,
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -988,7 +992,8 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, on axis at 20 cm (vector data from the PDF)",
     "specs":{
-      "type":"Condenser (electret) clip-on, 5.4 mm",
+      "type":"Condenser clip-on, 5.4 mm",
+      "electret":true,
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -1071,7 +1076,8 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, at 1 m: the 20 cm curve plus the proximity-effect graph's bass loss (vector data from the PDF)",
     "specs":{
-      "type":"Condenser (electret) clip-on, 5.4 mm",
+      "type":"Condenser clip-on, 5.4 mm",
+      "electret":true,
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -1153,7 +1159,8 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, with DAD4099 XLR adapter (80 Hz low cut), 20 cm (vector data from the PDF)",
     "specs":{
-      "type":"Condenser (electret) clip-on, 5.4 mm",
+      "type":"Condenser clip-on, 5.4 mm",
+      "electret":true,
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
