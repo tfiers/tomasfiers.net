@@ -671,7 +671,10 @@
     H = Math.round(legend ? Math.min(460, Math.max(320, W * 0.55)) : Math.min(W, 460));
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.textContent = '';
-    const R = Math.min((H - 44) / 2, W / 2 - 34), cx = legend ? Math.min(W / 2, W - 215 - R) : W / 2, cy = H / 2 + 2;
+    // Legend on the right, as wide as the longest name (about 6.6 px per character at 11 px bold).
+    const legW = legend ? 36 + 6.6 * Math.max(0, ...visible.map(m => m.name.length)) : 0;
+    const R = Math.max(80, Math.min((H - 44) / 2, W / 2 - 34, legend ? (W - legW - 60) / 2 : Infinity));
+    const cx = legend ? Math.min(W / 2, W - legW - 30 - R) : W / 2, cy = H / 2 + 2;
     const f = POLAR_FREQS[state.settings.polarF] || 1000;
     const rOf = d => Math.max(0, (Math.max(P_LO, d) - P_LO) / (P_HI - P_LO)) * R;
     const pt = (a, d, side) => { const r = rOf(d), t = a * Math.PI / 180; return [cx + side * r * Math.sin(t), cy - r * Math.cos(t)]; };
@@ -709,7 +712,7 @@
       shapes.push({ m, oa });
     }
     if (legend && shapes.length) {
-      const x0 = cx + R + 40;
+      const x0 = cx + R + 34;
       shapes.forEach(({ m }, k) => {
         const y = 30 + k * 18;
         el('line', { x1: x0, x2: x0 + 16, y1: y - 4, y2: y - 4, stroke: colorOf(m), 'stroke-width': 3, 'stroke-dasharray': dashOf(m) }, svg);
@@ -758,9 +761,13 @@
       const f = POLAR_FREQS[s.polarF];
       const edge = shown.filter(m => { const oa = offaxisOf(m); return oa && (f < oa.f[0] || f > oa.f[oa.f.length - 1]); });
       if (edge.length) t += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtF(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}Hz`; }).join('; ') + '. ';
-      if (!shown.some(m => offaxisOf(m))) t += 'Polar data: sE V7, sE V7 X, sE8, sE4400, DPA 4099, Schoeps MK 4. ';
+      if (!shown.some(m => offaxisOf(m))) t += 'All library mics have polar data; your own curves don\'t. ';
     } else if (angle) {
-      t += 'Off axis = on-axis curve + the maker\'s polar plot, which covers 250 Hz–16 kHz (below and above: held). ';
+      // Mention mics whose polar plot covers less than the usual 250 Hz–16 kHz.
+      const span = oa => oa.f.length === 1 ? fmtF(oa.f[0]) + ' Hz only' : fmtF(oa.f[0]) + ' Hz–' + fmtF(oa.f[oa.f.length - 1]) + ' Hz';
+      const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
+      t += 'Off axis = on-axis curve + the maker\'s polar plot, which mostly covers 250 Hz–16 kHz' +
+        (narrow.length ? ' (' + narrow.map(m => `${m.name}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') + '; beyond that the nearest is held. ';
     }
     if (polar || angle) t += 'Polar data traced from the manufacturers\' plots, roughly ±1 dB.';
     hint.textContent = t; hint.hidden = !t;
