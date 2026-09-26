@@ -1650,13 +1650,13 @@ window.MIC_LIBRARY = [
     "price":"~€1,700 with CMC 6",
     "desc":"Reference small-diaphragm cardioid (MK 4 capsule on a CMC 6 amplifier): very flat and natural, also off-axis. A favourite for acoustic and classical recording, often as a pair.",
     "graph":"mics-sources/schoeps-mk4.webp",
-    "photo":"mics-photos/schoeps-mk4.webp",
+    "photo":"mics-photos/schoeps-mk4-capsule.webp",
     "graphSize":[1000,307],
-    "photoSize":[360,360],
+    "photoSize":[287,360],
     "polar":"mics-polar/schoeps-mk4.webp",
     "polarSize":[700,622],
     "photosExtra":[
-      {"src":"mics-photos/schoeps-mk4-capsule.webp","size":[287,360]},
+      {"src":"mics-photos/schoeps-mk4.webp","size":[360,360]},
       {"src":"mics-photos/schoeps-mk4-box.webp","size":[360,360]}
     ],
     "url":"https://schoeps.de/en/products/colette/capsules/cardioids/mk-4.html",

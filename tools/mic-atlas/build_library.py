@@ -128,10 +128,10 @@ DESC={
 GRAPH={'AT2020':'at2020','Behringer C-2':'behringer-c2','sE V7':'se-v7','sE V7 X':'se-v7x','Ovid CC 100':'ovid-cc100','sE8':'se8',
  'sE4400':'se4400','AKG C414 XLS':'akg-c414','AKG C414 XLII':'akg-c414','DPA 4099':'dpa-4099','Neumann U 87 Ai':'neumann-u87ai','Schoeps MK 4':'schoeps-mk4','Schoeps MK 5':'schoeps-mk5','Shure SM57':'shure-sm57','Shure SM58':'shure-sm58'}
 PHOTO={'AT2020':'at2020','Behringer C-2':'behringer-c2','sE V7':'se-v7','sE V7 X':'se-v7x','Ovid CC 100':'ovid-cc100','sE8':'se8','sE4400':'se4400',
- 'AKG C414 XLS':'akg-c414xls','AKG C414 XLII':'akg-c414xlii','DPA 4099':'dpa-4099','Neumann U 87 Ai':'neumann-u87ai','Schoeps MK 4':'schoeps-mk4','Schoeps MK 5':'schoeps-mk5','Shure SM57':'shure-sm57','Shure SM58':'shure-sm58'}
+ 'AKG C414 XLS':'akg-c414xls','AKG C414 XLII':'akg-c414xlii','DPA 4099':'dpa-4099','Neumann U 87 Ai':'neumann-u87ai','Schoeps MK 4':'schoeps-mk4-capsule','Schoeps MK 5':'schoeps-mk5','Shure SM57':'shure-sm57','Shure SM58':'shure-sm58'}
 # Extra photos shown as thumbnails under the main one in the info card.
-# MK 5: the capsule first; the pair of pencils and the wooden box are the ones from the MK 4 set.
-PHOTO_EXTRA={'Schoeps MK 4':['schoeps-mk4-capsule','schoeps-mk4-box'],'Schoeps MK 5':['schoeps-mk4','schoeps-mk4-box']}
+# Both Schoeps: the capsule first; then the pair of pencils and the wooden box (from the MK 4 set).
+PHOTO_EXTRA={'Schoeps MK 4':['schoeps-mk4','schoeps-mk4-box'],'Schoeps MK 5':['schoeps-mk4','schoeps-mk4-box']}
 # How the manufacturer markets / positions the mic (verbatim quotes from the manuals and data sheets).
 QUOTE={}  # (marketing quotes replaced by own descriptions)
 # Official product/manual pages; filled in once known.
