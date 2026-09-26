@@ -217,6 +217,12 @@
     max-width: min(92vw, 380px); padding: 8px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
   .picker[hidden] { display: none; }
+  /* A control's caption can be tapped to show its tooltip text (phones have no hover). */
+  .controls .field > .cap { cursor: help; }
+  .cap-tip { position: absolute; z-index: 6; max-width: min(88vw, 320px); padding: 8px 10px; white-space: pre-line;
+    background: var(--surface); color: var(--ink-2); font-size: 0.8rem; line-height: 1.4;
+    border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
+  .cap-tip[hidden] { display: none; }
   .picker .chip { padding: 3px 9px; font-size: 0.82rem; }
   .picker .chip .pat { width: 16px; height: 16px; }
   .picker .info { border: none; background: none; color: var(--accent); font-size: 0.82rem; padding: 3px 6px; }
@@ -283,9 +289,9 @@
           <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
           <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
         </div>
-        <label class="field resp-only" title="The vertical scale of the chart.">
+        <div class="field resp-only" title="The vertical scale of the chart.">
           <span class="cap">Y range</span>
-          <select id="yRange">
+          <select id="yRange" aria-label="Y range">
             <option value="-10,5">+5 / −10 dB</option>
             <option value="5">±5 dB</option>
             <option value="10">±10 dB</option>
@@ -293,7 +299,7 @@
             <option value="30">±30 dB</option>
             <option value="auto">Auto</option>
           </select>
-        </label>
+        </div>
         <div class="field field-wide resp-only" title="Where the sound comes from, relative to the front of the mic: 0° is straight on, 90° from the side, 180° from behind.">
           <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
           <input type="range" id="angle" min="0" max="180" step="15" value="0" aria-label="Angle">
@@ -380,6 +386,7 @@
 </main>
 <dialog id="infoCard" aria-label="Mic info"></dialog>
 <div id="picker" class="picker" role="dialog" aria-label="Pick patterns" hidden></div>
+<div id="capTip" class="cap-tip" role="tooltip" hidden></div>
 
 <script src="mics-library.js"></script>
 <script>
@@ -1215,6 +1222,19 @@
     pk.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - pk.offsetWidth - 8)) + scrollX + 'px';
   }
   function closePicker() { pickerModel = null; $('picker').hidden = true; }
+  // Tap a control's caption: show the field's tooltip text in a small popup (for touch screens).
+  document.querySelectorAll('.controls .field > .cap').forEach(cap => cap.addEventListener('click', ev => {
+    if (ev.target.closest('.info-btn')) return;
+    const tip = $('capTip'), text = cap.closest('.field').title;
+    if (!text) return;
+    if (!tip.hidden && tip.dataset.for === text) { tip.hidden = true; return; }
+    tip.textContent = text; tip.dataset.for = text; tip.hidden = false;
+    const r = cap.getBoundingClientRect();
+    tip.style.top = (r.bottom + scrollY + 4) + 'px';
+    tip.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - tip.offsetWidth - 8)) + scrollX + 'px';
+  }));
+  document.addEventListener('pointerdown', ev => { if (!ev.target.closest('.controls .field > .cap') && !ev.target.closest('#capTip')) $('capTip').hidden = true; });
+
   // Close the picker on a tap elsewhere (its own chip toggles it), or with Esc.
   document.addEventListener('pointerdown', ev => {
     if (pickerModel && !ev.target.closest('#picker') && !(ev.target.closest('.chip') && ev.target.closest('.chip').dataset.model === pickerModel)) closePicker();
