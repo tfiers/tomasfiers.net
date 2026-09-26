@@ -259,7 +259,7 @@
         <p>All curves come from the makers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Mics table to see its original graphs.</p>
         <ul>
           <li>Makers measure in different ways (distance, room, smoothing), so take small differences between brands with a grain of salt.</li>
-          <li>A curve is drawn faded outside the mic's rated frequency range.</li>
+          <li class="resp-only">A curve is drawn faded outside the mic's rated frequency range.</li>
         </ul>
       </div>
       <div class="controls">
@@ -823,11 +823,12 @@
     // shown mics whose polar plot covers less than the usual 250 Hz–16 kHz.
     const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
     const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
-    $('polarNote').innerHTML =
-      '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the maker\'s polar plot says the mic is at that angle. ' +
-      'Polar plots are only drawn for a handful of frequencies (mostly 250 Hz–16 kHz' +
-      (narrow.length ? '; ' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join(', ') : '') +
-      '), so in between the values are interpolated, and beyond them the curve is faded.</p>';
+    const cover = '(mostly 250 Hz–16 kHz' + (narrow.length ? '; ' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join(', ') : '') + ')';
+    $('polarNote').innerHTML = polar
+      ? `<p>These are the makers' polar plots, which are only drawn for a handful of frequencies ${cover}. ` +
+        'If a mic\'s plot doesn\'t include the chosen frequency, the nearest one is shown.</p>'
+      : '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the maker\'s polar plot says the mic is at that angle. ' +
+        `Polar plots are only drawn for a handful of frequencies ${cover}, so in between the values are interpolated, and beyond them the curve is faded.</p>`;
   }
 
   function drawTable() {
