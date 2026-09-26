@@ -72,6 +72,7 @@
   .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--page); }
   .src-note { margin: -4px 0 12px; }
   .note p { margin: 0 0 4px; }
+  .lib-hint { margin: 4px 0 0; }
   .note ul { margin: 0 0 4px; padding-left: 1.1em; }
   .note li { margin: 2px 0; }
   .note b { font-weight: 600; color: var(--ink-2); }
@@ -321,7 +322,7 @@
           <li><b>Max SPL:</b> the loudest sound before distortion, as the maker specifies it (their distortion threshold varies).</li>
           <li>– means the maker doesn't publish it.</li>
         </ul>
-        <p>Tap a mic's name for its photo, full specs, links and original graphs. In the library, press and hold a mic.</p>
+        <p>Tap a mic's name for its photo, full specs, links and original graphs.</p>
       </div>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
@@ -331,6 +332,7 @@
       <div class="panel">
         <details id="libBox" open>
           <summary>Library</summary>
+          <p class="hint lib-hint">Tap to show a mic; press and hold for its details.</p>
           <div id="libChips"></div>
         </details>
 
