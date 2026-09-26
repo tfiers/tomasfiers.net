@@ -253,6 +253,11 @@
   .cap-tip b { color: var(--ink); font-weight: 600; }
   .cap-tip p, .cap-tip ul { margin: 0; white-space: normal; }
   .cap-tip ul { padding-left: 1.1em; margin-top: 4px; }
+  .type-diagram { display: flex; gap: 10px; justify-content: center; margin: 8px 0 2px; }
+  .type-diagram figure { margin: 0; text-align: center; font-size: 0.72rem; line-height: 1.25; }
+  .type-diagram figcaption span { color: var(--muted); }
+  .type-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; }
+  .type-legend i { display: inline-block; width: 12px; height: 2px; margin-right: 4px; vertical-align: 3px; }
   .cap-tip li { margin: 3px 0; }
   .cap-tip a { color: var(--accent); }
   .cap-tip { position: absolute; z-index: 6; max-width: min(92vw, 360px); max-height: 70vh; overflow-y: auto; padding: 8px 10px; white-space: pre-line;
@@ -415,6 +420,10 @@
                 <button type="button" role="radio" data-sound="piano">Piano</button>
                 <button type="button" role="radio" data-sound="held">Held tone</button>
               </div>
+            </div>
+            <div class="field play-opt" title="Tap a key to play this chord on it (the key is the root). Or play several keys at once with several fingers.">
+              <span class="cap">Chord</span>
+              <select id="chord" aria-label="Chord"></select>
             </div>
             <div class="field play-opt" title="Plays the keys as that mic would pick them up: each overtone made louder or quieter by the mic's curve at its frequency, at the angle set above. The level is relative to the mic's on-axis 1 kHz level, so mics don't differ in overall loudness, but off axis the sound gets quieter.">
               <span class="cap">Through</span>
@@ -755,7 +764,15 @@
   // Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the
   // angle) while listening; it follows those changes live. Tap the key again, or Stop, to end it.
   // All harmonics up to 20 kHz sound, as in a real tone (the overtone lines only go to the 16th).
-  let held = null;   // { n, osc, g, lfo }
+  let held = null;   // { n: the root key, notes, voices: [{ f, osc, g, lfo }] }
+  // Chords: the key you tap is the root. [id, name in the menu, short name on the Stop button, semitones]
+  const CHORDS = [['', 'Single note', '', [0]], ['maj', 'Major', 'major', [0, 4, 7]], ['min', 'Minor', 'minor', [0, 3, 7]],
+    ['7', 'Dominant 7th', '7', [0, 4, 7, 10]], ['maj7', 'Major 7th', 'maj7', [0, 4, 7, 11]], ['m7', 'Minor 7th', 'm7', [0, 3, 7, 10]],
+    ['sus4', 'Sus4', 'sus4', [0, 5, 7]], ['dim', 'Diminished', 'dim', [0, 3, 6]], ['5', 'Power chord (root + 5th)', '5', [0, 7, 12]],
+    ['oct', 'Octave', 'octave', [0, 12]]];
+  const chordOf = () => CHORDS.find(c => c[0] === state.settings.chord) || CHORDS[0];
+  $('chord').innerHTML = CHORDS.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+  $('chord').onchange = ev => { state.settings.chord = ev.target.value; save(); };
   const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
   // One oscillator playing harmonics k0…k1 of f at the given amplitudes (a custom waveform; the browser
   // band-limits it, so there's no aliasing).
@@ -769,20 +786,46 @@
   const heldWave = (f, gainAt) => harmonicWave(1, topHarmonic(f), k => 0.36 / k ** 1.6 * gainAt(k * f));
   function releaseHeld() {
     if (!held) return;
-    const t = actx.currentTime, { osc, g, lfo } = held;
-    g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.12);
-    osc.stop(t + 0.15); lfo.stop(t + 0.15);
+    const t = actx.currentTime;
+    for (const { osc, g, lfo } of held.voices) {
+      g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.12);
+      osc.stop(t + 0.15); lfo.stop(t + 0.15);
+    }
     held = null;
     rtaUntil = t + 0.15;
     $('stopTone').hidden = true;
+    if (rangesHover) rangesHover.press([]);
   }
   function retuneHeld() {
-    if (held) held.osc.setPeriodicWave(heldWave(midiFreq(held.n), throughGain()));
+    if (!held) return;
+    const gainAt = throughGain();
+    for (const v of held.voices) v.osc.setPeriodicWave(heldWave(v.f, gainAt));
   }
+  // Tap a key: play the chosen chord on it (or the single note).
   function playNote(n) {
-    const ctx = audio(), f = midiFreq(n), t = ctx.currentTime, hold = state.settings.sound === 'held';
+    audio();
     if (!state.settings.played) { state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove()); }
     releaseHeld();
+    const [, , short, steps] = chordOf(), notes = steps.map(d => n + d).filter(m => m >= 21 && m <= 108);
+    const hold = state.settings.sound === 'held', t = actx.currentTime, level = 1 / Math.sqrt(notes.length);
+    if (hold) held = { n, notes, voices: [] };
+    for (const m of notes) playOne(m, hold, level);
+    const f = midiFreq(n);
+    rtaColor = noteColor(((n % 12) + 12) % 12);
+    rtaUntil = hold ? Infinity : Math.max(rtaUntil, t + 1.2 + 3.5 * (108 - n) / 87);
+    if (hold) {
+      const b = $('stopTone'), nn = nearestNote(f);
+      b.hidden = false; b.style.setProperty('--note', noteColor(nn.pc));
+      b.querySelector('.lbl').innerHTML = 'Stop ' + noteNameHtml(nn.name) + (short ? ' ' + short : '');
+    }
+    if (rangesHover) {
+      rangesHover.press(notes);
+      if (!hold) { clearTimeout(playNote.unpress); playNote.unpress = setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 450); }
+    }
+    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
+  }
+  function playOne(n, hold, level) {
+    const ctx = actx, f = midiFreq(n), t = ctx.currentTime;
     const len = 1.2 + 3.5 * (108 - n) / 87;   // low notes ring longer
     const gainAt = throughGain(), K = topHarmonic(f);
     if (hold) {
@@ -790,10 +833,10 @@
       osc.frequency.value = f; osc.setPeriodicWave(heldWave(f, gainAt));
       lfo.frequency.value = 4.5; lfo.connect(depth); depth.connect(osc.detune);
       depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(0, t + 0.3); depth.gain.linearRampToValueAtTime(2, t + 1.2);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.08);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.08);
       osc.connect(g); g.connect(master);
       osc.start(t); lfo.start(t);
-      held = { n, osc, g, lfo };
+      held.voices.push({ f, osc, g, lfo });
     } else {
       // Piano: each part starts at once and dies away, the higher harmonics quieter and faster. The first
       // 8 harmonics get their own oscillator; above that, one oscillator per octave band of harmonics.
@@ -806,20 +849,12 @@
         const osc = ctx.createOscillator(), g = ctx.createGain();
         osc.frequency.value = f; osc.setPeriodicWave(harmonicWave(k0, k1, amp));
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(1, t + 0.006);
+        g.gain.linearRampToValueAtTime(level, t + 0.006);
         g.gain.exponentialRampToValueAtTime(0.0001, t + len / Math.sqrt(kc));
         osc.connect(g); g.connect(master);
         osc.start(t); osc.stop(t + len + 0.05);
       }
     }
-    rtaColor = noteColor(((n % 12) + 12) % 12);
-    rtaUntil = hold ? Infinity : Math.max(rtaUntil, t + len);
-    if (hold) {
-      const b = $('stopTone'), nn = nearestNote(f);
-      b.hidden = false; b.style.setProperty('--note', noteColor(nn.pc));
-      b.querySelector('.lbl').innerHTML = 'Stop ' + noteNameHtml(nn.name);
-    }
-    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
   // The mic the piano is heard through (if it's still on the chart), and the menu to pick it.
   const throughMic = () => state.mics.find(m => m.visible && m.id === state.settings.through) || null;
@@ -1376,6 +1411,7 @@
       hint.textContent = '♪ playable';
     }
     // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
+    const pressG = el('g', {}, kb);   // marks on the keys that are sounding
     const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
     const harm = el('g', {}, g);
     let lit = null;
@@ -1397,6 +1433,15 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
+      // Mark the keys that sound: a bar in each one's note colour at the bottom of the key.
+      press(notes) {
+        pressG.textContent = '';
+        for (const m of notes) {
+          const k = keys[m]; if (!k) continue;
+          const bh = k[3] ? kbH * 0.6 : kbH, w = Math.max(2, k[5] - k[4] - 3);
+          el('rect', { x: k[2] - w / 2, y: kbY + bh - 6, width: w, height: 4, rx: 1.5, fill: noteColor(((m % 12) + 12) % 12), stroke: '#fff', 'stroke-width': 0.8 }, pressG);
+        }
+      },
       // The piano key at (x, y) in this SVG's coordinates, as a MIDI note number, or null.
       keyAt(x, y) {
         if (y < kbY || y > kbY + kbH) return null;
@@ -1405,6 +1450,7 @@
         return b ? Number(b[0]) : null;
       },
     };
+    if (held) rangesHover.press(held.notes);
     const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
     k.textContent = 'Faded top ends: approx. instrument limits, and overtones (up to the 8th harmonic)';
     if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top ends: approx. limits, and overtones (up to the 8th harmonic)';
@@ -1614,23 +1660,44 @@
     'Type': 'How the mic turns sound into a signal.<ul>' +
       '<li><b>Dynamic</b>: a light coil on the diaphragm moves in a magnet. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</li>' +
       '<li><b>Condenser</b>: a very thin diaphragm next to a fixed plate, together a charged capacitor; sound changes the gap and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).<ul>' +
-      '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Less even off axis at high frequencies.</li>' +
-      '<li><b>Small diaphragm</b> (“pencil”, about ½″): more neutral and more even off axis, with quick transients; for acoustic instruments, overheads, and stereo pairs.</li>' +
-      '<li><b>Electret</b>: a condenser whose charge is built into the material, so the capsule itself needs no voltage; common in affordable and miniature mics.</li></ul></li>' +
-      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8, with smooth, warm highs; low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives, and check before sending phantom power to an older passive one.</li></ul>',
+      '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Its pickup pattern changes more with frequency, so sound arriving from the sides or back has a different tone (often duller) than from the front; see the diagram below.</li>' +
+      '<li><b>Small diaphragm</b> (“pencil”, about ½″): more neutral, with quick transients, and nearly the same pattern at all frequencies, so off-axis sound keeps its tone; for acoustic instruments, overheads, and stereo pairs.</li>' +
+      '<li><b>Electret</b>: a condenser whose charge is built into the material, so the capsule itself needs no voltage; common in affordable and miniature mics.</li></ul>%DIAGRAM%</li>' +
+      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8. Its highs roll off gently from about 8–10 kHz, which softens sibilance, bright strings, and cymbals: that\'s what “smooth” or “warm” means here. Low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives, and check before sending phantom power to an older passive one.</li></ul>',
     'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
     'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
     'Max SPL': 'The loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies, typically 0.5–1 %).',
     'Impedance': 'The output impedance. Pro mics are typically 50–300 Ω, which any modern preamp handles; it rarely matters when comparing mics.',
     'Range': 'The rated frequency range, as the manufacturer states it. Outside it, the curve is drawn faded.',
   };
+  // Column help as HTML; the Type help gets a diagram of two real mics' polar patterns at three
+  // frequencies: a large diaphragm's pattern changes shape with frequency, a small diaphragm's hardly does.
+  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '');
+  function typeDiagram() {
+    const FREQS = [[1000, 'var(--ink-2)', '1 kHz'], [8000, '#d95926', '8 kHz'], [16000, '#3987e5', '16 kHz']];
+    const plot = (name, label) => {
+      const e = LIBRARY.find(x => x.name === name), oa = e && e.offaxis;
+      if (!oa) return '';
+      const R = 50, c = 60, rad = db => R * Math.max(0, 1 + db / 30);
+      let g = [0, -10, -20].map(d => `<circle cx="${c}" cy="${c}" r="${rad(d)}" fill="none" stroke="var(--grid)"/>`).join('')
+        + `<line x1="${c}" y1="${c - R}" x2="${c}" y2="${c + R}" stroke="var(--grid)"/><line x1="${c - R}" y1="${c}" x2="${c + R}" y2="${c}" stroke="var(--grid)"/>`;
+      for (const [f, col] of FREQS) {
+        const pts = [];
+        for (let a = 0; a <= 360; a += 5) { const r = rad(polarDb(oa, f, a > 180 ? 360 - a : a)), th = a * Math.PI / 180; pts.push(`${(c + r * Math.sin(th)).toFixed(1)},${(c - r * Math.cos(th)).toFixed(1)}`); }
+        g += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+      }
+      return `<figure><svg viewBox="0 0 120 118" width="120" height="118">${g}<text x="${c}" y="7" text-anchor="middle" font-size="7" fill="var(--muted)">front</text></svg><figcaption>${label}</figcaption></figure>`;
+    };
+    return `<div class="type-diagram">${plot('Neumann U 87 Ai (cardioid)', 'Large diaphragm<br><span>U 87 Ai, cardioid</span>')}${plot('Schoeps MK 4', 'Small diaphragm<br><span>Schoeps MK 4</span>')}</div>`
+      + `<div class="type-legend">${FREQS.map(([, col, l]) => `<span><i style="background:${col}"></i>${l}</span>`).join('')} · rings every 10 dB</div>`;
+  }
   function drawList() {
     const table = $('micTable');
     $('micEmpty').hidden = state.mics.length > 0;
     table.hidden = !state.mics.length;
     const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
     table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="toggle" aria-label="Show"></th><th class="tight" aria-label="Remove"></th>${['Pattern', 'Type', 'Sensitivity', 'Self-noise', 'Max SPL', 'Impedance', 'Range'].map(h =>
-      `<th class="help" data-help="${h}" title="${esc(COL_HELP[h].replace(/<[^>]+>/g, ''))}">${h}</th>`).join('')}</tr></thead>`;
+      `<th class="help" data-help="${h}" title="${esc(COL_HELP[h].replace('%DIAGRAM%', ' ').replace(/<[^>]+>/g, ''))}">${h}</th>`).join('')}</tr></thead>`;
     const tbody = document.createElement('tbody');
     for (const m of state.mics) {
       const sp = m.specs || {};
@@ -1697,6 +1764,7 @@
     document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
     document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
     document.querySelectorAll('#soundSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sound === (s.sound || 'piano'))));
+    $('chord').value = chordOf()[0];
     $('sensHint').hidden = polar || s.normMode !== 'sens';
     $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
     $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
@@ -1879,7 +1947,7 @@
   // Tap a table column header: what that column means.
   $('micTable').addEventListener('click', ev => {
     const th = ev.target.closest('th[data-help]');
-    if (th) showTip(th, COL_HELP[th.dataset.help], th.dataset.help);
+    if (th) showTip(th, helpHtml(th.dataset.help), th.dataset.help);
   });
   document.addEventListener('pointerdown', ev => {
     if (!ev.target.closest('.controls .field > .cap, .ranges-bar .field > .cap, th[data-help], .polar-info, #capTip')) $('capTip').hidden = true;
@@ -1991,6 +2059,9 @@
     syncControls();
     update();
     if (state.mics.length) $('addBox').open = false;
+    // Notes & Instruments: open or closed as it was left.
+    if (st.rangesOpen) $('rangesBox').open = true;
+    $('rangesBox').addEventListener('toggle', () => { state.settings.rangesOpen = $('rangesBox').open; save(); });
   });
   let lastW = 0;
   new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); drawRanges(); } }).observe($('chartWrap'));
