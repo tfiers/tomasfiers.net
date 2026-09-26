@@ -796,17 +796,20 @@
   const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
   $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
   $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
-  // Tapping the dots: they hop one by one with a little Cmaj7 arpeggio, and the chord switch appears (or goes away).
+  // Tapping the dots: they hop one by one with a jazz chord (tension on opening, resolution on closing), and the chord switch appears (or goes away).
   function triadTapped(tg) {
     const st = state.settings;
     st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
     tg.classList.toggle('on', !!st.chords);
     tg.classList.remove('hop', 'arrive'); void tg.getBoundingClientRect(); tg.classList.add('hop');
     setTimeout(() => tg.classList.remove('hop'), 700);
+    // A jazz chord around C₃, played as one (lightly rolled): opening is the tension, a G13♭9; closing is
+    // the resolution, a Cmaj9.
     audio();
-    const t = actx.currentTime;
-    (st.chords ? [72, 76, 79, 83] : [83, 79, 76, 72]).forEach((n, i) => setTimeout(() => playOne(n, false, 0.45), i * 90));
-    rtaColor = noteColor(0); rtaUntil = Math.max(rtaUntil, t + 2.5);
+    const t = actx.currentTime, notes = st.chords ? [43, 53, 59, 64, 68] : [48, 52, 59, 62, 67];
+    notes.forEach((n, i) => setTimeout(() => playOne(n, false, 0.5 / Math.sqrt(notes.length)), i * 18));
+    if (rangesHover) { rangesHover.press(notes); setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 900); }
+    rtaColor = noteColor(st.chords ? 7 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
     if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
   const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
