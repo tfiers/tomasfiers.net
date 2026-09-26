@@ -282,21 +282,15 @@
   button.inst-edit { position: absolute; top: 9px; right: 0; font-size: 0.8rem; padding: 3px 10px; }
   #chordField[hidden] { display: none; }
   #chordSeg button { padding: 2px 7px; min-width: 28px; }
-  /* The four dots: a Cmaj7 (C, E, G, B), small and faint next to the keyboard's top end. Tap them for chords. */
+  /* The three dots: a C major triad (C, E, G) next to the keyboard's top end. Tap them for chords.
+     Still at rest; they only move when tapped. */
   svg .triad { cursor: pointer; }
-  svg .triad circle.dot { transform-box: fill-box; transform-origin: center; animation: breathe 3.2s ease-in-out infinite; }
-  svg .triad circle.dot:nth-of-type(2) { animation-delay: 0.4s; }
-  svg .triad circle.dot:nth-of-type(3) { animation-delay: 0.8s; }
-  svg .triad circle.dot:nth-of-type(4) { animation-delay: 1.2s; }
-  @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.08); opacity: 0.65; } }
-  svg .triad.on circle.dot { animation: none; opacity: 0.9; }
-  svg .triad.arrive circle.dot { animation: triad-in 0.5s ease-out backwards; }
+  svg .triad circle.dot { transform-box: fill-box; transform-origin: center; opacity: 0.55; }
+  svg .triad.on circle.dot { opacity: 0.9; }
   svg .triad.hop circle.dot { animation: triad-hop 0.35s ease-out; }
-  svg .triad.arrive circle.dot:nth-of-type(2), svg .triad.hop circle.dot:nth-of-type(2) { animation-delay: 0.09s; }
-  svg .triad.arrive circle.dot:nth-of-type(3), svg .triad.hop circle.dot:nth-of-type(3) { animation-delay: 0.18s; }
-  svg .triad.arrive circle.dot:nth-of-type(4), svg .triad.hop circle.dot:nth-of-type(4) { animation-delay: 0.27s; }
-  @keyframes triad-in { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 0.4; } }
-  @keyframes triad-hop { 0%, 100% { transform: translateY(0); opacity: 0.9; } 40% { transform: translateY(-3px) scale(1.15); opacity: 1; } }
+  svg .triad.hop circle.dot:nth-of-type(2) { animation-delay: 0.05s; }
+  svg .triad.hop circle.dot:nth-of-type(3) { animation-delay: 0.1s; }
+  @keyframes triad-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-3px) scale(1.15); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { svg .triad circle.dot { animation: none !important; } }
   /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
   .stop-tone[hidden] { display: none; }
@@ -796,17 +790,17 @@
   const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
   $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
   $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
-  // Tapping the dots: they hop one by one with a jazz chord (tension on opening, resolution on closing), and the chord switch appears (or goes away).
+  // Tapping the dots: they hop, with a chord (G7 on opening, resolving to C major on closing), and the chord switch appears (or goes away).
   function triadTapped(tg) {
     const st = state.settings;
     st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
     tg.classList.toggle('on', !!st.chords);
-    tg.classList.remove('hop', 'arrive'); void tg.getBoundingClientRect(); tg.classList.add('hop');
+    tg.classList.remove('hop'); void tg.getBoundingClientRect(); tg.classList.add('hop');
     setTimeout(() => tg.classList.remove('hop'), 700);
-    // A jazz chord around C₃, played as one (lightly rolled): opening is the tension, a G13♭9; closing is
-    // the resolution, a Cmaj9.
+    // A chord around C₃, played as one (lightly rolled): opening is the tension, a G7; closing is the
+    // resolution, C major.
     audio();
-    const t = actx.currentTime, notes = st.chords ? [43, 53, 59, 64, 68] : [48, 52, 59, 62, 67];
+    const t = actx.currentTime, notes = st.chords ? [43, 50, 53, 59] : [48, 52, 55, 60];
     notes.forEach((n, i) => setTimeout(() => playOne(n, false, 0.5 / Math.sqrt(notes.length)), i * 18));
     if (rangesHover) { rangesHover.press(notes); setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 900); }
     rtaColor = noteColor(st.chords ? 7 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
@@ -846,7 +840,7 @@
     audio();
     if (!state.settings.played) {
       state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove());
-      setTimeout(() => { if (rangesHover) rangesHover.addTriad(true); }, 900);
+      setTimeout(() => { if (rangesHover) rangesHover.addTriad(); }, 900);
     }
     const hold = state.settings.sound === 'held';
     if (!(hold && add && held)) releaseHeld();
@@ -1479,17 +1473,17 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
-      // The four dots (once a note has been played): a Cmaj7, C, E, G, and B in their note colours,
+      // The three dots (once a note has been played): a C major triad, C, E, and G in their note colours,
       // just right of the keyboard's top end. Tap them for the chord switch.
-      addTriad(arrive) {
+      addTriad() {
         if (kb.querySelector('.triad')) return;
-        const x = keys[108][5] + 10, y = kbY + kbH;
-        const tg = el('g', { class: 'triad' + (arrive ? ' arrive' : '') + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
+        const x = keys[108][5] + 16, y = kbY + kbH;
+        const tg = el('g', { class: 'triad' + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
         el('title', {}, tg).textContent = '♫';
-        // A Cmaj7 as a small diamond (C at the bottom, then E, G, and B going round), low on the keys' side.
-        const r = Math.min(2.8, kbH / 8), d = r * 2.3, cy = -d - r - 1.5;
-        el('rect', { x: -4, y: -kbH - 4, width: 2 * d + 8, height: kbH + 6, fill: 'transparent' }, tg);   // easier to tap
-        [[270, 0], [0, 4], [180, 7], [90, 11]].forEach(([deg, pc]) => el('circle', { class: 'dot', cx: d + d * Math.cos(deg * Math.PI / 180), cy: cy - d * Math.sin(deg * Math.PI / 180), r, fill: noteColor(pc) }, tg));
+        // An equilateral triangle (C bottom left, E bottom right, G on top), centred on the keys' height.
+        const r = Math.min(3.2, kbH / 7), R = r * 1.7, cy = -kbH / 2 + R * 0.25;
+        el('rect', { x: -6, y: -kbH - 4, width: 2 * R + 12, height: kbH + 6, fill: 'transparent' }, tg);   // easier to tap
+        [[210, 0], [330, 4], [90, 7]].forEach(([deg, pc]) => el('circle', { class: 'dot', cx: R + R * Math.cos(deg * Math.PI / 180), cy: cy - R * Math.sin(deg * Math.PI / 180), r, fill: noteColor(pc) }, tg));
         tg.addEventListener('pointerdown', ev => ev.stopPropagation());
         tg.addEventListener('pointermove', ev => ev.stopPropagation());
         tg.addEventListener('click', ev => { ev.stopPropagation(); triadTapped(tg); });
@@ -1516,7 +1510,7 @@
       },
     };
     if (held) rangesHover.press(held.notes);
-    if (state.settings.played) rangesHover.addTriad(false);
+    if (state.settings.played) rangesHover.addTriad();
     const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
     k.textContent = 'Faded top ends: approx. instrument limits, and overtones (up to the 8th harmonic)';
     if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top ends: approx. limits, and overtones (up to the 8th harmonic)';
