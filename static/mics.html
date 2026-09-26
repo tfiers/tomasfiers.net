@@ -135,9 +135,9 @@
   }
   .tip .f { font-weight: 600; margin-bottom: 4px; }
   .tip .cents { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
-  sub.oct { font-size: 0.72em; vertical-align: -0.2em; line-height: 0; }
+  sub.oct { font-size: 0.72em; vertical-align: -0.08em; line-height: 0; }
   svg tspan.oct { font-size: 0.75em; }
-  .tip .note { white-space: nowrap; color: #fff; padding: 0 6px; border-radius: 5px; }
+  .tip .note { white-space: nowrap; color: #fff; padding: 1px 6px 2px; border-radius: 5px; }
   .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
   .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
@@ -695,11 +695,11 @@
     let i = 0, m, lowered = false;
     const put = (str, attrs) => { if (str) el('tspan', attrs, parent).textContent = str; };
     while ((m = re.exec(text))) {
-      put(text.slice(i, m.index) + m[1], lowered ? { dy: -2.5 } : {});
-      put(m[2], { class: 'oct', dy: 2.5 });
+      put(text.slice(i, m.index) + m[1], lowered ? { dy: -1.2 } : {});
+      put(m[2], { class: 'oct', dy: 1.2 });
       lowered = true; i = re.lastIndex;
     }
-    put(text.slice(i) || (lowered ? '\u200b' : ''), lowered ? { dy: -2.5 } : {});
+    put(text.slice(i) || (lowered ? '\u200b' : ''), lowered ? { dy: -1.2 } : {});
   }
   const noteHtml = f => {
     const nn = nearestNote(f);
@@ -1269,7 +1269,7 @@
     const g = $('ranges');
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
     const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
-    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 34, h = kbY + kbH + 48;
+    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 34, h = kbY + kbH + 51;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
@@ -1295,7 +1295,7 @@
       el('title', {}, row).textContent = `${label}: ${range}` + (softLo || softHi ? '. ± = a typical limit, not a hard one.' : '');
       el('rect', { x: xa, y, width: Math.max(0, xb - xa), height: 8, rx: 3, fill: `url(#rg${i})` }, row);
       // Label: the instrument name, then its range in lighter, smaller type.
-      const t = el('text', { x: xOf(mf(lo)), y: y - 3, class: 'rl' }, row);
+      const t = el('text', { x: xOf(mf(lo)), y: y - 4, class: 'rl' }, row);
       const setLabel = name => {
         t.textContent = '';
         el('tspan', { class: 'rl-name' }, t).textContent = name;
@@ -1326,9 +1326,9 @@
       const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
       noteText(t, 'C' + o);
     }
-    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 24, 'text-anchor': 'end', style: `fill:${noteColor(0)}` }, kb);
+    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 27, 'text-anchor': 'end', style: `fill:${noteColor(0)}` }, kb);
     mc.textContent = 'middle C';
-    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: `fill:${noteColor(9)}` }, kb);
+    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 27, 'text-anchor': 'start', style: `fill:${noteColor(9)}` }, kb);
     noteText(a4, 'A4 = 440 Hz');
     // A small hint that the keys play, next to the keyboard's top end; gone once a note has been played.
     if (!state.settings.played) {
