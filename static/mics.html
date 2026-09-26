@@ -235,7 +235,11 @@
   details { margin-top: 12px; }
   #rangesBox { margin-top: 4px; }
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; }
-  button.inst-edit { color: var(--accent); font-size: 0.82rem; padding: 4px 0 0; }
+  svg .rl-name { fill: var(--ink-2); font-weight: 500; }
+  svg .rl-range { fill: var(--muted); font-size: 9.5px; opacity: 0.85; }
+  button.inst-edit { display: block; width: max-content; color: var(--accent); font-size: 0.82rem; padding: 0; margin-top: -18px; position: relative; }
+  /* Next to the legend line; on narrow screens the legend fills that line, so go below it. */
+  @media (max-width: 620px) { button.inst-edit { margin-top: 4px; } }
   .inst-chips .lib-head { margin-top: 8px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .inst-chips { margin: 2px 0 6px; }
   .inst-chips .chip { padding: 2px 8px; font-size: 0.8rem; }
@@ -327,9 +331,9 @@
       </div>
       <details id="rangesBox" class="resp-only">
         <summary>Instrument ranges</summary>
+        <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
         <button type="button" class="link inst-edit" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
         <div id="instChips" class="inst-chips" hidden></div>
-        <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
       </details>
       <p class="hint" id="polarWarn" hidden></p>
       <div class="hint note" id="polarNote" hidden></div>
@@ -940,13 +944,19 @@
       else { stop(xOf(mf(hi)), 0.85); stop(xOf(mf(hi)), 0.22); }
       stop(xb, 0.12);
       const row = el('g', {}, g);
-      const range = `${softLo ? '~' : ''}${nm(lo)} (${fmtHzShort(mf(lo))}) – ${softHi ? '~' : ''}${nm(hi)} (${fmtHzShort(mf(hi))})`;
-      el('title', {}, row).textContent = `${label}: ${range}` + (softLo || softHi ? '. ~ = a typical limit, not a hard one.' : '');
+      const range = `${softLo ? '±' : ''}${nm(lo)} (${fmtHzShort(mf(lo))}) – ${softHi ? '±' : ''}${nm(hi)} (${fmtHzShort(mf(hi))})`;
+      el('title', {}, row).textContent = `${label}: ${range}` + (softLo || softHi ? '. ± = a typical limit, not a hard one.' : '');
       el('rect', { x: xa, y, width: Math.max(0, xb - xa), height: 8, rx: 3, fill: `url(#rg${i})` }, row);
-      const t = el('text', { x: xOf(mf(lo)), y: y - 3 }, row);
-      t.textContent = `${label} · ${range}`;
+      // Label: the instrument name, then its range in lighter, smaller type.
+      const t = el('text', { x: xOf(mf(lo)), y: y - 3, class: 'rl' }, row);
+      const setLabel = name => {
+        t.textContent = '';
+        el('tspan', { class: 'rl-name' }, t).textContent = name;
+        el('tspan', { class: 'rl-range', dx: 5 }, t).textContent = range;
+      };
+      setLabel(label);
       // Narrow screens: drop the label's parenthetical, and slide it left so it stays inside the chart.
-      if (t.getComputedTextLength() > W - 8) t.textContent = `${label.replace(/ \(.*\)/, '')} · ${range}`;
+      if (t.getComputedTextLength() > W - 8) setLabel(label.replace(/ \(.*\)/, ''));
       const over = xOf(mf(lo)) + t.getComputedTextLength() - (W - 4);
       if (over > 0) t.setAttribute('x', Math.max(4, xOf(mf(lo)) - over));
     });
@@ -971,7 +981,7 @@
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
     a4.textContent = 'A4 = 440 Hz';
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
-    k.textContent = 'Light: overtones · fading end (~): approximate limit';
+    k.textContent = 'Light: overtones · fading end (±): approximate limit';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
   $('instEdit').onclick = () => {
