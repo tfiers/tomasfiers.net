@@ -253,6 +253,21 @@
   .cap-tip b { color: var(--ink); font-weight: 600; }
   .cap-tip p, .cap-tip ul { margin: 0; white-space: normal; }
   .cap-tip ul { padding-left: 1.1em; margin-top: 4px; }
+  .type-schematics { display: flex; gap: 8px; margin: 8px 0 6px; }
+  .type-schematics figure { flex: 1 1 0; min-width: 0; margin: 0; text-align: center; font-size: 0.68rem; line-height: 1.25; }
+  .type-schematics figcaption span { font-size: 0.64rem; }
+  .type-schematics svg { width: 100%; max-width: 150px; height: auto; display: block; margin: 0 auto 2px; }
+  .type-schematics figcaption span { color: var(--muted); }
+  .ts-wave { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
+  .ts-dia { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .ts-thin { fill: none; stroke: var(--ink-2); stroke-width: 1; }
+  .ts-coil { fill: #d95926; }
+  .ts-mag { fill: var(--muted); opacity: 0.55; }
+  .ts-plate { fill: var(--ink-2); opacity: 0.7; }
+  .ts-hole { fill: var(--surface); }
+  .ts-fold { stroke: var(--accent); stroke-width: 0.6; opacity: 0.6; }
+  .ts-t { font-size: 7px; fill: var(--muted); }
+  .ts-pole { font-size: 9px; font-weight: 600; fill: var(--ink-2); }
   .type-diagram { display: flex; gap: 10px; justify-content: center; margin: 8px 0 2px; }
   .type-diagram figure { margin: 0; text-align: center; font-size: 0.72rem; line-height: 1.25; }
   .type-diagram figcaption span { color: var(--muted); }
@@ -1734,7 +1749,7 @@
   // What each column of the Selected microphones table means (header tooltip, and popup on tap).
   const COL_HELP = {
     'Pattern': 'The polar pattern: the directions the mic picks up from. <b>Cardioid</b>: mostly from the front. <b>Super- / hypercardioid</b>: narrower, with a small lobe at the back. <b>Omni</b>: all around. <b>Figure-8</b>: front and back, not the sides.',
-    'Type': 'How the mic turns sound into a signal.<ul>' +
+    'Type': 'How the mic turns sound into a signal.%TYPES%<ul>' +
       '<li><b>Dynamic</b>: a light coil on the diaphragm moves in a magnet. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</li>' +
       '<li><b>Condenser</b>: a very thin diaphragm next to a fixed plate, together a charged capacitor; sound changes the gap and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).<ul>' +
       '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Its pickup pattern changes more with frequency, so sound arriving from the sides or back has a different tone (often duller) than from the front; see the diagram below.</li>' +
@@ -1749,7 +1764,34 @@
   };
   // Column help as HTML; the Type help gets a diagram of two real mics' polar patterns at three
   // frequencies: a large diaphragm's pattern changes shape with frequency, a small diaphragm's hardly does.
-  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '');
+  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '').replace('%TYPES%', key === 'Type' ? typeSchematics() : '');
+  // Three simple cross-sections: how a dynamic, a condenser, and a ribbon mic turn sound into a signal.
+  function typeSchematics() {
+    const waves = x => [0, 6, 12].map(d => `<path d="M${x + d} 38 q-5 12 0 24" class="ts-wave"/>`).join('');
+    const svg = (body, label) => `<figure><svg viewBox="0 0 120 100">${body}</svg><figcaption>${label}</figcaption></figure>`;
+    const dyn = svg(`${waves(6)}
+      <path d="M36 18 q8 32 0 64" class="ts-dia"/>
+      <path d="M39 39 h22 M39 61 h22" class="ts-thin"/>
+      <rect x="61" y="35.5" width="8" height="7" class="ts-coil"/><rect x="61" y="57.5" width="8" height="7" class="ts-coil"/>
+      <path d="M62 24 h44 v52 h-44 v-10 h8 v-10 h-6 v-12 h6 v-10 h-8 z" class="ts-mag"/>
+      <text x="36" y="93" class="ts-t" text-anchor="middle">diaphragm</text><text x="52" y="31" class="ts-t" text-anchor="middle">coil</text>
+      <text x="85" y="18" class="ts-t" text-anchor="middle">magnet</text>`, '<b>Dynamic</b><br><span>a coil on the diaphragm moves in a magnet’s field</span>');
+    const con = svg(`${waves(6)}
+      <path d="M40 18 q3 32 0 64" class="ts-dia"/>
+      <rect x="50" y="18" width="10" height="64" class="ts-plate"/>
+      ${[26, 38, 50, 62, 74].map(y => `<rect x="50" y="${y}" width="10" height="3" class="ts-hole"/>`).join('')}
+      <path d="M40 18 v-6 h40 M55 18 v-2 h25" class="ts-thin"/><text x="84" y="16" class="ts-t">+ V</text>
+      <text x="40" y="93" class="ts-t" text-anchor="middle">diaphragm</text><text x="84" y="52" class="ts-t">back-</text><text x="84" y="61" class="ts-t">plate</text>`,
+      '<b>Condenser</b><br><span>diaphragm and plate form a charged capacitor; sound changes the gap</span>');
+    const rib = svg(`<rect x="18" y="18" width="24" height="64" class="ts-mag"/><rect x="78" y="18" width="24" height="64" class="ts-mag"/>
+      <text x="30" y="54" class="ts-t ts-pole" text-anchor="middle">N</text><text x="90" y="54" class="ts-t ts-pole" text-anchor="middle">S</text>
+      <path d="M53 18 ${Array.from({ length: 16 }, (_, i) => `l${i % 2 ? -3 : 3} 4`).join(' ')}" class="ts-dia"/>
+      <path d="M67 18 ${Array.from({ length: 16 }, (_, i) => `l${i % 2 ? -3 : 3} 4`).join(' ')}" class="ts-dia"/>
+      ${Array.from({ length: 16 }, (_, i) => `<path d="M${53 + (i % 2 ? 3 : 0)} ${18 + i * 4} h14" class="ts-fold"/>`).join('')}
+      <text x="60" y="93" class="ts-t" text-anchor="middle">ribbon (seen from the front)</text>`,
+      '<b>Ribbon</b><br><span>a thin, pleated metal ribbon moves between two magnet poles</span>');
+    return `<div class="type-schematics">${dyn}${con}${rib}</div>`;
+  }
   function typeDiagram() {
     const FREQS = [[1000, 'var(--ink-2)', '1 kHz'], [8000, '#d95926', '8 kHz'], [16000, '#3987e5', '16 kHz']];
     const plot = (name, label) => {
