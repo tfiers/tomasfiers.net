@@ -65,14 +65,20 @@
     #specPanel { order: 3; }
   }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
-  .controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
+  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
+  @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level { grid-column: 1 / -1; } }
+  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .field .cap { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .field select { width: 100%; height: 30px; }
+  .field .row { display: flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
+  .field .row select { flex: 1; min-width: 0; }
+  #normFreqBox { white-space: nowrap; }
+  #normFreq { width: 4.5em; height: 30px; }
   select, input[type=number], input[type=text], textarea {
     font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--page);
     border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
   }
   select { max-width: 100%; min-width: 0; }
-  .controls label { max-width: 100%; }
   input[type=number] { width: 5.5em; }
   textarea { width: 100%; min-height: 140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; }
   button {
@@ -116,6 +122,8 @@
   .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; white-space: nowrap; }
   .chip .plus { color: var(--muted); }
   .chip.on { border-color: var(--muted); font-weight: 600; }
+  .chip.icon { padding: 2px 7px; }
+  .chip .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; stroke-linejoin: round; }
   .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   .chip-group { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-top: 6px;
     overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -153,36 +161,42 @@
     <div class="main-col">
     <section class="panel" id="chartPanel">
       <div class="controls">
-        <label>Level
-          <select id="normMode">
-            <option value="freq">0 dB at</option>
-            <option value="mean">0 dB = 200–5k average</option>
-            <option value="sens">output (sensitivity, dBV/Pa)</option>
-            <option value="none">as in the source</option>
-          </select>
-          <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
-        </label>
-        <label>Smoothing
+        <div class="field field-level">
+          <span class="cap">Level</span>
+          <div class="row">
+            <select id="normMode">
+              <option value="freq">0 dB at</option>
+              <option value="mean">0 dB = 200 Hz–5 kHz average</option>
+              <option value="sens">Output (sensitivity, dBV/Pa)</option>
+              <option value="none">As in the source</option>
+            </select>
+            <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
+          </div>
+        </div>
+        <label class="field">
+          <span class="cap">Smoothing</span>
           <select id="smooth">
-            <option value="0">none</option>
-            <option value="24">1/24 oct</option>
-            <option value="12">1/12 oct</option>
-            <option value="6">1/6 oct</option>
-            <option value="3">1/3 oct</option>
-            <option value="1">1 oct</option>
+            <option value="0">None</option>
+            <option value="24">1/24 octave</option>
+            <option value="12">1/12 octave</option>
+            <option value="6">1/6 octave</option>
+            <option value="3">1/3 octave</option>
+            <option value="1">1 octave</option>
           </select>
         </label>
-        <label>Relative to
-          <select id="refMic"><option value="">— nothing —</option></select>
+        <label class="field">
+          <span class="cap">Relative to</span>
+          <select id="refMic"><option value="">—</option></select>
         </label>
-        <label>Y range
+        <label class="field">
+          <span class="cap">Y range</span>
           <select id="yRange">
             <option value="-10,5">+5 / −10 dB</option>
             <option value="5">±5 dB</option>
-            <option value="auto">auto</option>
             <option value="10">±10 dB</option>
             <option value="20">±20 dB</option>
             <option value="30">±30 dB</option>
+            <option value="auto">Auto</option>
           </select>
         </label>
       </div>
@@ -213,9 +227,10 @@
           <summary>Library</summary>
           <div id="libChips"></div>
           <details id="libInfo">
-            <summary>About these curves</summary>
+            <summary>About the mics on the chart</summary>
             <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these. Faded parts of a curve lie outside the manufacturer's rated frequency range.</p>
             <ul class="mics" id="libList"></ul>
+            <p class="hint" id="libInfoEmpty">Add a mic from the library to see its details here.</p>
           </details>
         </details>
 
@@ -610,7 +625,7 @@
       ul.appendChild(li);
     }
     const sel = $('refMic');
-    sel.innerHTML = '<option value="">— nothing —</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
+    sel.innerHTML = '<option value="">—</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
     sel.value = state.settings.ref;
   }
   function resolvedHex(m) {
@@ -677,8 +692,22 @@
     if (entry.specs) m.specs = { ...entry.specs };
     return m;
   }
-  const PATTERN_SHORT = { 'Cardioid': 'card', 'Omni': 'omni', 'Hypercardioid': 'hyper', 'Figure-8': 'fig-8',
-    'Wide cardioid': 'wide', 'with XLR adapter': 'XLR', '20 cm': '20 cm' };
+  // Polar-pattern icon: r(θ) = |a + (1−a)·cos θ|, front pointing up.
+  const PATTERN_A = { 'Omni': 1, 'Wide cardioid': 0.7, 'Cardioid': 0.5, 'Supercardioid': 0.37, 'Hypercardioid': 0.25, 'Figure-8': 0 };
+  function patternIcon(pattern) {
+    const a = PATTERN_A[pattern];
+    if (a === undefined) return null;
+    const pts = [];
+    for (let k = 0; k <= 72; k++) {
+      const t = k / 72 * 2 * Math.PI, r = Math.abs(a + (1 - a) * Math.cos(t));
+      pts.push([r * Math.sin(t), -r * Math.cos(t)]);
+    }
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + (p[0] - cx).toFixed(3) + ' ' + (p[1] - cy).toFixed(3)).join('') + 'Z';
+    return `<svg class="pat" viewBox="-1.15 -1.15 2.3 2.3" aria-hidden="true"><path d="${d}"/></svg>`;
+  }
+  const VARIANT_SHORT = { 'with XLR adapter': 'XLR', '20 cm': '20 cm' };
   function drawLibrary() {
     const chips = $('libChips'), ul = $('libList');
     chips.innerHTML = ''; ul.innerHTML = '';
@@ -686,11 +715,12 @@
     const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
     const split = models.some(m => !owned(m));
     // Chip for one library entry: tap to add, tap again to remove.
-    const chip = (entry, label, plus = true) => {
+    const chip = (entry, label, plus = true, icon = null) => {
       const m = state.mics.find(x => x.lib === entry.name);
       const btn = document.createElement('button');
-      btn.className = 'chip' + (m ? ' on' : '');
-      btn.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : plus ? '<span class="plus">+</span>' : '') + esc(label);
+      btn.className = 'chip' + (m ? ' on' : '') + (icon ? ' icon' : '');
+      btn.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : plus ? '<span class="plus">+</span>' : '') + (icon || esc(label));
+      if (icon) btn.setAttribute('aria-label', (m ? 'Remove ' : 'Add ') + entry.name);
       btn.title = (m ? 'Remove ' : 'Add ') + entry.name;
       btn.onclick = () => {
         if (m) {
@@ -723,7 +753,7 @@
         const g = document.createElement('div');
         g.className = 'chip-group';
         g.innerHTML = `<span class="chip-model">${esc(model)}</span>`;
-        for (const e of variants(model)) g.appendChild(chip(e, PATTERN_SHORT[e.pattern] || e.pattern, false));
+        for (const e of variants(model)) g.appendChild(chip(e, VARIANT_SHORT[e.pattern] || e.pattern, false, patternIcon(e.pattern)));
         chips.appendChild(g);
         // Fade the right edge while there is more to scroll to.
         const edge = () => g.classList.toggle('more', g.scrollLeft + g.clientWidth < g.scrollWidth - 2);
@@ -731,8 +761,10 @@
         requestAnimationFrame(edge);
       }
     }
-    // Details (description, source, links) live in the collapsed "About these curves".
-    for (const model of [...models.filter(owned), ...models.filter(m => !owned(m))]) {
+    // Details (description, source, links) for the library mics currently on the chart.
+    const shown = models.filter(model => LIBRARY.some(e => (e.model || e.name) === model && state.mics.some(x => x.lib === e.name)));
+    $('libInfoEmpty').hidden = shown.length > 0;
+    for (const model of shown) {
       const e0 = LIBRARY.find(e => (e.model || e.name) === model);
       const links = [
         e0.graph ? `<a href="${esc(e0.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
