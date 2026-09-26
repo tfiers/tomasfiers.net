@@ -181,7 +181,6 @@
         <div class="tip" id="tip"></div>
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
-      <p class="hint" id="fadeHint" hidden>Faded: outside the manufacturer's rated frequency range.</p>
       <details id="tableBox">
         <summary>Values at standard frequencies</summary>
         <div class="table-wrap" id="tableWrap"></div>
@@ -203,7 +202,7 @@
         <details id="libBox" open>
           <summary>Library</summary>
           <ul class="mics" id="libList"></ul>
-          <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these.</p>
+          <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these. Faded parts of a curve lie outside the manufacturer's rated frequency range.</p>
         </details>
 
         <details id="addBox" open>
@@ -461,7 +460,6 @@
     const i0 = Math.max(0, gridIndex(FMIN) - 1), i1 = Math.min(GRID.length - 1, gridIndex(FMAX) + 1);
     const visible = state.mics.filter(m => m.visible);
     const ends = [];
-    let anyFaded = false;
     for (const m of visible) {
       const c = curves.get(m.id);
       // Solid inside the maker's rated frequency range, faded outside it.
@@ -477,7 +475,6 @@
         prev = pt; prevIn = ir; last = i;
       }
       if (!dIn && !dOut) continue;
-      if (dOut) anyFaded = true;
       // Only dim the others while the hovered mic is actually on the chart.
       const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
       const attrs = {
@@ -488,7 +485,6 @@
       if (dIn) el('path', { ...attrs, d: dIn, opacity: dim ? 0.2 : 1 }, plot);
       if (last !== null) ends.push({ m, y: yOf(c[last]), x: xOf(GRID[last]) });
     }
-    $('fadeHint').hidden = !anyFaded;
     // Direct labels at line ends when there are few series (placed inside, right-aligned, de-overlapped)
     if (visible.length <= 8 && ends.length && W >= 520) {
       ends.sort((a, b) => a.y - b.y);
@@ -581,9 +577,8 @@
         <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
         <input type="color" title="Change color" value="${resolvedHex(m)}">
         <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
-        <span class="meta">${m.points.length} pts</span>
         <button class="link" title="Remove">✕</button>`;
-      const [cb, color, name, , del] = li.children;
+      const [cb, color, name, del] = li.children;
       cb.onchange = () => { m.visible = cb.checked; update(); };
       name.onclick = () => {
         const n = prompt('Rename mic', m.name);
