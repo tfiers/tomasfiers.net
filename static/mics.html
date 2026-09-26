@@ -968,7 +968,10 @@
     ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(cx + rot(1.02, 0, 0)[0] * R, cy - rot(1.02, 0, 0)[1] * R); ctx.lineTo(...tip); ctx.stroke();
     ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
     const lx = Math.max(18, Math.min(size - 18, tip[0])), ly = Math.max(12, Math.min(size - 4, tip[1] + (fr[1] >= 0 ? -6 : 14)));
-    ctx.fillText('front', lx, ly);
+    // Outlined in the background colour, so it stays readable over the shape.
+    ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fcfcfb';
+    ctx.strokeText('front', lx, ly); ctx.fillText('front', lx, ly);
   }
   // Drag on any balloon to rotate them all together.
   {
