@@ -56,9 +56,9 @@
   }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
   .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 860px) {
+  @media (max-width: 1100px) {
     .layout { grid-template-columns: minmax(0,1fr); }
-    /* Phones: mic list right under the chart, specs after it. */
+    /* Phones and tablets in portrait: one column, mic list right under the chart, library after it. */
     .main-col { display: contents; }
     #chartPanel { order: 1; }
     #micPanel { order: 2; }
@@ -866,9 +866,11 @@
 
   // Instrument ranges under the chart, on the same frequency axis: solid = the notes (fundamentals),
   // faint = their overtones, up to the 8th harmonic (three octaves up).
+  // [label, lowest note, highest note, soft low end?, soft high end?] (MIDI note numbers).
+  // A soft end is a typical limit rather than a hard one (voices; the violin's top): drawn faded.
   const RANGES = [
-    ['Violin', 55, 100], ['Female voice (alto–soprano)', 53, 84], ['Male voice (bass–tenor)', 40, 72],
-    ['Guitar', 40, 88], ['Piano (standard 88 keys)', 21, 108],
+    ['Violin', 55, 100, false, true], ['Female voice (alto–soprano)', 53, 84, true, true], ['Male voice (bass–tenor)', 40, 72, true, true],
+    ['Guitar', 40, 88, false, false], ['Piano (standard 88 keys)', 21, 108, false, false],
   ];
   function drawRanges() {
     const g = $('ranges');
@@ -881,14 +883,29 @@
     for (const f of [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
       el('line', { x1: xOf(f), x2: xOf(f), y1: 0, y2: kbY - 3, stroke: 'var(--grid)', 'stroke-width': 1 }, g);
     }
-    RANGES.forEach(([label, lo, hi], i) => {
-      const y = 16 + i * rowH, x0 = xOf(mf(lo)), x1 = xOf(mf(hi)), x2 = xOf(Math.min(FMAX, mf(hi) * 8));
+    const defs = el('defs', {}, g);
+    const fmtHzShort = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + ' kHz' : Math.round(f) + ' Hz';
+    RANGES.forEach(([label, lo, hi, softLo, softHi], i) => {
+      const y = 16 + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
+      const xa = xOf(mf(softLo ? lo - FADE : lo)), xb = xOf(Math.min(FMAX, mf(hi) * 8));
+      const at = x => ((x - xa) / (xb - xa)).toFixed(4);
+      // One bar per row; a gradient gives the solid notes, the faint overtones and the soft ends.
+      const grad = el('linearGradient', { id: 'rg' + i, gradientUnits: 'userSpaceOnUse', x1: xa, x2: xb, y1: 0, y2: 0 }, defs);
+      const stop = (x, o) => el('stop', { offset: at(x), 'stop-color': 'var(--accent)', 'stop-opacity': o }, grad);
+      if (softLo) { stop(xa, 0); stop(xOf(mf(lo + 2)), 0.85); } else stop(xa, 0.85);
+      if (softHi) { stop(xOf(mf(hi - 2)), 0.85); stop(xOf(mf(hi + FADE)), 0.22); }
+      else { stop(xOf(mf(hi)), 0.85); stop(xOf(mf(hi)), 0.22); }
+      stop(xb, 0.12);
       const row = el('g', {}, g);
-      el('title', {}, row).textContent = `${label}: ${nm(lo)}–${nm(hi)} (${Math.round(mf(lo))}–${Math.round(mf(hi))} Hz)`;
-      el('rect', { x: x1, y, width: Math.max(0, x2 - x1), height: 8, rx: 3, fill: 'var(--accent)', opacity: 0.22 }, row);
-      el('rect', { x: x0, y, width: x1 - x0, height: 8, rx: 3, fill: 'var(--accent)', opacity: 0.85 }, row);
-      const t = el('text', { x: x0, y: y - 3 }, row);
-      t.textContent = `${label} · ${nm(lo)}–${nm(hi)}`;
+      const range = `${softLo ? '~' : ''}${nm(lo)} (${fmtHzShort(mf(lo))}) – ${softHi ? '~' : ''}${nm(hi)} (${fmtHzShort(mf(hi))})`;
+      el('title', {}, row).textContent = `${label}: ${range}` + (softLo || softHi ? '. ~ = a typical limit, not a hard one.' : '');
+      el('rect', { x: xa, y, width: Math.max(0, xb - xa), height: 8, rx: 3, fill: `url(#rg${i})` }, row);
+      const t = el('text', { x: xOf(mf(lo)), y: y - 3 }, row);
+      t.textContent = `${label} · ${range}`;
+      // Narrow screens: drop the label's parenthetical, and slide it left so it stays inside the chart.
+      if (t.getComputedTextLength() > W - 8) t.textContent = `${label.replace(/ \(.*\)/, '')} · ${range}`;
+      const over = xOf(mf(lo)) + t.getComputedTextLength() - (W - 4);
+      if (over > 0) t.setAttribute('x', Math.max(4, xOf(mf(lo)) - over));
     });
     // The 88 piano keys under the piano row, at their frequencies. C's labelled; middle C and A4 = 440 Hz marked.
     const isBlack = n => [1, 3, 6, 8, 10].includes(n % 12);
@@ -911,7 +928,8 @@
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
     a4.textContent = 'A4 = 440 Hz';
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
-    k.textContent = 'solid: notes · faint: overtones (up to the 8th harmonic)';
+    k.textContent = 'solid: notes · faint: overtones (up to the 8th harmonic) · faded end / ~: no hard limit';
+    if (k.getComputedTextLength() > PW) k.textContent = 'solid: notes · faint: overtones · faded / ~: no hard limit';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
 
