@@ -744,11 +744,14 @@
   // Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the
   // angle) while listening; it follows those changes live. Tap the key again, or Stop, to end it.
   let held = null;   // { n, voices: [[oscillator, gain, harmonic]] }
-  const heldAmp = (k, f, gainAt) => 0.28 / k * gainAt(k * f);
+  // Warm rather than buzzy: the harmonics fall off faster than a sawtooth's 1/k (still all there, so a
+  // mic's highs stay audible), and a gentle vibrato (5 Hz, ±0.4 %) sets in over the first second.
+  const heldAmp = (k, f, gainAt) => 0.36 / k ** 1.6 * gainAt(k * f);
   function releaseHeld() {
     if (!held) return;
     const t = actx.currentTime;
-    for (const [osc, g] of held.voices) { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.08); osc.stop(t + 0.1); }
+    for (const [osc, g] of held.voices) { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.12); osc.stop(t + 0.15); }
+    held.lfo.stop(t + 0.15);
     held = null;
     rtaUntil = t + 0.15;
     $('stopTone').hidden = true;
@@ -764,7 +767,13 @@
     releaseHeld();
     const len = 1.2 + 3.5 * (108 - n) / 87;   // low notes ring longer
     const gainAt = throughGain();
-    if (hold) held = { n, voices: [] };
+    if (hold) {
+      const lfo = ctx.createOscillator(), depth = ctx.createGain();
+      lfo.frequency.value = 5; lfo.connect(depth);
+      depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(0, t + 0.3); depth.gain.linearRampToValueAtTime(1, t + 1.2);
+      lfo.start(t);
+      held = { n, voices: [], lfo, depth };
+    }
     for (let k = 1; k <= 16 && k * f < 18000; k++) {
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.frequency.value = k * f;
@@ -774,7 +783,9 @@
       osc.start(t);
       if (hold) {
         // Steady, all harmonics present (like a bowed or blown note), with a soft start.
-        g.gain.linearRampToValueAtTime(heldAmp(k, f, gainAt), t + 0.03);
+        g.gain.linearRampToValueAtTime(heldAmp(k, f, gainAt), t + 0.08);
+        const vib = ctx.createGain(); vib.gain.value = 0.004 * k * f;   // every harmonic wobbles by the same ratio
+        held.depth.connect(vib); vib.connect(osc.frequency);
         held.voices.push([osc, g, k]);
       } else {
         // The lowest notes' fundamentals are weak on a real piano, too.
