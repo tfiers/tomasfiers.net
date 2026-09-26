@@ -250,8 +250,8 @@
     <section class="panel" id="chartPanel">
       <div class="view-row">
       <div class="seg" id="viewSeg" role="tablist" aria-label="View">
-        <button type="button" role="tab" data-view="resp">Frequency</button>
-        <button type="button" role="tab" data-view="polar">Polar</button>
+        <button type="button" role="tab" data-view="resp" title="Response across frequencies, at one angle">Frequency</button>
+        <button type="button" role="tab" data-view="polar" title="Pickup in every direction, at one frequency">Polar</button>
       </div>
       <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
       </div>
@@ -263,7 +263,11 @@
         </ul>
       </div>
       <div class="controls">
-        <div class="field field-level resp-only">
+        <div class="field field-level resp-only" title="How the curves are lined up vertically.
+• As in the source: as the maker drew it (usually 0 dB at 1 kHz).
+• Output: shifted by the published sensitivity, so mics that give a stronger signal sit higher.
+• 0 dB at …: every curve passes through 0 dB at the frequency you choose.
+• 300 Hz–1 kHz average: every curve's average over that range is set to 0 dB.">
           <span class="cap">Level</span>
           <div class="row">
             <select id="normMode">
@@ -275,11 +279,11 @@
             <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
           </div>
         </div>
-        <div class="field resp-only">
+        <div class="field resp-only" title="Averages each curve over a fraction of an octave, to hide small wiggles and focus on the overall shape.">
           <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
           <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
         </div>
-        <label class="field resp-only">
+        <label class="field resp-only" title="The vertical scale of the chart.">
           <span class="cap">Y range</span>
           <select id="yRange">
             <option value="-10,5">+5 / −10 dB</option>
@@ -290,11 +294,11 @@
             <option value="auto">Auto</option>
           </select>
         </label>
-        <div class="field field-wide resp-only">
+        <div class="field field-wide resp-only" title="Where the sound comes from, relative to the front of the mic: 0° is straight on, 90° from the side, 180° from behind.">
           <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
           <input type="range" id="angle" min="0" max="180" step="15" value="0" aria-label="Angle">
         </div>
-        <div class="field field-wide polar-only">
+        <div class="field field-wide polar-only" title="Which frequency's polar pattern to show.">
           <span class="cap with-info">Frequency <span id="polarFLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
           <input type="range" id="polarF" min="0" max="6" step="1" value="2" aria-label="Frequency">
           <div class="ticks" aria-hidden="true"><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>16k</span></div>
