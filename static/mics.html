@@ -422,7 +422,7 @@
                 <button type="button" role="radio" data-sound="held">Held tone</button>
               </div>
             </div>
-            <div class="field play-opt" title="Play a chord on the key you tap (the key is the root): ♩ single note, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave). Several fingers also play several keys at once.">
+            <div class="field play-opt" title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave). Several fingers also play several keys at once.">
               <span class="cap">Chord</span>
               <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
             </div>
@@ -766,9 +766,10 @@
   // angle) while listening; it follows those changes live. Tap the key again, or Stop, to end it.
   // All harmonics up to 20 kHz sound, as in a real tone (the overtone lines only go to the 16th).
   let held = null;   // { roots: the keys tapped, notes: all that sound, voices: [{ f, osc, g, lfo }] }
+  const fingers = new Map();   // each finger (pointer) down on the keyboard → the key it's on (or null)
   // Chords: the key you tap is the root. [id, name in the menu, short name on the Stop button, semitones]
   // [id, button, name (tooltip), suffix on the Stop button, semitones]
-  const CHORDS = [['', '♩', 'Single note', '', [0]], ['maj', 'M', 'Major', 'major', [0, 4, 7]], ['min', 'm', 'Minor', 'minor', [0, 3, 7]],
+  const CHORDS = [['', 'Off', 'Off: single notes', '', [0]], ['maj', 'M', 'Major', 'major', [0, 4, 7]], ['min', 'm', 'Minor', 'minor', [0, 3, 7]],
     ['7', '7', 'Dominant 7th', '7', [0, 4, 7, 10]], ['maj7', 'M7', 'Major 7th', 'maj7', [0, 4, 7, 11]], ['m7', 'm7', 'Minor 7th', 'm7', [0, 3, 7, 10]],
     ['5', '5', 'Power chord: root, 5th, and octave', '5', [0, 7, 12]]];
   const chordOf = () => CHORDS.find(c => c[0] === state.settings.chord) || CHORDS[0];
@@ -824,7 +825,7 @@
     }
     if (rangesHover) {
       rangesHover.press(hold ? held.notes : notes);
-      if (!hold) { clearTimeout(playNote.unpress); playNote.unpress = setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 450); }
+      if (!hold) { clearTimeout(playNote.unpress); playNote.unpress = setTimeout(() => { if (!held && rangesHover && fingers.size < 2) rangesHover.press([]); }, 450); }
     }
     if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
@@ -1463,8 +1464,7 @@
   {
     // Over the piano, the readout snaps to the key under the pointer; pressing a key plays it, and
     // dragging across the keys with the button (or finger) down plays each key it reaches.
-    // Each finger (pointer) that's down, and the key it's on: several fingers play several keys.
-    const fingers = new Map();
+    // Several fingers play several keys (each finger tracked on its own).
     const onMove = ev => {
       if (!rangesHover) return;
       const pt = $('ranges').createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
@@ -1478,15 +1478,28 @@
         if (n !== null) playNote(n, fingers.size > 1);
         fingers.set(ev.pointerId, n);
       }
+      // With several fingers down we're just playing: no frequency line or readout, only the keys lit.
+      if (fingers.size > 1) { markFingers(); return; }
       const f = n !== null ? midiFreq(n) : Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       rangesHover.show(f);
       if (chartHover) chartHover.show(f, ev, true);
     };
-    const onLeave = ev => { fingers.delete(ev.pointerId); if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
+    const markFingers = () => {
+      rangesHover.hide(); if (chartHover) chartHover.hide();
+      const steps = chordOf()[4];
+      rangesHover.press(held ? held.notes : [...fingers.values()].filter(k => k !== null).flatMap(k => steps.map(d => k + d)));
+    };
+    const lift = ev => {
+      fingers.delete(ev.pointerId);
+      if (!rangesHover) return;
+      if (fingers.size > 1) markFingers();
+      else if (!fingers.size && !held) setTimeout(() => { if (!fingers.size && !held && rangesHover) rangesHover.press([]); }, 250);
+    };
+    const onLeave = ev => { lift(ev); if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
     $('ranges').addEventListener('pointermove', onMove);
     $('ranges').addEventListener('pointerdown', onMove);
     $('ranges').addEventListener('pointerleave', onLeave);
-    ['pointerup', 'pointercancel'].forEach(t => $('ranges').addEventListener(t, ev => fingers.delete(ev.pointerId)));
+    ['pointerup', 'pointercancel'].forEach(t => $('ranges').addEventListener(t, lift));
   }
   $('instEdit').onclick = () => {
     const box = $('instChips'), open = box.hidden;
