@@ -148,6 +148,11 @@
   .card-photo { float: right; max-height: 170px; max-width: 42%; margin: 0 0 8px 14px; border-radius: 8px; background: #fff; }
   .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
   .card-graph a { display: block; cursor: zoom-in; }
+  .card-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .card-chips .chip { padding: 2px 9px; font-size: 0.82rem; }
+  .card-chips .chip .pat, .card-specs .per .pat { width: 16px; height: 16px; margin-right: 3px; vertical-align: -3px; }
+  .card-specs .per { color: var(--muted); display: inline-block; margin-right: 6px; }
+  .vl { margin-left: 1px; }
   .card-quote footer { font-style: normal; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
   .card-desc { color: var(--ink-2); font-size: 0.9rem; margin: 0 0 4px; }
   .card-specs { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 12px 0; font-size: 0.9rem; }
@@ -629,50 +634,86 @@
   const nameLen = m => { const e = libVariant(m); return e ? e.model.length + 2 : m.name.length; };
 
   // Info card (modal) for one mic: description, specs, source graph, links, rename/remove.
+  const fmtNum = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+  const SPEC_ROWS = [
+    ['Type', sp => esc(sp.type || '–')],
+    ['Sensitivity', sp => typeof sp.sens === 'number' ? `${fmtNum(sp.sens, ' dBV')} · ${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa` : '–'],
+    ['Self-noise', sp => fmtNum(sp.noise, ' dB(A)')],
+    ['Max SPL', sp => fmtNum(sp.maxspl, ' dB')],
+    ['Impedance', sp => fmtNum(sp.imp, ' Ω')],
+    ['Rated range', sp => sp.range ? esc(sp.range) + ' Hz' : '–'],
+  ];
+  const variantLabel = e => patternIcon(e.pattern) ? patternIcon(e.pattern) + `<span class="vl">${esc(e.pattern)}</span>` : esc(e.pattern);
+
+  // Info card (modal). Library mics with several patterns/variants share one card per model.
   function openInfo(m) {
+    const e = m.lib && LIBRARY.find(x => x.name === m.lib);
+    const variants = e ? LIBRARY.filter(x => (x.model || x.name) === (e.model || e.name)) : [];
+    if (variants.length > 1 && m.name === e.name) return openModel(e.model);
+    renderCard({ title: esc(m.name), swatch: colorOf(m), e: e || {}, specsList: [[null, m.specs || {}]], mic: m });
+  }
+  function openModel(model) {
+    const variants = LIBRARY.filter(x => (x.model || x.name) === model);
+    renderCard({ title: esc(model), e: variants[0], specsList: variants.map(v => [v, v.specs || {}]), variants });
+  }
+  function renderCard({ title, swatch, e, specsList, mic, variants }) {
     const dlg = $('infoCard');
-    const sp = m.specs || {};
-    const e = m.lib && LIBRARY.find(x => x.name === m.lib) || {};
-    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    const rows = [
-      ['Pattern', sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'],
-      ['Type', esc(sp.type || '–')],
-      ['Sensitivity', typeof sp.sens === 'number' ? `${num(sp.sens, ' dBV')} · ${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa` : '–'],
-      ['Self-noise', num(sp.noise, ' dB(A)')],
-      ['Max SPL', num(sp.maxspl, ' dB')],
-      ['Impedance', num(sp.imp, ' Ω')],
-      ['Rated range', sp.range ? esc(sp.range) + ' Hz' : '–'],
-    ];
+    // Specs: one value if all variants agree, else one line per variant.
+    const specRow = ([label, f]) => {
+      const vals = specsList.map(([, sp]) => f(sp));
+      const v = vals.every(x => x === vals[0]) ? vals[0]
+        : specsList.map(([ve, sp]) => `<span class="per" title="${esc(ve.pattern)}">${patternIcon(ve.pattern) || esc(ve.pattern)}</span>${f(sp)}`).join('<br>');
+      return `<dt>${label}</dt><dd>${v}</dd>`;
+    };
+    const patternRow = variants
+      ? `<dt>${variants.every(v => patternIcon(v.pattern)) ? 'Patterns' : 'Variants'}</dt><dd class="card-chips"></dd>`
+      : `<dt>Pattern</dt><dd>${specsList[0][1].pattern ? (patternIcon(specsList[0][1].pattern) || '') + esc(specsList[0][1].pattern) : '–'}</dd>`;
     const links = [
       e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">Official page</a>` : '',
       e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">Manual (PDF)</a>` : '',
     ].filter(Boolean).join('');
     dlg.innerHTML = `
       <div class="card-head">
-        <span class="sw big" style="background:${colorOf(m)}"></span>
-        <h3>${esc(m.name)}</h3>
+        ${swatch ? `<span class="sw big" style="background:${swatch}"></span>` : ''}
+        <h3>${title}</h3>
         <button class="link close" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="card-intro">
-        ${e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || m.name)}">` : ''}
+        ${e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || title)}">` : ''}
         ${e.quote ? `<blockquote class="card-quote" title="${esc(e.quoteBy || '')}">“${esc(e.quote)}”</blockquote>` : ''}
-        ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : m.lib || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
+        ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : e.name || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
       </div>
-      <dl class="card-specs">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <dl class="card-specs">${patternRow}${SPEC_ROWS.map(specRow).join('')}</dl>
       ${links ? `<div class="card-links">${links}</div>` : ''}
       <div class="card-actions">
-        <button class="rename">Rename</button>
-        <button class="remove" style="color:var(--danger)">Remove from chart</button>
+        ${mic ? '<button class="rename">Rename</button>' : ''}
+        <button class="remove" style="color:var(--danger)">${variants ? 'Remove all from chart' : 'Remove from chart'}</button>
       </div>
-      ${e.graph ? `<figure class="card-graph"><a href="${esc(e.graph)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(m.name)}" loading="lazy"></a><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
+      ${e.graph ? `<figure class="card-graph"><a href="${esc(e.graph)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(e.model || title)}" loading="lazy"></a><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
+    if (variants) {
+      // One chip per pattern/variant: tap to add it to / remove it from the chart.
+      const box = dlg.querySelector('.card-chips');
+      for (const v of variants) {
+        const on = state.mics.find(x => x.lib === v.name);
+        const btn = document.createElement('button');
+        btn.className = 'chip' + (on ? ' on' : '');
+        btn.title = (on ? 'Remove ' : 'Add ') + v.name;
+        btn.innerHTML = (on ? `<span class="dot" style="background:${colorOf(on)}"></span>` : '<span class="plus">+</span>') + variantLabel(v);
+        btn.onclick = () => {
+          if (on) state.mics = state.mics.filter(x => x !== on); else addFromLibrary(v);
+          update(); openModel(e.model);
+        };
+        box.appendChild(btn);
+      }
+    }
     dlg.querySelector('.close').onclick = () => dlg.close();
-    dlg.querySelector('.rename').onclick = () => {
-      const n = prompt('Rename mic', m.name);
-      if (n && n.trim()) { m.name = n.trim(); update(); openInfo(m); }
+    if (mic) dlg.querySelector('.rename').onclick = () => {
+      const n = prompt('Rename mic', mic.name);
+      if (n && n.trim()) { mic.name = n.trim(); update(); openInfo(mic); }
     };
     dlg.querySelector('.remove').onclick = () => {
-      state.mics = state.mics.filter(x => x !== m);
-      if (state.settings.ref === m.id) state.settings.ref = '';
+      const gone = variants ? state.mics.filter(x => variants.some(v => v.name === x.lib)) : [mic];
+      state.mics = state.mics.filter(x => !gone.includes(x));
       dlg.close(); update();
     };
     if (!dlg.open) dlg.showModal();
