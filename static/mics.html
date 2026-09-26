@@ -146,6 +146,12 @@
   .sw.big { width: 14px; height: 14px; border-radius: 4px; }
   .card-intro { margin-top: 10px; display: flow-root; }
   .card-photo { float: right; height: 170px; width: auto; max-width: 42%; object-fit: contain; margin: 0 0 8px 14px; border-radius: 8px; background: #fff; }
+  .card-photos { float: right; width: min(42%, 180px); margin: 0 0 8px 14px; }
+  .card-photos .main { display: block; width: 100%; height: 170px; object-fit: contain; border-radius: 8px; background: #fff; }
+  .card-photos .thumbs { display: flex; gap: 5px; margin-top: 6px; justify-content: center; }
+  .card-photos .thumb { width: 38px; height: 38px; padding: 2px; border-radius: 6px; background: #fff; border: 1.5px solid var(--border); }
+  .card-photos .thumb.on { border-color: var(--accent); }
+  .card-photos .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
   .card-graph a { display: block; cursor: zoom-in; }
   .card-chips { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -685,7 +691,12 @@
         <button class="link close" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="card-intro">
-        ${e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || title)}"${dims(e.photoSize)}>` : ''}
+        ${e.photo && e.photosExtra ? `<div class="card-photos">
+            <img class="main" src="${esc(e.photo)}" alt="${esc(e.model || title)}">
+            <div class="thumbs">${[{ src: e.photo }, ...e.photosExtra].map((ph, i) =>
+              `<button type="button" class="thumb${i ? '' : ' on'}" data-src="${esc(ph.src)}" aria-label="Photo ${i + 1}"><img src="${esc(ph.src)}" alt=""></button>`).join('')}</div>
+          </div>`
+          : e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || title)}"${dims(e.photoSize)}>` : ''}
         ${e.quote ? `<blockquote class="card-quote" title="${esc(e.quoteBy || '')}">“${esc(e.quote)}”</blockquote>` : ''}
         ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : e.name || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
       </div>
@@ -712,6 +723,11 @@
         box.appendChild(btn);
       }
     }
+    // Extra photos: tap a thumbnail to show it large.
+    dlg.querySelectorAll('.card-photos .thumb').forEach(t => t.onclick = () => {
+      dlg.querySelector('.card-photos .main').src = t.dataset.src;
+      dlg.querySelectorAll('.card-photos .thumb').forEach(x => x.classList.toggle('on', x === t));
+    });
     dlg.querySelector('.close').onclick = () => dlg.close();
     if (mic) dlg.querySelector('.rename').onclick = () => {
       const n = prompt('Rename mic', mic.name);
