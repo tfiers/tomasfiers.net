@@ -277,7 +277,15 @@
   /* Three groups: Choose instruments (left); Stop, Sound, and Through (centre); Chord (right). */
   .play-opt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .play-opt select { max-width: 220px; }
-  #chordSeg button { padding: 2px 7px; min-width: 28px; }
+  /* Choose instruments: on the section's heading line, at the right (only while it's open). */
+  #rangesBox { position: relative; }
+  button.inst-edit { position: absolute; top: 9px; right: 0; font-size: 0.8rem; padding: 3px 10px; }
+  /* Chord: one small button that cycles through the chord types. */
+  .chord-pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; font-size: 0.85rem; color: var(--ink-2); align-self: flex-end; }
+  .chord-pill .ic { font-size: 1rem; line-height: 1; color: var(--muted); transition: transform 0.2s; }
+  .chord-pill.on { border-color: var(--accent); color: var(--ink); }
+  .chord-pill.on .ic { color: var(--accent); }
+  .chord-pill.bump .ic { transform: rotate(-14deg) scale(1.2); }
   /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
   .stop-tone[hidden] { display: none; }
   .stop-tone { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; height: 30px; padding: 0 12px 0 10px;
@@ -411,9 +419,10 @@
       </div>
       <details id="rangesBox" class="resp-only">
         <summary>Notes &amp; Instruments</summary>
+        <button type="button" id="instEdit" class="inst-edit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
+        <div id="instChips" class="inst-chips" hidden></div>
         <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
         <div class="ranges-bar">
-          <button type="button" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
           <div class="play-opts">
             <button type="button" id="stopTone" class="stop-tone" hidden title="Stop the held tone"><span class="sq"></span><span class="lbl"></span></button>
             <div class="field play-opt" title="Piano: a struck note that rings out. Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the angle) while listening. Tap the key again, or Stop, to end it.">
@@ -428,12 +437,8 @@
               <select id="through" aria-label="Play through"></select>
             </div>
           </div>
-          <div class="field play-opt chord-opt" title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave). Several fingers also play several keys at once.">
-            <span class="cap">Chord</span>
-            <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
-          </div>
+          <button type="button" id="chordBtn" class="chord-pill" title="Tap to change: each key then plays a chord built on it (off → major → minor → 7th → major 7th → minor 7th → power chord → off). Several fingers also play several keys at once."><span class="ic">♫</span><span class="lbl"></span></button>
         </div>
-        <div id="instChips" class="inst-chips" hidden></div>
       </details>
       <p class="hint" id="polarWarn" hidden></p>
       <div class="hint note" id="polarNote" hidden></div>
@@ -769,13 +774,16 @@
   let held = null;   // { roots: the keys tapped, notes: all that sound, voices: [{ f, osc, g, lfo }] }
   const fingers = new Map();   // each finger (pointer) down on the keyboard → the key it's on (or null)
   // Chords: the key you tap is the root. [id, name in the menu, short name on the Stop button, semitones]
-  // [id, button, name (tooltip), suffix on the Stop button, semitones]
-  const CHORDS = [['', 'Off', 'Off: single notes', '', [0]], ['maj', 'M', 'Major', 'major', [0, 4, 7]], ['min', 'm', 'Minor', 'minor', [0, 3, 7]],
-    ['7', '7', 'Dominant 7th', '7', [0, 4, 7, 10]], ['maj7', 'M7', 'Major 7th', 'maj7', [0, 4, 7, 11]], ['m7', 'm7', 'Minor 7th', 'm7', [0, 3, 7, 10]],
-    ['5', '5', 'Power chord: root, 5th, and octave', '5', [0, 7, 12]]];
+  // [id, label on the chord button, (unused), suffix on the Stop button, semitones]
+  const CHORDS = [['', 'Chords off', '', '', [0]], ['maj', 'Major', '', 'major', [0, 4, 7]], ['min', 'Minor', '', 'minor', [0, 3, 7]],
+    ['7', '7th', '', '7', [0, 4, 7, 10]], ['maj7', 'Major 7th', '', 'maj7', [0, 4, 7, 11]], ['m7', 'Minor 7th', '', 'm7', [0, 3, 7, 10]],
+    ['5', 'Power chord', '', '5', [0, 7, 12]]];
   const chordOf = () => CHORDS.find(c => c[0] === state.settings.chord) || CHORDS[0];
-  $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
-  $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
+  $('chordBtn').onclick = () => {
+    const i = CHORDS.indexOf(chordOf());
+    state.settings.chord = CHORDS[(i + 1) % CHORDS.length][0]; save(); syncControls();
+    const b = $('chordBtn'); b.classList.add('bump'); setTimeout(() => b.classList.remove('bump'), 180);
+  };
   const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
   // One oscillator playing harmonics k0…k1 of f at the given amplitudes (a custom waveform; the browser
   // band-limits it, so there's no aliasing).
@@ -1791,7 +1799,8 @@
     document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
     document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
     document.querySelectorAll('#soundSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sound === (s.sound || 'piano'))));
-    document.querySelectorAll('#chordSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.chord === chordOf()[0])));
+    $('chordBtn').querySelector('.lbl').textContent = chordOf()[1];
+    $('chordBtn').classList.toggle('on', !!chordOf()[0]);
     $('sensHint').hidden = polar || s.normMode !== 'sens';
     $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
     $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
