@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mic Atlas &amp; Instrument Ranges</title>
+<title>Mic Atlas and Instrument Ranges</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
   :root {
@@ -48,6 +48,7 @@
   }
   main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .h1-more { font-size: 0.72em; font-weight: 500; color: var(--muted); }
   h2 { font-size: 1rem; margin: 0 0 10px; }
   .sub { color: var(--ink-2); margin: 0 0 20px; }
   .panel {
@@ -276,7 +277,6 @@
   .inst-chips .lib-head { margin-top: 8px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .inst-chips { margin: 2px 0 6px; }
   .inst-chips .chip { padding: 2px 8px; font-size: 0.8rem; }
-  #tableBox .table-wrap { margin-top: 8px; }
   /* Collapsible sections: headings with a chevron, separated by a thin line. */
   summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px;
     color: var(--ink); font-size: 1rem; font-weight: 600; padding: 12px 0 10px; }
@@ -284,7 +284,7 @@
   summary::before { content: ''; flex: none; width: 7px; height: 7px; margin: 0 1px 2px 3px;
     border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform 0.15s; }
   details[open] > summary::before { transform: rotate(45deg); margin-bottom: 5px; }
-  #rangesBox, #tableBox, #addBox, #addBox + details { border-top: 1px solid var(--border); margin-top: 14px; }
+  #rangesBox, #addBox, #addBox + details { border-top: 1px solid var(--border); margin-top: 14px; }
   #libBox > summary { padding-top: 0; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
   .row-gap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
@@ -303,8 +303,8 @@
 </head>
 <body>
 <main>
-  <h1>Mic Atlas &amp; Instrument Ranges</h1>
-  <p class="sub">Microphone frequency responses and polar patterns · Musical instruments, piano notes, and overtones</p>
+  <h1>Mic Atlas <span class="h1-more">and Instrument Ranges</span></h1>
+  <p class="sub">Microphone frequency responses and polar patterns · Musical instrument ranges, note names, and overtones</p>
 
   <div class="layout">
     <div class="main-col">
@@ -410,10 +410,6 @@
       </details>
       <p class="hint" id="polarWarn" hidden></p>
       <div class="hint note" id="polarNote" hidden></div>
-      <details id="tableBox">
-        <summary>Values at standard frequencies</summary>
-        <div class="table-wrap" id="tableWrap"></div>
-      </details>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
@@ -490,7 +486,6 @@
   const GRID_STEP = 48;
   const GRID = [];
   for (let i = 0; ; i++) { const f = 10 * 2 ** (i / GRID_STEP); if (f > 40000) break; GRID.push(f); }
-  const TABLE_FREQS = [50, 100, 200, 500, 1000, 2000, 5000, 8000, 10000, 15000];
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
@@ -1408,19 +1403,6 @@
     if (open) drawInstrumentPicker();
   };
 
-  function drawTable() {
-    const wrap = $('tableWrap');
-    const visible = state.mics.filter(m => m.visible);
-    $('tableBox').hidden = !visible.length;
-    if (!visible.length) { wrap.innerHTML = ''; return; }
-    let h = '<table><thead><tr><th>dB at</th>' + TABLE_FREQS.map(f => `<th>${fmtF(f)}</th>`).join('') + '</tr></thead><tbody>';
-    for (const m of visible) {
-      const c = curves.get(m.id);
-      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>` +
-        TABLE_FREQS.map(f => { const v = valueAt(c, f); return `<td>${v === null ? '–' : fmtD(v)}</td>`; }).join('') + '</tr>';
-    }
-    wrap.innerHTML = h + '</tbody></table>';
-  }
 
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1637,7 +1619,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); drawLibrary(); draw(); drawRanges(); syncThrough(); if (actx) retuneHeld(); drawTable(); drawPolarHint();
+    drawList(); drawLibrary(); draw(); drawRanges(); syncThrough(); if (actx) retuneHeld(); drawPolarHint();
   }
 
   // ---------- controls ----------
@@ -1653,7 +1635,6 @@
     document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
     document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
     document.querySelectorAll('#soundSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sound === (s.sound || 'piano'))));
-    $('tableBox').classList.toggle('resp-only', true);
     $('sensHint').hidden = polar || s.normMode !== 'sens';
     $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
     $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
