@@ -392,7 +392,7 @@
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <details id="rangesBox" class="resp-only">
-        <summary>Instrument ranges</summary>
+        <summary>Instrument ranges &amp; note names</summary>
         <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
         <div class="ranges-bar">
           <button type="button" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
@@ -1296,7 +1296,9 @@
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
     const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
     // The first row starts below the legend line at the top right.
-    const rowH = 25, top = 32, kbY = rows.length ? top + (rows.length - 1) * rowH + 13 : 22, kbH = 29, h = kbY + kbH + 33;
+    // Keys keep the same proportions on every screen: as long as about 3.3 white-key widths.
+    const whiteW = xOf(440 * 2 ** (1 / 7)) - xOf(440), kbH = Math.round(Math.min(46, Math.max(20, whiteW * 3.3)));
+    const rowH = 25, top = 32, kbY = rows.length ? top + (rows.length - 1) * rowH + 13 : 22, h = kbY + kbH + 33;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
