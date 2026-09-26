@@ -279,7 +279,7 @@
         <details>
           <summary>Where do I get the data?</summary>
           <p class="hint"><strong>From a spec sheet graph:</strong> screenshot the manufacturer's curve, open it in <a href="https://automeris.io/WebPlotDigitizer/" target="_blank" rel="noopener">WebPlotDigitizer</a>, set a log X axis, trace the line, and export CSV.</p>
-          <p class="hint"><strong>Measure it yourself:</strong> put each mic in the same spot in front of a speaker, run a sweep in <a href="https://www.roomeqwizard.com/" target="_blank" rel="noopener">REW</a>, and export "measurement as text". A shared room and speaker cancel out once you use "Relative to" against one reference mic.</p>
+          <p class="hint"><strong>Measure it yourself:</strong> put a calibrated measurement mic in front of a speaker and run a sweep in <a href="https://www.roomeqwizard.com/" target="_blank" rel="noopener">REW</a> (with the mic's calibration file loaded). Then put each of your mics in exactly the same spot and sweep again. In REW, divide each mic's sweep by the measurement-mic one (<em>All SPL → Trace arithmetic → A / B</em>): the speaker and the room are the same in both, so they cancel out and only the mic's own response is left. Export that as text and drop it here.</p>
         </details>
 
         <details>
