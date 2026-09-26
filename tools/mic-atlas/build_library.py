@@ -109,10 +109,10 @@ for m in ['XLS','XLII']:
             source='AKG C414 XLS/XLII manual, no bass cut ('+('vector data from the PDF' if (m,k)==('XLS','fig8') else 'traced from image')+')',
             specs=dict(SC414, pattern=PAT[k])))
 DESC={
- 'AT2020':'Affordable side-address cardioid condenser (electret, 16 mm), the classic first home-studio mic. Fairly flat, with a gentle lift in the highs; for vocals, voice-over and acoustic instruments.',
- 'Behringer C-2':'Budget small-diaphragm “pencil” condenser, sold as a matched stereo pair with a stereo bar. For acoustic guitar, overheads and simple stereo recordings.',
+ 'AT2020':'Affordable side-address cardioid condenser (electret, 16 mm), the classic first home-studio mic. Fairly flat, with a gentle lift in the highs; for vocals, voice-over, and acoustic instruments.',
+ 'Behringer C-2':'Budget small-diaphragm “pencil” condenser, sold as a matched stereo pair with a stereo bar. For acoustic guitar, overheads, and simple stereo recordings.',
  'sE V7':'Supercardioid dynamic vocal mic for the stage. The tight pattern keeps out spill and feedback; rolled-off lows and a presence lift for clear, forward vocals.',
- 'sE V7 X':'Instrument version of the V7: same supercardioid dynamic design, but with fuller, flatter lows. For guitar cabs, snare, toms, brass and more.',
+ 'sE V7 X':'Instrument version of the V7: same supercardioid dynamic design, but with fuller, flatter lows. For guitar cabs, snare, toms, brass, and more.',
  'Ovid CC 100':'Miniature clip-on condenser (cardioid, mini-XLR) on a gooseneck, part of the t.bone Ovid system for acoustic instruments (violin, guitar, wind) on stage.',
  'Neumann U 87 Ai':'The classic studio large-diaphragm condenser (3 patterns). Flat mids with a gentle lift around 8–10 kHz; the reference “big studio” vocal sound.',
  'Schoeps MK 5':'Switchable Colette capsule: a slider on the side sets omni or cardioid, each close to the dedicated MK 2S / MK 4. Unlike most dual-diaphragm mics, the cardioid stays directional down to the lowest frequencies. Schoeps\' recommended all-purpose first capsule.',
@@ -120,9 +120,9 @@ DESC={
  'Shure SM58':'The standard stage vocal mic: essentially the SM57 behind a ball grille with a built-in pop filter. Bass roll-off and a presence lift around 4–5 kHz for clear vocals; famously rugged.',
  'Schoeps MK 4':'Reference small-diaphragm cardioid (MK 4 capsule on a CMC 6 amplifier): very flat and natural, also off-axis. A favourite for acoustic and classical recording, often as a pair.',
  'DPA 4099':'Tiny clip-on instrument mic on a gooseneck (violin, guitar, sax clips). Natural sound and strong off-axis rejection, so lots of gain before feedback on stage. Curves: at 20 cm from the source (DPA\'s reference distance), and at 10 cm and 1 m, where only the bass changes (the closer, the more bass: proximity effect). XLR: with the DAD4099 XLR adapter, whose low cut removes the lowest bass.',
- 'sE8':'Small-diaphragm “pencil” condenser. Even, detailed and very quiet; for acoustic guitar, piano, drum overheads, and as a stereo pair.',
+ 'sE8':'Small-diaphragm “pencil” condenser. Even, detailed, and very quiet; for acoustic guitar, piano, drum overheads, and as a stereo pair.',
  'sE4400':'Large-diaphragm condenser with 4 patterns and a smooth, classic sound. A studio all-rounder: vocals, acoustic instruments, piano, overheads.',
- 'AKG C414 XLS':'The neutral C414: flat, smooth, very low noise (6 dB(A)), 9 patterns. The industry-standard all-rounder for instruments, ensembles and rooms.',
+ 'AKG C414 XLS':'The neutral C414: flat, smooth, very low noise (6 dB(A)), 9 patterns. The industry-standard all-rounder for instruments, ensembles, and rooms.',
  'AKG C414 XLII':'Same mic as the XLS but voiced brighter: a presence lift of about +3 to +5 dB from 3–10 kHz, so lead vocals and solo instruments stand out.',
 }
 GRAPH={'AT2020':'at2020','Behringer C-2':'behringer-c2','sE V7':'se-v7','sE V7 X':'se-v7x','Ovid CC 100':'ovid-cc100','sE8':'se8',
