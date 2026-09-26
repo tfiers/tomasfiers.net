@@ -56,7 +56,14 @@
   }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
   .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr); } }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0,1fr); }
+    /* Phones: mic list right under the chart, specs after it. */
+    .main-col { display: contents; }
+    #chartPanel { order: 1; }
+    .layout > aside { order: 2; }
+    #specPanel { order: 3; }
+  }
 
   .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
   .controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
@@ -110,6 +117,7 @@
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
+  #tableBox .table-wrap { margin-top: 8px; }
   summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
   .row-gap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
@@ -174,7 +182,10 @@
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <p class="hint" id="fadeHint" hidden>Faded: outside the manufacturer's rated frequency range.</p>
-      <div class="table-wrap" id="tableWrap"></div>
+      <details id="tableBox">
+        <summary>Values at standard frequencies</summary>
+        <div class="table-wrap" id="tableWrap"></div>
+      </details>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
@@ -526,7 +537,8 @@
   function drawTable() {
     const wrap = $('tableWrap');
     const visible = state.mics.filter(m => m.visible);
-    if (!visible.length) { wrap.innerHTML = ''; return; }
+    $('tableBox').hidden = !visible.length;
+    if (!visible.length) { wrap.innerHTML = ''; drawSpecs(visible); return; }
     let h = '<table><thead><tr><th>dB at</th>' + TABLE_FREQS.map(f => `<th>${fmtF(f)}</th>`).join('') + '</tr></thead><tbody>';
     for (const m of visible) {
       const c = curves.get(m.id);
