@@ -147,6 +147,8 @@
   .card-links a { color: var(--accent); }
   .card-actions { display: flex; gap: 8px; justify-content: flex-end; }
   #libBox { margin-top: 0; }
+  .side-note { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+  h1 { margin-bottom: 16px; }
   .mic-table tr.off .name { color: var(--muted); text-decoration: line-through; }
   .mic-table input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; flex: none; }
   .mic-table .meta { color: var(--muted); font-size: 0.75rem; }
@@ -189,7 +191,6 @@
 <body>
 <main>
   <h1>Microphone frequency response compare</h1>
-  <p class="sub">Paste or drop frequency-response data for each mic and overlay the curves. Everything stays in your browser.</p>
 
   <div class="layout">
     <div class="main-col">
@@ -250,7 +251,6 @@
       <h2>Mics</h2>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
-      <p class="hint">Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
     </section>
     </div>
     <aside>
@@ -271,7 +271,7 @@
           <div class="drop" id="drop">Or drop CSV/TXT files here (one mic per file) —
             <label style="color:var(--accent);cursor:pointer">browse<input type="file" id="fileIn" accept=".csv,.txt,.frd,.tsv,text/plain" multiple hidden></label>
           </div>
-          <p class="hint">Two columns: frequency (Hz) and level (dB). Commas, tabs, semicolons or spaces all work; header and comment lines are skipped. REW exports, <code>.frd</code> files and WebPlotDigitizer CSVs load as-is.</p>
+          <p class="hint">Two columns: frequency (Hz) and level (dB). Commas, tabs, semicolons or spaces all work; header and comment lines are skipped. REW exports, <code>.frd</code> files and WebPlotDigitizer CSVs load as-is. Nothing is uploaded; it all stays in your browser.</p>
         </details>
 
         <details>
@@ -293,6 +293,7 @@
           <p class="msg" id="shareMsg"></p>
           <p class="hint">Your mics are also stored in this browser automatically.</p>
         </details>
+        <p class="hint side-note">Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
       </div>
     </aside>
   </div>
