@@ -585,9 +585,10 @@
     const s = state.settings, r = s.yRange;
     // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves. The makers' graphs
     // (as in the source) are 0 dB around 1 kHz too; own data in absolute dB (e.g. SPL) gets the auto range.
+    // Judged on the on-axis curves, so moving the angle slider never switches the range.
     const nearZero = () => state.mics.every(m => {
       if (!m.visible) return true;
-      const v = valueAt(curves.get(m.id), 1000);
+      const v = valueAt(resample(m.points), 1000);
       return v === null || Math.abs(v) < 10;
     });
     const centred = s.ref || (s.normMode !== 'sens' && (s.normMode !== 'none' || nearZero()));
