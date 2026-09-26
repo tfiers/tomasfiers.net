@@ -125,6 +125,7 @@
   .chart-wrap { position: relative; }
   svg#chart { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  svg .inlabel { paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   svg .direct { font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   .tip {
     position: absolute; pointer-events: none; background: var(--surface); color: var(--ink);
@@ -158,6 +159,9 @@
     /* Phones: the table runs to the screen edges. */
     #micPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding-left: 0; padding-right: 0; }
     #chartPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding: 12px 10px; }
+    /* The chart (and the ranges under it, on the same axis) run to the screen edges. */
+    #chartWrap, #rangesBox svg#ranges { margin-left: -10px; margin-right: -10px; }
+    #rangesBox svg#ranges { width: calc(100% + 20px); }
     #micPanel > h2, #micPanel > .hint { padding-left: 16px; padding-right: 16px; }
   }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
@@ -234,8 +238,10 @@
   .controls .field > .cap, .mic-table th.help { cursor: help; }
   .cap-tip b { color: var(--ink); font-weight: 600; }
   .cap-tip p, .cap-tip ul { margin: 0; white-space: normal; }
+  .cap-tip ul { padding-left: 1.1em; margin-top: 4px; }
+  .cap-tip li { margin: 3px 0; }
   .cap-tip a { color: var(--accent); }
-  .cap-tip { position: absolute; z-index: 6; max-width: min(88vw, 320px); padding: 8px 10px; white-space: pre-line;
+  .cap-tip { position: absolute; z-index: 6; max-width: min(92vw, 360px); max-height: 70vh; overflow-y: auto; padding: 8px 10px; white-space: pre-line;
     background: var(--surface); color: var(--ink-2); font-size: 0.8rem; line-height: 1.4;
     border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
   .cap-tip[hidden] { display: none; }
@@ -244,7 +250,7 @@
   .picker .info { border: none; background: none; color: var(--accent); font-size: 0.82rem; padding: 3px 6px; }
   button:disabled { color: var(--muted); cursor: default; }
 
-  details { margin-top: 12px; }
+  details { margin-top: 4px; }
   #rangesBox { margin-top: 4px; }
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
   svg .rl-name { fill: var(--ink-2); font-weight: 500; }
@@ -256,7 +262,7 @@
   .inst-chips { margin: 2px 0 6px; }
   .inst-chips .chip { padding: 2px 8px; font-size: 0.8rem; }
   #tableBox .table-wrap { margin-top: 8px; }
-  summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
+  summary { cursor: pointer; color: var(--ink-2); font-size: 0.95rem; padding: 8px 0; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
   .row-gap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
   .drop { border: 1.5px dashed var(--axis); border-radius: 8px; padding: 10px; text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
@@ -606,11 +612,14 @@
 
   // ---------- chart ----------
   // Chart is drawn at its real pixel size so text stays readable on phones.
-  const M = { l: 34, r: 8, t: 22, b: 30 };
+  const M = { l: 34, r: 8, t: 22, b: 30 };   // l and r shrink on narrow screens (sizeChart)
   let W = 800, H = 440, PW, PH;
+  // Narrow screens: no left margin; the dB labels go inside the plot (see draw).
+  const narrowChart = () => W < 520;
   function sizeChart() {
     W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
-    H = Math.round(Math.min(460, Math.max(300, W * 0.55)));
+    M.l = narrowChart() ? 1 : 34; M.r = narrowChart() ? 1 : 8;
+    H = Math.round(narrowChart() ? Math.min(460, Math.max(320, W * 0.85)) : Math.min(460, Math.max(300, W * 0.55)));
     PW = W - M.l - M.r; PH = H - M.t - M.b;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   }
@@ -636,7 +645,8 @@
   // Each of the 12 notes gets its own colour. They go round the colour wheel in the circle of fifths
   // (C, G, D, …), so neighbouring semitones get clearly different colours and a note change is easy to see.
   // OKLCH keeps all 12 equally dark, so white text on them stays readable (also yellow and green).
-  const noteColor = pc => `oklch(0.52 0.17 ${((pc * 7 % 12) * 30 + 25) % 360})`;
+  // Rotated so that C is blue, like the middle C key; A4's key uses A's colour.
+  const noteColor = pc => `oklch(0.52 0.17 ${((pc * 7 % 12) * 30 + 255) % 360})`;
   const noteHtml = f => {
     const nn = nearestNote(f);
     return ` · <span class="note" style="background:${noteColor(nn.pc)}">${nn.name}</span>` +
@@ -697,6 +707,7 @@
       t.textContent = fmtF(f);
     }
     const step = (yHi - yLo) > 40 ? 10 : (yHi - yLo) > 12 ? 5 : 1;
+    const unitLabel = state.settings.normMode === 'sens' && !state.settings.ref ? 'dBV' : 'dB';
     // Unlabeled minor dB lines between the labelled ones.
     const minor = step === 10 ? 5 : step === 5 ? 1 : 0;
     if (minor) for (let d = Math.ceil(yLo / minor) * minor; d <= yHi; d += minor) {
@@ -705,10 +716,13 @@
     }
     for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
       el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
-      const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
-      t.textContent = d > 0 ? '+' + d : d < 0 ? '−' + -d : '0';
+      const t = narrowChart()
+        ? el('text', { x: M.l + 4, y: yOf(d) - 3, 'text-anchor': 'start', class: 'inlabel' }, grid)
+        : el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
+      t.textContent = (d > 0 ? '+' + d : d < 0 ? '−' + -d : '0') + (narrowChart() && d + step > yHi ? ' ' + unitLabel : '');
     }
-    const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = state.settings.normMode === 'sens' && !state.settings.ref ? 'dBV' : 'dB';
+    // The unit: above the axis labels, or on narrow screens appended to the top label (above).
+    if (!narrowChart()) { const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = unitLabel; }
     const hz = el('text', { x: M.l + PW, y: H - 1, 'text-anchor': 'end' }, grid); hz.textContent = 'Hz';
 
     el('clipPath', { id: 'plotClip' }, svg).appendChild(el('rect', { x: M.l, y: M.t, width: PW, height: PH }));
@@ -1112,7 +1126,7 @@
       // A white key reaches halfway to its white neighbours' own edges; a black key spans ±½ semitone.
       const lo = black || isBlack(n - 1) ? n - 0.5 - (black ? 0 : 0.5) : n - 0.5, hi = black || isBlack(n + 1) ? n + 0.5 + (black ? 0 : 0.5) : n + 0.5;
       const xa = xOf(mf(Math.max(lo, 20.5))), xb = xOf(mf(Math.min(hi, 108.5)));
-      const mark = n === 60 ? 'var(--accent)' : n === 69 ? 'var(--s2)' : null;
+      const mark = n === 60 ? noteColor(0) : n === 69 ? noteColor(9) : null;
       const fill = mark || (black ? '#2b2b29' : '#f6f5f1');
       keys[n] = [el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
         fill, stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb), fill];
@@ -1121,9 +1135,9 @@
       const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
       t.textContent = 'C' + o;
     }
-    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 24, 'text-anchor': 'end', style: 'fill:var(--accent)' }, kb);
+    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 24, 'text-anchor': 'end', style: `fill:${noteColor(0)}` }, kb);
     mc.textContent = 'middle C';
-    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
+    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: `fill:${noteColor(9)}` }, kb);
     a4.textContent = 'A4 = 440 Hz';
     // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
     const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
@@ -1139,9 +1153,9 @@
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); },
     };
-    const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
+    const k = el('text', { x: W - Math.max(M.r, 6), y: h - 4, 'text-anchor': 'end' }, g);
     k.textContent = 'Faded top end: approximate instrument limit (±), and overtones up to the 8th harmonic';
-    if (k.getComputedTextLength() > PW) k.textContent = 'Faded top end: approx. limit (±), overtones to the 8th harmonic';
+    if (k.getComputedTextLength() > W - 12) k.textContent = 'Faded top end: approx. limit (±), overtones to the 8th harmonic';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
   {
@@ -1323,7 +1337,13 @@
   // What each column of the Selected microphones table means (header tooltip, and popup on tap).
   const COL_HELP = {
     'Pattern': 'The polar pattern: the directions the mic picks up from. <b>Cardioid</b>: mostly from the front. <b>Super- / hypercardioid</b>: narrower, with a small lobe at the back. <b>Omni</b>: all around. <b>Figure-8</b>: front and back, not the sides.',
-    'Type': 'How the mic turns sound into a signal. <b>Dynamic</b>: a coil moving in a magnet; rugged, needs no power, takes loud sources. <b>Condenser</b>: a thin, electrically charged diaphragm; more sensitive and detailed, needs phantom power (48 V). <b>Electret</b>: a condenser with a permanent charge. <b>Large / small diaphragm</b>: the size of the capsule (about 1″ vs ½″).',
+    'Type': 'How the mic turns sound into a signal.<ul>' +
+      '<li><b>Dynamic</b>: a light coil on the diaphragm moves in a magnet. Rugged, needs no power and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</li>' +
+      '<li><b>Condenser</b>: a very thin diaphragm next to a fixed plate, together a charged capacitor; sound changes the gap and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).<ul>' +
+      '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller, “bigger” sound, often with switchable patterns; the classic studio vocal mic. Less even off axis at high frequencies.</li>' +
+      '<li><b>Small diaphragm</b> (“pencil”, about ½″): more neutral and more even off axis, with quick transients; for acoustic instruments, overheads and stereo pairs.</li>' +
+      '<li><b>Electret</b>: a condenser whose charge is built into the material, so the capsule itself needs no voltage; common in affordable and miniature mics.</li></ul></li>' +
+      '<li><b>Ribbon</b>: a thin metal ribbon hanging in a magnetic field. Naturally figure-8, with smooth, warm highs; low output (needs a quiet, high-gain preamp) and delicate: keep it out of wind and plosives, and check before sending phantom power to an older passive one.</li></ul>',
     'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
     'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
     'Max SPL': 'The loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies, typically 0.5–1 %).',
