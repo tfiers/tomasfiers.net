@@ -102,6 +102,7 @@
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
   #libList .name { white-space: normal; }
   #libList .lib-head { border-bottom: none; padding: 10px 0 0; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  #libList .meta a { color: var(--accent); }
   .lib-desc { font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; display: inline-block; margin: 2px 0; }
   #libList .lib-item { display: block; }
   .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
@@ -653,7 +654,12 @@
       const li = document.createElement('li');
       li.className = 'lib-item';
       const desc = entries[0].desc ? `<br><span class="lib-desc">${esc(entries[0].desc)}</span>` : '';
-      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(entries[0].source || '')}</span></span>
+      const e0 = entries[0];
+      const links = [
+        e0.graph ? `<a href="${esc(e0.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
+        e0.url ? `<a href="${esc(e0.url)}" target="_blank" rel="noopener">official page</a>` : '',
+      ].filter(Boolean).join(' · ');
+      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(e0.source || '')}${links ? ' · ' + links : ''}</span></span>
         <span class="lib-btns"></span>`;
       const box = li.querySelector('.lib-btns');
       for (const entry of entries) {
