@@ -65,9 +65,15 @@
     .layout > aside { order: 3; }
   }
 
-  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
+  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(2, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
   @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level { grid-column: 1 / -1; } }
   .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .dots { display: flex; align-items: center; justify-content: space-between; height: 30px; max-width: 190px; }
+  .dot-btn { width: 30px; height: 30px; padding: 0; border: none; background: none; display: grid; place-items: center; border-radius: 50%; }
+  .dot-btn span { display: block; border-radius: 50%; border: 1.5px solid var(--muted); box-sizing: border-box; }
+  .dot-btn.on span { background: var(--accent); border-color: var(--accent); }
+  .dot-btn:hover span { border-color: var(--ink-2); }
+  .cap-val { text-transform: none; letter-spacing: 0; color: var(--ink-2); }
   .field .cap { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .field select { width: 100%; height: 30px; }
   .field .row { display: flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
@@ -116,6 +122,8 @@
   .mic-table .toggle { padding-left: 14px; padding-right: 10px; width: 1px; }
   .mic-table .mcell .name { font-size: 0.88rem; }
   .mic-table .mcell .name.long { font-size: 0.78rem; }
+  .mic-table .mcell .name .variant { font-size: 0.72rem; color: var(--muted); }
+  .mic-table .mcell .name .pat { width: 15px; height: 15px; vertical-align: -3px; margin: 0; }
   .mic-table th.sticky, .mic-table td.sticky { padding-left: 8px; padding-right: 6px; }
   .mic-table input[type=checkbox] { width: 18px; height: 18px; margin: 2px 0 0; }
   @media (max-width: 860px) {
@@ -136,7 +144,11 @@
   .card-head h3 { margin: 0; font-size: 1.15rem; flex: 1; }
   .card-head .close { font-size: 1.1rem; }
   .sw.big { width: 14px; height: 14px; border-radius: 4px; }
-  .card-desc { color: var(--ink-2); font-size: 0.9rem; margin: 10px 0 4px; }
+  .card-intro { margin-top: 10px; display: flow-root; }
+  .card-photo { float: right; max-height: 170px; max-width: 42%; margin: 0 0 8px 14px; border-radius: 8px; background: #fff; }
+  .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
+  .card-quote footer { font-style: normal; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .card-desc { color: var(--ink-2); font-size: 0.9rem; margin: 0 0 4px; }
   .card-specs { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 12px 0; font-size: 0.9rem; }
   .card-specs dt { color: var(--muted); }
   .card-specs dd { margin: 0; }
@@ -209,21 +221,10 @@
             <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
           </div>
         </div>
-        <label class="field">
-          <span class="cap">Smoothing</span>
-          <select id="smooth">
-            <option value="0">None</option>
-            <option value="24">1/24 octave</option>
-            <option value="12">1/12 octave</option>
-            <option value="6">1/6 octave</option>
-            <option value="3">1/3 octave</option>
-            <option value="1">1 octave</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="cap">Relative to</span>
-          <select id="refMic"><option value="">—</option></select>
-        </label>
+        <div class="field">
+          <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
+          <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
+        </div>
         <label class="field">
           <span class="cap">Y range</span>
           <select id="yRange">
@@ -612,6 +613,20 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- mic list ----------
+  // Table name: for an unrenamed library variant, show the model plus a pattern icon (or the variant, small).
+  function libVariant(m) {
+    const e = m.lib && LIBRARY.find(x => x.name === m.lib);
+    return e && e.pattern && m.name === e.name ? e : null;
+  }
+  function nameHtml(m) {
+    const e = libVariant(m);
+    if (!e) return esc(m.name);
+    const icon = patternIcon(e.pattern);
+    return esc(e.model) + (icon ? ' ' + icon.replace('class="pat"', `class="pat" role="img" aria-label="${esc(e.pattern)}"`)
+                                : ` <span class="variant">${esc(e.pattern.replace(/^with /, '+ '))}</span>`);
+  }
+  const nameLen = m => { const e = libVariant(m); return e ? e.model.length + 2 : m.name.length; };
+
   // Info card (modal) for one mic: description, specs, source graph, links, rename/remove.
   function openInfo(m) {
     const dlg = $('infoCard');
@@ -638,7 +653,11 @@
         <h3>${esc(m.name)}</h3>
         <button class="link close" title="Close" aria-label="Close">✕</button>
       </div>
-      ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : m.lib ? '' : '<p class="card-desc">Your own data.</p>'}
+      <div class="card-intro">
+        ${e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || m.name)}">` : ''}
+        ${e.quote ? `<blockquote class="card-quote">“${esc(e.quote)}”<footer>— as marketed, ${esc(e.quoteBy || '')}</footer></blockquote>` : ''}
+        ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : m.lib || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
+      </div>
       <dl class="card-specs">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
       ${links ? `<div class="card-links">${links}</div>` : ''}
       <div class="card-actions">
@@ -673,7 +692,7 @@
       tr.innerHTML = `
         <td class="sticky"><div class="mcell">
           <input type="color" title="Change color" value="${resolvedHex(m)}">
-          <span class="name${m.name.length > 14 ? ' long' : ''}" title="${esc(m.name)} — tap for info">${esc(m.name)}</span>
+          <span class="name${nameLen(m) > 14 ? ' long' : ''}" title="${esc(m.name)} — tap for info">${nameHtml(m)}</span>
         </div></td>
         <td class="toggle"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
         <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>
@@ -703,9 +722,6 @@
     const edge = () => wrap.classList.toggle('more', wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 2);
     if (!wrap.dataset.edge) { wrap.dataset.edge = 1; wrap.addEventListener('scroll', edge, { passive: true }); addEventListener('resize', edge); }
     requestAnimationFrame(edge);
-    const sel = $('refMic');
-    sel.innerHTML = '<option value="">—</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
-    sel.value = state.settings.ref;
   }
   function resolvedHex(m) {
     if (m.color) return m.color;
@@ -727,12 +743,27 @@
     $('normMode').value = s.normMode; $('normFreq').value = s.normFreq;
     $('normFreqBox').hidden = s.normMode !== 'freq';
     $('sensHint').hidden = s.normMode !== 'sens';
-    $('smooth').value = s.smooth; $('yRange').value = s.yRange;
+    $('yRange').value = s.yRange;
+    drawSmoothDots();
+  }
+  // Smoothing: five tap dots, growing with the amount of smoothing.
+  const SMOOTH_STEPS = [['0', 'none'], ['12', '1/12 oct'], ['6', '1/6 oct'], ['3', '1/3 oct'], ['1', '1 oct']];
+  function drawSmoothDots() {
+    const box = $('smoothDots'), cur = state.settings.smooth;
+    box.innerHTML = '';
+    SMOOTH_STEPS.forEach(([v, label], i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'dot-btn' + (v === cur ? ' on' : '');
+      b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', v === cur); b.title = 'Smoothing: ' + label;
+      b.innerHTML = `<span style="width:${6 + i * 3}px;height:${6 + i * 3}px"></span>`;
+      b.onclick = () => { state.settings.smooth = v; syncControls(); update(); };
+      box.appendChild(b);
+    });
+    const hit = SMOOTH_STEPS.find(([v]) => v === cur);
+    $('smoothLabel').textContent = '· ' + (hit ? hit[1] : cur + ' oct');
   }
   $('normMode').onchange = e => { state.settings.normMode = e.target.value; syncControls(); update(); };
   $('normFreq').onchange = e => { const v = Number(e.target.value); if (v > 0) state.settings.normFreq = v; update(); };
-  $('smooth').onchange = e => { state.settings.smooth = e.target.value; update(); };
-  $('refMic').onchange = e => { state.settings.ref = e.target.value; update(); };
   $('yRange').onchange = e => { state.settings.yRange = e.target.value; update(); };
 
   function msg(id, text, err) { const m = $(id); m.textContent = text; m.classList.toggle('err', !!err); }
@@ -916,6 +947,9 @@
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
     if (!hadSaved && !shared) LIBRARY.filter(e => e.auto).forEach(addFromLibrary);
+    // The 'Relative to' control is gone; don't keep a hidden reference from older saves or links.
+    state.settings.ref = '';
+    if (!SMOOTH_STEPS.some(([v]) => v === state.settings.smooth)) state.settings.smooth = '12';
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
