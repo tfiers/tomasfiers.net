@@ -219,6 +219,7 @@
   .card-graph a { display: block; cursor: zoom-in; }
   .card-graph img { display: block; width: 100%; height: auto; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
   .card-source { font-size: 0.75rem; color: var(--muted); margin: 6px 0 0; }
+  .card-note { font-size: 0.8rem; color: var(--ink-2); margin: 8px 0 0; }
   #libBox { margin-top: 0; }
   .with-info { display: flex; align-items: center; gap: 8px; }
   .info-btn { width: 20px; height: 20px; padding: 0; border-radius: 50%; font: italic 600 12px/1 Georgia, serif;
@@ -1724,6 +1725,7 @@
       ${graphs.length ? `<h4 class="card-sec">From the manufacturer</h4>
       <div class="card-graphs" style="--cols:${cols}">${graphs.map(([src, sz, alt]) =>
         `<figure class="card-graph"><a href="${esc(src)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(src)}" alt="${esc(alt)}"${dims(sz)}></a></figure>`).join('')}</div>
+      ${e.note ? `<p class="card-note">${esc(e.note)}</p>` : ''}
       ${e.source ? `<p class="card-source">Source: ${esc(e.source)}</p>` : ''}` : ''}
       ${actions ? `<div class="card-foot">${actions}</div>` : ''}`;
     if (variants) {

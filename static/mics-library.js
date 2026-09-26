@@ -11,7 +11,8 @@
 //   offaxis       polar data: {f: [freqs], db: [[dB at 0°, 5°, 10°, ..., 180°] per freq]}, 0 dB at 0°
 //   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k"),
 //                 electret (true for electret condensers; shown in the mic's details)}; null = not published
-//   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from)
+//   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from),
+//                 note (a remark on the manufacturer's graph, e.g. its measuring distance)
 //   url, pdf      product page and manual / data sheet
 //   photo, photosExtra, graph, polar (+ …Size = [w, h] in px): images in mics-photos/, mics-sources/, mics-polar/
 //
@@ -122,6 +123,7 @@ window.MIC_LIBRARY = [
     "manufacturer":"Behringer",
     "price":"~€60 a pair",
     "desc":"Budget small-diaphragm “pencil” condenser, sold as a matched stereo pair with a stereo bar. For acoustic guitar, overheads, and simple stereo recordings.",
+    "note":"Behringer doesn’t say at what distance this was measured. Its low end matches the DPA 4099 at 1 m almost exactly, so it is likely a far-field curve: closer in (20–30 cm), the proximity effect brings much of that bass back.",
     "graph":"mics-sources/behringer-c2.webp",
     "photo":"mics-photos/behringer-c2.webp",
     "graphSize":[1100,395],

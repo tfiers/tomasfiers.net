@@ -158,9 +158,13 @@ MAKER={'AT2020':('Audio-Technica','~€100'),'Behringer C-2':('Behringer','~€6
  'Schoeps MK 5':('Schoeps','~€2,100 with CMC 6'),'sE4400':('sE Electronics','~€400'),'DPA 4099':('DPA Microphones','~€500'),
  'Neumann U 87 Ai':('Neumann','~€2,900'),'Shure SM57':('Shure','~€100'),'Shure SM58':('Shure','~€100'),
  'Schoeps MK 4':('Schoeps','~€1,700 with CMC 6'),'AKG C414 XLS':('AKG','~€850'),'AKG C414 XLII':('AKG','~€900')}
+# A remark on how to read the manufacturer's graph, shown under it in the mic's details.
+NOTE={'Behringer C-2':'Behringer doesn’t say at what distance this was measured. Its low end matches the DPA 4099 at 1 m '
+ 'almost exactly, so it is likely a far-field curve: closer in (20–30 cm), the proximity effect brings much of that bass back.'}
 for e in lib:
     if e['model'] in MAKER: e['manufacturer'],e['price']=MAKER[e['model']]
     if e['model'] in DESC: e['desc']=DESC[e['model']]
+    if e['model'] in NOTE: e['note']=NOTE[e['model']]
     e['graph']='mics-sources/'+GRAPH[e['model']]+'.webp'
     if e['model'] in PHOTO: e['photo']='mics-photos/'+PHOTO[e['model']]+'.webp'
     # Image sizes, so the info card can reserve space before the images load (no layout jump).
@@ -253,7 +257,8 @@ js="""// Mic Atlas (mics.html): the built-in microphones. One entry per curve (a
 //   offaxis       polar data: {f: [freqs], db: [[dB at 0°, 5°, 10°, ..., 180°] per freq]}, 0 dB at 0°
 //   specs         {type, pattern, sens (dBV/Pa), noise (dB(A)), maxspl (dB SPL), imp (ohm), range ("20–20k"),
 //                 electret (true for electret condensers; shown in the mic's details)}; null = not published
-//   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from)
+//   manufacturer, price (approximate, text), desc (short description), source (where the curve comes from),
+//                 note (a remark on the manufacturer's graph, e.g. its measuring distance)
 //   url, pdf      product page and manual / data sheet
 //   photo, photosExtra, graph, polar (+ …Size = [w, h] in px): images in mics-photos/, mics-sources/, mics-polar/
 //
