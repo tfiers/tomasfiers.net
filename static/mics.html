@@ -154,6 +154,7 @@
   .card-photos .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
   .card-graph a { display: block; cursor: zoom-in; }
+  .card-polar img { max-width: 340px; margin: 0 auto; }
   .card-chips { display: flex; flex-wrap: wrap; gap: 5px; }
   .card-chips .chip { padding: 2px 9px; font-size: 0.82rem; }
   .card-chips .chip .pat, .card-specs .per .pat { width: 16px; height: 16px; margin-right: 3px; vertical-align: -3px; }
@@ -706,6 +707,7 @@
         ${mic ? '<button class="rename">Rename</button>' : ''}
         <button class="remove" style="color:var(--danger)">${variants ? 'Remove all from chart' : 'Remove from chart'}</button>
       </div>
+      ${e.polar ? `<figure class="card-graph card-polar"><a href="${esc(e.polar)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.polar)}" alt="Manufacturer's polar diagram for ${esc(e.model || title)}"${dims(e.polarSize)}></a><figcaption>Polar pattern (from the manufacturer)</figcaption></figure>` : ''}
       ${e.graph ? `<figure class="card-graph"><a href="${esc(e.graph)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(e.model || title)}"${dims(e.graphSize)}></a><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
     if (variants) {
       // One chip per pattern/variant: tap to add it to / remove it from the chart.
