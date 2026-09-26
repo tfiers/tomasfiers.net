@@ -125,8 +125,26 @@
   }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .mic-table td.about { min-width: 24em; max-width: 30em; white-space: normal; }
-  .mic-table .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; }
+  .mic-table td.type { white-space: normal; min-width: 7.5em; max-width: 9.5em; font-size: 0.85rem; line-height: 1.3; }
+  .mic-table .mcell .name { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: pointer; }
+  dialog#infoCard { width: min(520px, calc(100% - 32px)); max-height: calc(100% - 48px); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  dialog#infoCard::backdrop { background: rgba(0,0,0,0.35); }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .card-head h3 { margin: 0; font-size: 1.15rem; flex: 1; }
+  .card-head .close { font-size: 1.1rem; }
+  .sw.big { width: 14px; height: 14px; border-radius: 4px; }
+  .card-desc { color: var(--ink-2); font-size: 0.9rem; margin: 10px 0 4px; }
+  .card-specs { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 12px 0; font-size: 0.9rem; }
+  .card-specs dt { color: var(--muted); }
+  .card-specs dd { margin: 0; }
+  .card-specs .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; vertical-align: -4px; margin-right: 4px; }
+  .card-graph { margin: 16px 0 0; }
+  .card-graph img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border); background: #fff; }
+  .card-graph figcaption { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .card-links { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.9rem; margin: 8px 0 14px; }
+  .card-links a { color: var(--accent); }
+  .card-actions { display: flex; gap: 8px; justify-content: flex-end; }
   #libBox { margin-top: 0; }
   .mic-table tr.off .name { color: var(--muted); text-decoration: line-through; }
   .mic-table input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; flex: none; }
@@ -278,6 +296,7 @@
     </aside>
   </div>
 </main>
+<dialog id="infoCard" aria-label="Mic info"></dialog>
 
 <script src="mics-library.js"></script>
 <script>
@@ -584,45 +603,80 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- mic list ----------
+  // Info card (modal) for one mic: description, specs, source graph, links, rename/remove.
+  function openInfo(m) {
+    const dlg = $('infoCard');
+    const sp = m.specs || {};
+    const e = m.lib && LIBRARY.find(x => x.name === m.lib) || {};
+    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+    const rows = [
+      ['Pattern', sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'],
+      ['Type', esc(sp.type || '–')],
+      ['Sensitivity', typeof sp.sens === 'number' ? `${num(sp.sens, ' dBV')} · ${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa` : '–'],
+      ['Self-noise', num(sp.noise, ' dB(A)')],
+      ['Max SPL', num(sp.maxspl, ' dB')],
+      ['Impedance', num(sp.imp, ' Ω')],
+      ['Rated range', sp.range ? esc(sp.range) + ' Hz' : '–'],
+    ];
+    const links = [
+      e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">Official page</a>` : '',
+      e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">Manual (PDF)</a>` : '',
+      e.graph ? `<a href="${esc(e.graph)}" target="_blank" rel="noopener">Source graph (full size)</a>` : '',
+    ].filter(Boolean).join('');
+    dlg.innerHTML = `
+      <div class="card-head">
+        <span class="sw big" style="background:${colorOf(m)}"></span>
+        <h3>${esc(m.name)}</h3>
+        <button class="link close" title="Close" aria-label="Close">✕</button>
+      </div>
+      ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : m.lib ? '' : '<p class="card-desc">Your own data.</p>'}
+      <dl class="card-specs">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      ${links ? `<div class="card-links">${links}</div>` : ''}
+      <div class="card-actions">
+        <button class="rename">Rename</button>
+        <button class="remove" style="color:var(--danger)">Remove from chart</button>
+      </div>
+      ${e.graph ? `<figure class="card-graph"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(m.name)}" loading="lazy"><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
+    dlg.querySelector('.close').onclick = () => dlg.close();
+    dlg.querySelector('.rename').onclick = () => {
+      const n = prompt('Rename mic', m.name);
+      if (n && n.trim()) { m.name = n.trim(); update(); openInfo(m); }
+    };
+    dlg.querySelector('.remove').onclick = () => {
+      state.mics = state.mics.filter(x => x !== m);
+      if (state.settings.ref === m.id) state.settings.ref = '';
+      dlg.close(); update();
+    };
+    if (!dlg.open) dlg.showModal();
+  }
   function drawList() {
     const table = $('micTable');
     $('micEmpty').hidden = state.mics.length > 0;
     table.hidden = !state.mics.length;
     const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
     table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="toggle" aria-label="Show"></th><th class="tight" aria-label="Remove"></th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
-      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th></tr></thead>`;
+      <th>Max SPL</th><th>Impedance</th><th>Range</th></tr></thead>`;
     const tbody = document.createElement('tbody');
     for (const m of state.mics) {
       const sp = m.specs || {};
-      const e = m.lib && LIBRARY.find(x => x.name === m.lib) || {};
-      const links = [
-        e.graph ? `<a href="${esc(e.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
-        e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">official page</a>` : '',
-        e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">manual (PDF)</a>` : '',
-      ].filter(Boolean).join(' · ');
       const tr = document.createElement('tr');
       if (!m.visible) tr.className = 'off';
       tr.innerHTML = `
         <td class="sticky"><div class="mcell">
           <input type="color" title="Change color" value="${resolvedHex(m)}">
-          <span class="name${m.name.length > 14 ? ' long' : ''}" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
+          <span class="name${m.name.length > 14 ? ' long' : ''}" title="${esc(m.name)} — tap for info">${esc(m.name)}</span>
         </div></td>
         <td class="toggle"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
         <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>
         <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
-        <td>${esc(sp.type || '–')}</td>
+        <td class="type">${esc(sp.type || '–')}</td>
         <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
         <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
-        <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>
-        <td class="about"><div class="clamp" title="${esc(e.desc || '')}">${esc(e.desc || '–')}</div></td>
-        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>`;
+        <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>`;
       const cb = tr.querySelector('input[type=checkbox]'), color = tr.querySelector('input[type=color]');
       const name = tr.querySelector('.name'), del = tr.querySelector('button.link');
       cb.onchange = () => { m.visible = cb.checked; update(); };
-      name.onclick = () => {
-        const n = prompt('Rename mic', m.name);
-        if (n && n.trim()) { m.name = n.trim(); update(); }
-      };
+      name.onclick = () => openInfo(m);
       color.oninput = () => { m.color = color.value; update(); };
       del.onclick = () => {
         state.mics = state.mics.filter(x => x !== m);
@@ -843,6 +897,9 @@
       history.replaceState(null, '', location.pathname + location.search);
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
+
+  // Close the info card when tapping the backdrop.
+  $('infoCard').addEventListener('click', ev => { if (ev.target === ev.currentTarget) ev.currentTarget.close(); });
 
   // ---------- init ----------
   const hadSaved = load();
