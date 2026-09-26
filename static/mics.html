@@ -112,7 +112,10 @@
   .mic-table td { padding-top: 6px; padding-bottom: 6px; }
   .mic-table .sticky { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
   .mic-table .mcell { display: flex; align-items: center; gap: 6px; width: 8.5em; }
-  .mic-table .tight { padding-left: 4px; padding-right: 4px; width: 1px; }
+  .mic-table .tight { padding-left: 2px; padding-right: 8px; width: 1px; }
+  .mic-table .toggle { padding-left: 14px; padding-right: 10px; width: 1px; }
+  .mic-table .mcell .name { font-size: 0.88rem; }
+  .mic-table .mcell .name.long { font-size: 0.78rem; }
   .mic-table th.sticky, .mic-table td.sticky { padding-left: 8px; padding-right: 6px; }
   .mic-table input[type=checkbox] { width: 18px; height: 18px; margin: 2px 0 0; }
   @media (max-width: 860px) {
@@ -586,8 +589,8 @@
     $('micEmpty').hidden = state.mics.length > 0;
     table.hidden = !state.mics.length;
     const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="tight" aria-label="Show"></th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
-      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th><th class="tight" aria-label="Remove"></th></tr></thead>`;
+    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="toggle" aria-label="Show"></th><th class="tight" aria-label="Remove"></th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
+      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th></tr></thead>`;
     const tbody = document.createElement('tbody');
     for (const m of state.mics) {
       const sp = m.specs || {};
@@ -602,17 +605,17 @@
       tr.innerHTML = `
         <td class="sticky"><div class="mcell">
           <input type="color" title="Change color" value="${resolvedHex(m)}">
-          <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
+          <span class="name${m.name.length > 14 ? ' long' : ''}" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
         </div></td>
-        <td class="tight"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
+        <td class="toggle"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
+        <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>
         <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
         <td>${esc(sp.type || '–')}</td>
         <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
         <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
         <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>
         <td class="about"><div class="clamp" title="${esc(e.desc || '')}">${esc(e.desc || '–')}</div></td>
-        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>
-        <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>`;
+        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>`;
       const cb = tr.querySelector('input[type=checkbox]'), color = tr.querySelector('input[type=color]');
       const name = tr.querySelector('.name'), del = tr.querySelector('button.link');
       cb.onchange = () => { m.visible = cb.checked; update(); };
