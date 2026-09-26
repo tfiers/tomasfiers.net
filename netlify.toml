@@ -7,5 +7,7 @@
   # Directory to save the html to
   publish = "_build/"
 
-[context.production.environment]
+# Hugo version for every context (production, deploy previews, branch deploys).
+# Netlify doesn't preinstall Hugo, so without this previews fail with "hugo: command not found".
+[build.environment]
   HUGO_VERSION = "0.154.5"

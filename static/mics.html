@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mic Response Compare</title>
+<title>Mic Atlas and Instrument Ranges</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
   :root {
@@ -48,6 +48,7 @@
   }
   main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .h1-more { font-size: 0.72em; font-weight: 500; color: var(--muted); }
   h2 { font-size: 1rem; margin: 0 0 10px; }
   .sub { color: var(--ink-2); margin: 0 0 20px; }
   .panel {
@@ -56,16 +57,61 @@
   }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 16px; align-items: start; }
   .main-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr); } }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: minmax(0,1fr); }
+    /* Phones and tablets in portrait: one column, mic list right under the chart, library after it. */
+    .main-col { display: contents; }
+    #chartPanel { order: 1; }
+    #micPanel { order: 2; }
+    .layout > aside { order: 3; }
+  }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
-  .controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
+  .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
+  @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level, .field-wide { grid-column: 1 / -1; } }
+  /* Response / Polar view switch; each view shows only its own controls. */
+  .view-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--page); }
+  .src-note { margin: -4px 0 12px; }
+  .note p { margin: 0 0 4px; }
+  .lib-hint { margin: 4px 0 0; }
+  .sub-head { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); margin: 12px 0 2px; }
+  .note a { color: var(--accent); }
+  .note ul { margin: 0 0 4px; padding-left: 1.1em; }
+  .note li { margin: 2px 0; }
+  .note b { font-weight: 600; color: var(--ink-2); }
+  .seg button { border: none; background: none; border-radius: 6px; padding: 3px 12px; font-size: 0.85rem; color: var(--ink-2); }
+  .seg button[aria-selected="true"], .seg button[aria-checked="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  #chartPanel:not(.polar) .polar-only, #chartPanel.polar .resp-only { display: none; }
+  #chartPanel.polar .controls { grid-template-columns: minmax(0, 360px) auto; }
+  .seg.small { margin: 0; align-self: start; }
+  .seg.small button { padding: 2px 12px; }
+  /* 3D polar view: one rotatable balloon per mic. */
+  .p3d { display: grid; gap: 8px 12px; justify-content: center; padding: 4px 0; }
+  .p3d[hidden] { display: none; }
+  .p3d canvas { display: block; touch-action: none; cursor: grab; }
+  .p3d canvas:active { cursor: grabbing; }
+  .p3d .p3d-name { text-align: center; font-size: 0.8rem; font-weight: 600; margin-top: -4px; }
+  .p3d .hint { grid-column: 1 / -1; text-align: center; margin: 0; }
+  .field input[type=range] { width: 100%; height: 30px; margin: 0; accent-color: var(--accent); }
+  .ticks { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); margin-top: -4px; padding: 0 2px; font-variant-numeric: tabular-nums; }
+  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .dots { display: flex; align-items: center; justify-content: space-between; height: 30px; max-width: 190px; }
+  .dot-btn { width: 30px; height: 30px; padding: 0; border: none; background: none; display: grid; place-items: center; border-radius: 50%; }
+  .dot-btn span { display: block; border-radius: 50%; border: 1.5px solid var(--muted); box-sizing: border-box; }
+  .dot-btn.on span { background: var(--accent); border-color: var(--accent); }
+  .dot-btn:hover span { border-color: var(--ink-2); }
+  .cap-val { text-transform: none; letter-spacing: 0; color: var(--ink-2); }
+  .field .cap { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .field select { width: 100%; height: 30px; }
+  .field .row { display: flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 0.9rem; }
+  .field .row select { flex: 1; min-width: 0; }
+  #normFreqBox { white-space: nowrap; }
+  #normFreq { width: 4.5em; height: 30px; }
   select, input[type=number], input[type=text], textarea {
     font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--page);
     border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
   }
   select { max-width: 100%; min-width: 0; }
-  .controls label { max-width: 100%; }
   input[type=number] { width: 5.5em; }
   textarea { width: 100%; min-height: 140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; }
   button {
@@ -80,6 +126,7 @@
   .chart-wrap { position: relative; }
   svg#chart { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  svg .inlabel { paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   svg .direct { font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   .tip {
     position: absolute; pointer-events: none; background: var(--surface); color: var(--ink);
@@ -87,29 +134,228 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; display: none; z-index: 2;
   }
   .tip .f { font-weight: 600; margin-bottom: 4px; }
+  .tip .cents { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
+  sub.oct { font-size: 0.72em; vertical-align: -0.08em; line-height: 0; }
+  svg tspan.oct { font-size: 0.75em; }
+  .tip .note { white-space: nowrap; color: #fff; padding: 1px 6px 2px; border-radius: 5px; }
   .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
   .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
 
   .empty { text-align: center; color: var(--muted); padding: 60px 16px; }
 
-  .mics { list-style: none; margin: 0; padding: 0; }
-  .mics li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-  .mics li:last-child { border-bottom: none; }
-  .mics .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
-  .mics li.off .name { color: var(--muted); text-decoration: line-through; }
-  .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
-  .mics .meta { color: var(--muted); font-size: 0.75rem; }
-  #libList .name { white-space: normal; }
-  #libList .lib-head { border-bottom: none; padding: 10px 0 0; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .lib-desc { font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; display: inline-block; margin: 2px 0; }
-  #libList .lib-item { display: block; }
-  .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .lib-btns button { font-size: 0.78rem; padding: 3px 7px; }
+  .mic-wrap { margin-top: 0; }
+  .mic-wrap.more { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+  .mic-table th, .mic-table td { text-align: left; vertical-align: top; }
+  .mic-table td { padding-top: 6px; padding-bottom: 6px; }
+  .mic-table .sticky { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
+  .mic-table .mcell { display: flex; align-items: center; gap: 6px; width: 8.5em; }
+  .mic-table .tight { padding-left: 2px; padding-right: 8px; width: 1px; }
+  .mic-table .toggle { padding-left: 14px; padding-right: 10px; width: 1px; }
+  .mic-table .mcell .name { font-size: 0.88rem; }
+  .mic-table .mcell .name.long { font-size: 0.78rem; }
+  .mic-table .mcell .name .variant { font-size: 0.72rem; color: var(--muted); }
+  .mic-table .mcell .name .pat { width: 15px; height: 15px; vertical-align: -3px; margin: 0; }
+  .mic-table th.sticky, .mic-table td.sticky { padding-left: 8px; padding-right: 6px; }
+  .mic-table input[type=checkbox] { width: 18px; height: 18px; margin: 2px 0 0; }
+  @media (max-width: 860px) {
+    /* Phones: the table runs to the screen edges. */
+    #micPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding-left: 0; padding-right: 0; }
+    #chartPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding: 12px 10px; }
+    /* The chart (and the ranges under it, on the same axis) run to the screen edges. */
+    #chartWrap, #rangesBox svg#ranges { margin-left: -10px; margin-right: -10px; }
+    #rangesBox svg#ranges { width: calc(100% + 20px); }
+    #micPanel > h2, #micPanel > .hint { padding-left: 16px; padding-right: 16px; }
+  }
+  .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .mic-table td.type { white-space: normal; min-width: 13em; max-width: 16em; line-height: 1.3; }
+  .mic-table td.type div { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .mic-table .mcell .name { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: pointer; }
+  dialog#infoCard { width: min(720px, calc(100% - 32px)); max-height: calc(100% - 48px); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  dialog#infoCard::backdrop { background: rgba(0,0,0,0.35); }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .card-head h3 { margin: 0; font-size: 1.15rem; flex: 1; }
+  .card-maker { margin: 2px 0 0; color: var(--muted); font-size: 0.88rem; }
+  .card-head .close { font-size: 1.1rem; }
+  .sw.big { width: 14px; height: 14px; border-radius: 4px; }
+  /* Details panel: header; photo + description + links; specs as tiles; the manufacturer's graphs;
+     a footer with the chart actions that stays in view. */
+  .card-intro { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 14px; }
+  .card-intro.no-photo { grid-template-columns: minmax(0, 1fr); }
+  .card-photos .main { display: block; object-fit: contain; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid var(--border); }
+  .card-photos .thumbs { display: flex; gap: 5px; margin-top: 6px; justify-content: center; }
+  .card-photos .thumb { width: 36px; height: 36px; padding: 2px; border-radius: 6px; background: #fff; border: 1.5px solid var(--border); }
+  .card-photos .thumb.on { border-color: var(--accent); }
+  .card-photos .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .card-desc { color: var(--ink-2); font-size: 0.92rem; margin: 0 0 12px; }
+  .card-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card-links a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+    color: var(--ink); text-decoration: none; font-size: 0.82rem; background: var(--page); }
+  .card-links a:hover { border-color: var(--accent); color: var(--accent); }
+  .card-links svg { width: 14px; height: 14px; flex: none; }
+  .card-links .dom { color: var(--muted); }
+  .card-sec { margin: 20px 0 8px; font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 0; }
+  .card-specs .spec { padding: 7px 10px; border-radius: 8px; background: var(--page); border: 1px solid var(--border); min-width: 0; }
+  .card-specs .spec.wide { grid-column: 1 / -1; }
+  .card-specs dt { font-size: 0.7rem; color: var(--muted); margin-bottom: 2px; }
+  .card-specs dd { margin: 0; font-size: 0.9rem; }
+  .card-graphs { display: grid; grid-template-columns: var(--cols); gap: 12px; align-items: start; }
+  @media (max-width: 560px) { .card-graphs { grid-template-columns: 1fr; } }
+  .card-foot { position: sticky; bottom: -18px; display: flex; justify-content: flex-end; gap: 8px; margin: 20px -18px -18px; padding: 12px 18px;
+    background: var(--surface); border-top: 1px solid var(--border); border-radius: 0 0 14px 14px; }
+  .card-foot .remove { color: var(--danger); }
+  .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
+  .card-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .card-chips .chip { padding: 2px 9px; font-size: 0.82rem; }
+  .card-chips .chip .pat, .card-specs .per .pat { width: 16px; height: 16px; margin-right: 3px; vertical-align: -3px; }
+  .card-specs .per { color: var(--muted); display: inline-block; margin-right: 6px; }
+  .vl { margin-left: 1px; }
+  .card-quote footer { font-style: normal; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .card-specs .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; vertical-align: -4px; margin-right: 4px; }
+  .card-graph { margin: 0; min-width: 0; }
+  .card-graph a { display: block; cursor: zoom-in; }
+  .card-graph img { display: block; width: 100%; height: auto; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
+  .card-source { font-size: 0.75rem; color: var(--muted); margin: 6px 0 0; }
+  .card-note { font-size: 0.8rem; color: var(--ink-2); margin: 8px 0 0; }
+  #libBox { margin-top: 0; }
+  .with-info { display: flex; align-items: center; gap: 8px; }
+  .info-btn { width: 20px; height: 20px; padding: 0; border-radius: 50%; font: italic 600 12px/1 Georgia, serif;
+    color: var(--muted); border: 1.5px solid var(--muted); background: none; display: inline-grid; place-items: center; }
+  .info-btn.sm { width: 16px; height: 16px; font-size: 10px; border-width: 1.2px; text-transform: none; }
+  .cap.with-info { gap: 5px; }
+  #polarWarn + #polarNote, #polarNote { margin-top: 6px; }
+  .info-btn[aria-expanded="true"] { color: var(--surface); background: var(--muted); }
+  .mic-note { margin: -4px 0 10px; }
+  .mic-table tr.off .name { color: var(--muted); text-decoration: line-through; }
+  .mic-table input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; flex: none; }
+  .mic-table .meta { color: var(--muted); font-size: 0.75rem; }
+  .mic-table .meta a, .mic-table a { color: var(--accent); }
+  .mic-table .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; vertical-align: -4px; margin-right: 4px; }
+  #libChips .lib-head { margin-top: 10px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; white-space: nowrap; }
+  .chip .plus { color: var(--muted); }
+  .chip.on { border-color: var(--muted); font-weight: 600; }
+  .chip.icon { padding: 2px 7px; }
+  .chip .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; stroke-linejoin: round; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .chip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .chip .dot + .dot { margin-left: -2px; }
+  /* Quick picker under a multi-pattern chip: one toggle per pattern/variant, plus the info card. */
+  .picker { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    max-width: min(92vw, 380px); padding: 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
+  .picker[hidden] { display: none; }
+  /* A control's caption can be tapped to show its tooltip text (phones have no hover). */
+  .controls .field > .cap, .ranges-bar .field > .cap, .mic-table th.help { cursor: help; }
+  .cap-tip b { color: var(--ink); font-weight: 600; }
+  .cap-tip p, .cap-tip ul { margin: 0; white-space: normal; }
+  .cap-tip ul { padding-left: 1.1em; margin-top: 4px; }
+  .type-card { margin-top: 10px; font-size: 0.92rem; color: var(--ink-2); line-height: 1.5; }
+  .type-card ul { padding-left: 1.2em; } .type-card li { margin: 6px 0; }
+  .type-card .type-schematics svg { max-width: 190px; }
+  .type-schematics { display: flex; gap: 8px; margin: 8px 0 6px; }
+  .type-schematics figure { flex: 1 1 0; min-width: 0; margin: 0; text-align: center; font-size: 0.68rem; line-height: 1.25; }
+  .type-schematics figcaption span { font-size: 0.64rem; }
+  .type-schematics svg { width: 100%; max-width: 150px; height: auto; display: block; margin: 0 auto 2px; }
+  .type-schematics figcaption span { color: var(--muted); }
+  .ts-wave { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
+  .ts-dia { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .ts-thin { fill: none; stroke: var(--ink-2); stroke-width: 1; }
+  .ts-coil { fill: none; stroke: var(--accent); stroke-width: 1.3; }
+  .ts-diaf { fill: var(--accent); }
+  .ts-sig { fill: none; stroke: #d95926; stroke-width: 1.3; stroke-linejoin: round; }
+  .ts-dot { fill: var(--ink-2); }
+  .ts-mag { fill: var(--muted); opacity: 0.55; }
+  .ts-plate { fill: var(--ink-2); opacity: 0.7; }
+  .ts-hole { fill: var(--surface); }
+  .ts-fold { stroke: var(--accent); stroke-width: 0.6; opacity: 0.6; }
+  .type-card h4.type-h { margin: 16px 0 4px; font-size: 1rem; color: var(--ink); }
+  .type-card p { margin: 4px 0; }
+  .type-card a { color: var(--accent); }
+  .ts-field { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 2 2; }
+  .ts-t { font-size: 7px; fill: var(--muted); }
+  .ts-pm { font-size: 9px; font-weight: 600; fill: #d95926; }
+  .ts-q { font-size: 6px; font-weight: 600; fill: var(--accent); }
+  .ts-amp { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1; }
+  .type-card .ts-electret { float: right; width: 42%; max-width: 200px; margin: 4px 0 6px 12px; text-align: center; font-size: 0.68rem; line-height: 1.25; }
+  .ts-electret svg { width: 100%; height: auto; display: block; }
+  .ts-electret figcaption span { font-size: 0.64rem; color: var(--muted); }
+  .type-card h4.type-h { clear: both; }
+  .ts-pole { font-size: 9px; font-weight: 600; fill: var(--ink-2); }
+  .type-diagram { display: flex; gap: 10px; justify-content: center; margin: 8px 0 2px; }
+  .type-diagram figure { margin: 0; text-align: center; font-size: 0.72rem; line-height: 1.25; }
+  .type-diagram figcaption span { color: var(--muted); }
+  .type-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; }
+  .type-legend i { display: inline-block; width: 12px; height: 2px; margin-right: 4px; vertical-align: 3px; }
+  .cap-tip li { margin: 3px 0; }
+  .cap-tip a { color: var(--accent); }
+  .cap-tip { position: absolute; z-index: 6; max-width: min(92vw, 360px); max-height: 70vh; overflow-y: auto; padding: 8px 10px; white-space: pre-line;
+    background: var(--surface); color: var(--ink-2); font-size: 0.8rem; line-height: 1.4;
+    border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
+  .cap-tip[hidden] { display: none; }
+  .picker .chip { padding: 3px 9px; font-size: 0.82rem; }
+  .picker .chip .pat { width: 16px; height: 16px; }
+  .picker .info { border: none; background: none; color: var(--accent); font-size: 0.82rem; padding: 3px 6px; }
   button:disabled { color: var(--muted); cursor: default; }
 
-  details { margin-top: 12px; }
-  summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
+  details { margin-top: 4px; }
+  #rangesBox { margin-top: 4px; }
+  svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
+  .ranges-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin: 10px 0 6px; }
+  .play-opts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+  /* Three groups: Choose instruments (left); Stop, Sound, and Through (centre); Chord (right). */
+  .play-opt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .play-opt select { max-width: 220px; }
+  /* Choose instruments: on the section's heading line, at the right (only while it's open). */
+  #rangesBox { position: relative; }
+  button.inst-edit { position: absolute; top: 9px; right: 0; font-size: 0.8rem; padding: 3px 10px; }
+  #chordField[hidden] { display: none; }
+  #chordSeg button { padding: 2px 7px; min-width: 28px; }
+  /* The three dots: a C major triad (C, E, G) next to the keyboard's top end. Tap them for chords.
+     Still at rest; they only move when tapped. */
+  svg .triad { cursor: pointer; }
+  svg .triad circle.dot { transform-box: fill-box; transform-origin: center; opacity: 0.55; }
+  svg .triad.on circle.dot { opacity: 0.9; }
+  svg .triad.hop circle.dot { animation: triad-hop 0.35s ease-out; }
+  svg .triad.hop circle.dot:nth-of-type(2) { animation-delay: 0.05s; }
+  svg .triad.hop circle.dot:nth-of-type(3) { animation-delay: 0.1s; }
+  @keyframes triad-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-3px) scale(1.15); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { svg .triad circle.dot { animation: none !important; } }
+  /* Stop for the held tone: a pill in the note's colour, its square gently pulsing while it sounds. */
+  .stop-tone[hidden] { display: none; }
+  .stop-tone { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; height: 30px; padding: 0 12px 0 10px;
+    border: 1.5px solid var(--note, var(--accent)); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 0.85rem; }
+  .stop-tone .sq { width: 10px; height: 10px; border-radius: 2px; background: var(--note, var(--accent)); animation: glow 1.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .stop-tone .sq { animation: none; } }
+  /* The playable-piano hint: a soft, pulsing light until the first note is played. */
+  svg .play-hint { fill: var(--accent); font-size: 11px; animation: glow 2.4s ease-in-out infinite; }
+  @keyframes glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { svg .play-hint { animation: none; } }
+  /* No text selection or iOS callouts while dragging over the chart, ranges, and keys. */
+  #chartWrap, #rangesBox svg, .controls { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  svg .rta { fill-opacity: 0.18; stroke-opacity: 0.6; stroke-width: 1; stroke-linejoin: round; }
+  svg .rta-label { fill: var(--muted); font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  svg .ranges-legend { fill: var(--muted); font-size: 9.5px; opacity: 0.85; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  svg .ot-num { fill: var(--muted); font-size: 9.5px; }
+  .tip .ots { color: var(--muted); font-size: 0.72rem; margin: -2px 0 4px; }
+  svg .rl-name { fill: var(--ink-2); font-weight: 500; }
+  svg .rl-range { fill: var(--muted); font-size: 9.5px; opacity: 0.85; }
+  .inst-chips .lib-head { margin-top: 8px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .inst-chips { margin: 2px 0 6px; }
+  .inst-chips .chip { padding: 2px 8px; font-size: 0.8rem; }
+  /* Collapsible sections: headings with a chevron, separated by a thin line. */
+  summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px;
+    color: var(--ink); font-size: 1rem; font-weight: 600; padding: 12px 0 10px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: ''; flex: none; width: 7px; height: 7px; margin: 0 1px 2px 3px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform 0.15s; }
+  details[open] > summary::before { transform: rotate(45deg); margin-bottom: 5px; }
+  #rangesBox, #addBox, #addBox + details { border-top: 1px solid var(--border); margin-top: 14px; }
+  #libBox > summary { padding-top: 0; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
   .row-gap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
   .drop { border: 1.5px dashed var(--axis); border-radius: 8px; padding: 10px; text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
@@ -127,74 +373,143 @@
 </head>
 <body>
 <main>
-  <h1>Microphone frequency response compare</h1>
-  <p class="sub">Paste or drop frequency-response data for each mic and overlay the curves. Everything stays in your browser.</p>
+  <h1>Mic Atlas <span class="h1-more">and Instrument Ranges</span></h1>
+  <p class="sub">Microphone frequency responses and polar patterns · Musical instrument ranges, note names, and overtones · Browser synth</p>
 
   <div class="layout">
     <div class="main-col">
     <section class="panel" id="chartPanel">
+      <div class="view-row">
+      <div class="seg" id="viewSeg" role="tablist" aria-label="View">
+        <button type="button" role="tab" data-view="resp" title="Response across frequencies, at one angle">Frequency</button>
+        <button type="button" role="tab" data-view="polar" title="Pickup in every direction, at one frequency">Polar</button>
+      </div>
+      <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
+      </div>
+      <div class="hint note src-note" id="srcNote" hidden>
+        <p>All curves come from the manufacturers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Selected Microphones table to see its original graphs.</p>
+        <ul>
+          <li>Manufacturers measure in different ways (distance, room, smoothing), so take small differences between brands with a grain of salt.</li>
+          <li class="resp-only">A curve is drawn faded outside the mic's rated frequency range.</li>
+        </ul>
+      </div>
       <div class="controls">
-        <label>Level
-          <select id="normMode">
-            <option value="freq">0 dB at</option>
-            <option value="mean">0 dB = 200–5k average</option>
-            <option value="sens">output (sensitivity, dBV/Pa)</option>
-            <option value="none">as in the source</option>
-          </select>
-          <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
-        </label>
-        <label>Smoothing
-          <select id="smooth">
-            <option value="0">none</option>
-            <option value="24">1/24 oct</option>
-            <option value="12">1/12 oct</option>
-            <option value="6">1/6 oct</option>
-            <option value="3">1/3 oct</option>
-            <option value="1">1 oct</option>
-          </select>
-        </label>
-        <label>Relative to
-          <select id="refMic"><option value="">— nothing —</option></select>
-        </label>
-        <label>Y range
-          <select id="yRange">
+        <div class="field field-level resp-only" title="How the curves are lined up vertically.
+• As in the source: as the manufacturer drew it (usually 0 dB at 1 kHz).
+• Output: shifted by the published sensitivity, so mics that give a stronger signal sit higher.
+• 0 dB at …: every curve passes through 0 dB at the frequency you choose.
+• 300 Hz–1 kHz average: every curve's average over that range is set to 0 dB.">
+          <span class="cap">Level</span>
+          <div class="row">
+            <select id="normMode">
+              <option value="none">As in the source</option>
+              <option value="sens">Output (sensitivity, dBV/Pa)</option>
+              <option value="freq">0 dB at</option>
+              <option value="mean">0 dB = 300 Hz–1 kHz average</option>
+            </select>
+            <span id="normFreqBox"><input type="number" id="normFreq" value="1000" min="20" max="20000" step="1"> Hz</span>
+          </div>
+        </div>
+        <div class="field resp-only" title="Averages each curve horizontally, over a small frequency range, to hide small wiggles and show the overall shape.">
+          <span class="cap">Smoothing <span id="smoothLabel" class="cap-val"></span></span>
+          <div class="dots" id="smoothDots" role="radiogroup" aria-label="Smoothing"></div>
+        </div>
+        <div class="field resp-only" title="The vertical scale of the chart.">
+          <span class="cap">Y range</span>
+          <select id="yRange" aria-label="Y range">
             <option value="-10,5">+5 / −10 dB</option>
             <option value="5">±5 dB</option>
-            <option value="auto">auto</option>
             <option value="10">±10 dB</option>
             <option value="20">±20 dB</option>
             <option value="30">±30 dB</option>
+            <option value="auto">Auto</option>
           </select>
-        </label>
+        </div>
+        <div class="field resp-only" title="While you point at a frequency, also mark its overtones: 2, 3, 4, … times that frequency, up to the 16th harmonic (the 1st is the note itself). A note's timbre depends on how loud these come through, so this shows which parts of each mic's curve colour that note. Higher overtones are drawn fainter.">
+          <span class="cap">Overtones</span>
+          <div class="seg small" id="harmSeg" role="radiogroup" aria-label="Overtones">
+            <button type="button" role="radio" data-h="0">Off</button>
+            <button type="button" role="radio" data-h="16">On</button>
+          </div>
+        </div>
+        <div class="field field-wide resp-only" title="Where the sound comes from, relative to the front of the mic: 0° is straight on, 90° from the side, 180° from behind.">
+          <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" title="About the off-axis data">i</button></span>
+          <input type="range" id="angle" min="0" max="180" step="15" value="0" aria-label="Angle">
+        </div>
+        <div class="field field-wide polar-only" title="Which frequency's polar pattern to show.">
+          <span class="cap with-info">Frequency <span id="polarFLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" title="About the off-axis data">i</button></span>
+          <input type="range" id="polarF" min="0" max="6" step="1" value="2" aria-label="Frequency">
+          <div class="ticks" aria-hidden="true"><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>16k</span></div>
+        </div>
+        <div class="field polar-only" title="2D: all mics on one polar plot.
+3D: each mic's pattern as a shape, assuming it's the same all around the mic's axis. Drag to rotate.">
+          <span class="cap">Display</span>
+          <div class="seg small" id="dimSeg" role="tablist" aria-label="Display">
+            <button type="button" role="tab" data-dim="2d">2D</button>
+            <button type="button" role="tab" data-dim="3d">3D</button>
+          </div>
+        </div>
       </div>
       <div class="chart-wrap" id="chartWrap">
         <svg id="chart" viewBox="0 0 800 440" role="img" aria-label="Frequency response curves"></svg>
         <div class="tip" id="tip"></div>
+        <div class="p3d" id="polar3d" hidden></div>
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
-      <div class="table-wrap" id="tableWrap"></div>
+      <details id="rangesBox" class="resp-only">
+        <summary>Notes &amp; Instruments</summary>
+        <button type="button" id="instEdit" class="inst-edit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
+        <div id="instChips" class="inst-chips" hidden></div>
+        <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
+        <div class="ranges-bar">
+          <div class="play-opts">
+            <button type="button" id="stopTone" class="stop-tone" hidden title="Stop the held tone"><span class="sq"></span><span class="lbl"></span></button>
+            <div class="field play-opt" title="Piano: a struck note that rings out. Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the angle) while listening. Tap the key again, or Stop, to end it.">
+              <span class="cap">Sound</span>
+              <div class="seg small" id="soundSeg" role="radiogroup" aria-label="Sound">
+                <button type="button" role="radio" data-sound="piano">Piano</button>
+                <button type="button" role="radio" data-sound="held">Held tone</button>
+              </div>
+            </div>
+            <div class="field play-opt" title="Plays the keys as that mic would pick them up: each overtone made louder or quieter by the mic's curve at its frequency, at the angle set above. The level is relative to the mic's on-axis 1 kHz level, so mics don't differ in overall loudness, but off axis the sound gets quieter.">
+              <span class="cap">Through</span>
+              <select id="through" aria-label="Play through"></select>
+            </div>
+          </div>
+          <div class="field play-opt chord-opt" id="chordField" hidden title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave).">
+            <span class="cap">Chord</span>
+            <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
+          </div>
+        </div>
+      </details>
+      <p class="hint" id="polarWarn" hidden></p>
+      <div class="hint note" id="polarNote" hidden></div>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
-    <section class="panel" id="specPanel" hidden>
-      <h2>Specs</h2>
-      <div class="table-wrap" id="specWrap" style="margin-top:0"></div>
-      <p class="hint">From the manufacturers' data sheets. Sensitivity: output voltage for 1 Pa (94 dB SPL); ~16 dB between a condenser and a dynamic mic means that much more preamp gain. Self-noise is A-weighted; – = not published.</p>
+    <section class="panel" id="micPanel">
+      <h2 class="with-info">Selected Microphones <button type="button" class="info-btn sm" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About this table">i</button></h2>
+      <div class="hint note mic-note" id="micNote" hidden>
+        <ul>
+          <li>Tap a mic's name for its photo, full specs, links, and original graphs.</li>
+          <li>Tap a column header (Pattern, Type, Sensitivity, …) for what it means.</li>
+          <li>– means the manufacturer doesn't publish it.</li>
+        </ul>
+      </div>
+      <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
+      <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
     </div>
     <aside>
       <div class="panel">
-        <h2>Mics</h2>
-        <ul class="mics" id="micList"></ul>
-
         <details id="libBox" open>
           <summary>Library</summary>
-          <ul class="mics" id="libList"></ul>
-          <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these.</p>
+          <p class="hint lib-hint">Tap to display a mic; press and hold for its details.</p>
+          <div id="libChips"></div>
         </details>
 
         <details id="addBox" open>
-          <summary>Add your own data</summary>
+          <summary>Add Microphone</summary>
           <input type="text" id="newName" placeholder="Name, e.g. SM58" style="width:100%;margin-top:8px">
           <textarea id="newData" placeholder="freq  dB&#10;20    -8.5&#10;50    -3.1&#10;100   -0.8&#10;1000  0&#10;5000  4.2&#10;..."></textarea>
           <div class="row-gap">
@@ -204,17 +519,17 @@
           <div class="drop" id="drop">Or drop CSV/TXT files here (one mic per file) —
             <label style="color:var(--accent);cursor:pointer">browse<input type="file" id="fileIn" accept=".csv,.txt,.frd,.tsv,text/plain" multiple hidden></label>
           </div>
-          <p class="hint">Two columns: frequency (Hz) and level (dB). Commas, tabs, semicolons or spaces all work; header and comment lines are skipped. REW exports, <code>.frd</code> files and WebPlotDigitizer CSVs load as-is.</p>
-        </details>
-
-        <details>
-          <summary>Where do I get the data?</summary>
+          <p class="hint">Two columns: frequency (Hz) and level (dB). Commas, tabs, semicolons, or spaces all work; header and comment lines are skipped. REW exports, <code>.frd</code> files, and WebPlotDigitizer CSVs load as-is. Nothing is uploaded; it all stays in your browser.</p>
+          <h3 class="sub-head">Where to get data</h3>
           <p class="hint"><strong>From a spec sheet graph:</strong> screenshot the manufacturer's curve, open it in <a href="https://automeris.io/WebPlotDigitizer/" target="_blank" rel="noopener">WebPlotDigitizer</a>, set a log X axis, trace the line, and export CSV.</p>
-          <p class="hint"><strong>Measure it yourself:</strong> put each mic in the same spot in front of a speaker, run a sweep in <a href="https://www.roomeqwizard.com/" target="_blank" rel="noopener">REW</a>, and export "measurement as text". A shared room and speaker cancel out once you use "Relative to" against one reference mic.</p>
+          <p class="hint"><strong>Measure it yourself:</strong> put a calibrated measurement mic in front of a speaker and run a sweep in <a href="https://www.roomeqwizard.com/" target="_blank" rel="noopener">REW</a> (with the mic's calibration file loaded). Then put each of your mics in exactly the same spot and sweep again. In REW, divide each mic's sweep by the measurement-mic one (<em>All SPL → Trace arithmetic → A / B</em>): the speaker and the room are the same in both, so they cancel out and only the mic's own response is left. Export that as text and drop it here.</p>
+          <h3 class="sub-head">Make your own Mic Atlas</h3>
+          <p class="hint">Mics added here stay in your browser. To put mics in the built-in library, make your own copy: the whole thing is one page (<code>mics.html</code>) and one data file (<code>mics-library.js</code>), in this site's <a href="https://github.com/tfiers/tomasfiers.net/tree/master/static" target="_blank" rel="noopener">public repository</a>. Fork it, or download those two files (plus the <code>mics-*</code> image folders) and open <code>mics.html</code> in a browser.</p>
+          <p class="hint">Each mic is one entry in <a href="https://github.com/tfiers/tomasfiers.net/blob/master/static/mics-library.js" target="_blank" rel="noopener"><code>mics-library.js</code></a>; the top of that file explains the fields. The mics here were added with an AI coding assistant (Claude Code, Opus 5.5 (High)): give it the manufacturer's data sheet or manual (PDF) and ask it to add the mic. It reads the frequency response and polar plots straight from the PDF's vector graphics where possible, or traces them from the image. The scripts that extracted the data for the mics here are in <a href="https://github.com/tfiers/tomasfiers.net/tree/master/tools/mic-atlas" target="_blank" rel="noopener"><code>tools/mic-atlas</code></a>.</p>
         </details>
 
         <details>
-          <summary>Save / share</summary>
+          <summary>Save / Share</summary>
           <div class="row-gap">
             <button id="shareBtn">Copy share link</button>
             <button id="exportBtn">Export JSON</button>
@@ -230,6 +545,9 @@
     </aside>
   </div>
 </main>
+<dialog id="infoCard" aria-label="Mic info"></dialog>
+<div id="picker" class="picker" role="dialog" aria-label="Pick patterns" hidden></div>
+<div id="capTip" class="cap-tip" role="tooltip" hidden></div>
 
 <script src="mics-library.js"></script>
 <script>
@@ -242,11 +560,10 @@
   const GRID_STEP = 48;
   const GRID = [];
   for (let i = 0; ; i++) { const f = 10 * 2 ** (i / GRID_STEP); if (f > 40000) break; GRID.push(f); }
-  const TABLE_FREQS = [50, 100, 200, 500, 1000, 2000, 5000, 8000, 10000, 15000];
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'freq', normFreq: 1000, smooth: '0', ref: '', yRange: '-10,5' } };
+  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, dim: '2d', overtones: false, through: '', sound: 'piano', played: false, instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -290,6 +607,25 @@
     const used = state.mics.map(m => m.slot);
     for (let i = 0; i < 64; i++) if (!used.includes(i)) return i;
     return used.length;
+  }
+  // Rated range from specs, e.g. "40–19k" -> [40, 19000]; null if unknown.
+  function ratedRange(m) {
+    const r = m.specs && m.specs.range;
+    const mm = typeof r === 'string' && r.match(/^\s*([\d.]+)\s*(k?)\s*[–-]\s*([\d.]+)\s*(k?)/i);
+    if (!mm) return null;
+    const v = (n, k) => Number(n) * (k ? 1000 : 1);
+    return [v(mm[1], mm[2]), v(mm[3], mm[4])];
+  }
+  // Where a curve is drawn solid: inside the rated range and, off axis, where the polar plot has data
+  // (beyond its traced frequencies the nearest one is held, which is a guess). null = everywhere.
+  function solidRange(m) {
+    let r = ratedRange(m);
+    const oa = Number(state.settings.angle) ? offaxisOf(m) : null;
+    if (oa) {
+      const lo = oa.f[0] / (oa.f.length === 1 ? 2 : 1), hi = oa.f[oa.f.length - 1] * (oa.f.length === 1 ? 2 : 1);
+      r = r ? [Math.max(r[0], lo), Math.min(r[1], hi)] : [lo, hi];
+    }
+    return r;
   }
   const colorOf = m => m.color || `var(--s${(m.slot % NSLOTS) + 1})`;
   const dashOf = m => DASHES[Math.floor(m.slot / NSLOTS) % DASHES.length];
@@ -340,18 +676,46 @@
     }
     if (s.normMode === 'mean') {
       let sum = 0, n = 0;
-      for (let i = gridIndex(200); i <= gridIndex(5000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
+      for (let i = gridIndex(300); i <= gridIndex(1000); i++) if (arr[i] !== null) { sum += arr[i]; n++; }
       return n ? sum / n : 0;
     }
     const v = valueAt(arr, s.normFreq);
     return v === null ? 0 : v;
   }
+  // ---------- off-axis (polar) data ----------
+  // Library entries may carry offaxis = {f: [Hz…], db: [[dB at 0°, 5°, …, 180°] per f]}, relative to on-axis.
+  const POLAR_FREQS = [250, 500, 1000, 2000, 4000, 8000, 16000];
+  const offaxisOf = m => { const e = m.lib && LIBRARY.find(x => x.name === m.lib); return e && e.offaxis || null; };
+  // dB at one angle for each traced frequency (linear between the 5° steps).
+  const atAngle = (oa, a) => oa.db.map(row => {
+    const x = Math.min(180, Math.max(0, a)) / 5, i = Math.min(row.length - 2, Math.floor(x));
+    return row[i] + (x - i) * (row[i + 1] - row[i]);
+  });
+  // Interpolate between traced frequencies in log-f; beyond the first/last one, hold its value.
+  function interpF(fs, vals, f) {
+    if (f <= fs[0]) return vals[0];
+    const n = fs.length - 1;
+    if (f >= fs[n]) return vals[n];
+    let k = 0; while (fs[k + 1] < f) k++;
+    return vals[k] + Math.log(f / fs[k]) / Math.log(fs[k + 1] / fs[k]) * (vals[k + 1] - vals[k]);
+  }
+  const fmtHz = f => f >= 1000 ? f / 1000 + ' kHz' : f + ' Hz';
+  const polarDb = (oa, f, a) => interpF(oa.f, atAngle(oa, a), f);
+
   function processAll() {
     const s = state.settings;
     const curves = new Map();
+    const angle = Number(s.angle) || 0;
     for (const m of state.mics) {
-      const c = smooth(resample(m.points), Number(s.smooth));
+      let c = smooth(resample(m.points), Number(s.smooth));
+      // Level from the on-axis curve, so off-axis curves show their drop.
       const off = offsetFor(c, m);
+      if (angle) {
+        const oa = offaxisOf(m);
+        if (!oa) { curves.set(m.id, c.map(() => null)); continue; }
+        const vals = atAngle(oa, angle);
+        c = c.map((v, i) => v === null ? null : v + interpF(oa.f, vals, GRID[i]));
+      }
       curves.set(m.id, c.map(v => v === null || off === null ? null : v - off));
     }
     const ref = s.ref && curves.get(s.ref);
@@ -363,11 +727,14 @@
 
   // ---------- chart ----------
   // Chart is drawn at its real pixel size so text stays readable on phones.
-  const M = { l: 44, r: 16, t: 24, b: 32 };
+  const M = { l: 34, r: 8, t: 22, b: 30 };   // l and r shrink on narrow screens (sizeChart)
   let W = 800, H = 440, PW, PH;
+  // Narrow screens: no left margin; the dB labels go inside the plot (see draw).
+  const narrowChart = () => W < 520;
   function sizeChart() {
     W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
-    H = Math.round(Math.min(460, Math.max(300, W * 0.55)));
+    M.l = narrowChart() ? 1 : 34; M.r = narrowChart() ? 1 : 8;
+    H = Math.round(narrowChart() ? Math.min(460, Math.max(320, W * 0.85)) : Math.min(460, Math.max(300, W * 0.55)));
     PW = W - M.l - M.r; PH = H - M.t - M.b;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   }
@@ -384,14 +751,237 @@
   let yLo = -20, yHi = 10;
   const yOf = d => M.t + (1 - (d - yLo) / (yHi - yLo)) * PH;
   const fmtF = f => f >= 1000 ? (+(f / 1000).toFixed(f >= 10000 ? 1 : 2)).toString() + 'k' : Math.round(f).toString();
+  // Nearest note (equal temperament, A4 = 440 Hz) and how far off, in cents.
+  const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  function nearestNote(f) {
+    const x = 69 + 12 * Math.log2(f / 440), n = Math.round(x), pc = ((n % 12) + 12) % 12;
+    return { name: NOTE_NAMES[pc] + (Math.floor(n / 12) - 1), pc, cents: Math.round(100 * (x - n)) };
+  }
+  // Each of the 12 notes gets its own colour. They go round the colour wheel in the circle of fifths
+  // (C, G, D, …), so neighbouring semitones get clearly different colours and a note change is easy to see.
+  // OKLCH keeps all 12 equally dark, so white text on them stays readable (also yellow and green).
+  // Rotated so that C is blue, like the middle C key; A4's key uses A's colour.
+  const noteColor = pc => `oklch(0.52 0.17 ${((pc * 7 % 12) * 30 + 255) % 360})`;
+  // Note names with the octave number smaller and lowered (C₄), in HTML and in SVG text.
+  const noteNameHtml = name => name.replace(/([A-G]♯?)(-?\d+)/g, '$1<sub class="oct">$2</sub>');
+  function noteText(parent, text) {
+    const re = /([A-G]♯?)(-?\d+)/g;
+    let i = 0, m, lowered = false;
+    const put = (str, attrs) => { if (str) el('tspan', attrs, parent).textContent = str; };
+    while ((m = re.exec(text))) {
+      put(text.slice(i, m.index) + m[1], lowered ? { dy: -1.2 } : {});
+      put(m[2], { class: 'oct', dy: 1.2 });
+      lowered = true; i = re.lastIndex;
+    }
+    put(text.slice(i) || (lowered ? '\u200b' : ''), lowered ? { dy: -1.2 } : {});
+  }
+  const noteHtml = f => {
+    const nn = nearestNote(f);
+    return ` · <span class="note" style="background:${noteColor(nn.pc)}">${noteNameHtml(nn.name)}</span>` +
+      (nn.cents ? `<span class="cents"> ${nn.cents > 0 ? '+' : '−'}${Math.abs(nn.cents)}¢</span>` : '');
+  };
   const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
 
   let curves = new Map();
+  // Linked hover between the chart and the instrument ranges: each sets these when drawn.
+  let chartHover = null, rangesHover = null;
+  const midiFreq = n => 440 * 2 ** ((n - 69) / 12);
+
+  // ---------- the playable piano, and a live spectrum (RTA) of what it plays, drawn on the chart ----------
+  // A simple additive piano-like tone: all harmonics up to 20 kHz, each quieter and dying away faster than
+  // the one below; it rings out as if the sustain pedal were down. The spectrum is measured from the actual sound.
+  let actx = null, master = null, analyser = null, rtaPath = null, rtaLabel = null, rtaUntil = 0, rtaRunning = false, rtaColor = '';
+  function audio() {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value = 0.3;
+      // Only against clipping when many notes ring together; it shouldn't even out a mic's level differences.
+      const comp = actx.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 4;
+      analyser = actx.createAnalyser(); analyser.fftSize = 16384; analyser.smoothingTimeConstant = 0.5;
+      master.connect(comp); comp.connect(analyser); analyser.connect(actx.destination);
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  // Through a mic: each harmonic gets the mic's curve at its frequency (at the chosen angle), relative to
+  // its on-axis level at 1 kHz; so from the side or behind, the sound also gets quieter.
+  function throughGain() {
+    const mic = throughMic(), c = mic && curves.get(mic.id), oa = mic && offaxisOf(mic), angle = Number(state.settings.angle) || 0;
+    const ref = c && valueAt(c, 1000) !== null ? valueAt(c, 1000) - (angle && oa ? polarDb(oa, 1000, angle) : 0) : null;
+    return fk => { if (!c) return 1; const v = valueAt(c, fk); return v === null || ref === null ? 1 : 10 ** (Math.min(12, v - ref) / 20); };
+  }
+  // Held tone: a steady tone that keeps sounding after you let go, so you can switch mics (or move the
+  // angle) while listening; it follows those changes live. Tap the key again, or Stop, to end it.
+  // All harmonics up to 20 kHz sound, as in a real tone (the overtone lines only go to the 16th).
+  let held = null;   // { roots: the keys tapped, notes: all that sound, voices: [{ f, osc, g, lfo }] }
+  const fingers = new Map();   // each finger (pointer) down on the keyboard → the key it's on (or null)
+  // Chords (an easter egg: the switch appears after tapping the peeking note). The key you tap is the root.
+  // [id, button, name (tooltip), suffix on the Stop button, semitones]
+  const CHORDS = [['', 'Off', 'Off: single notes', '', [0]], ['maj', 'M', 'Major', 'major', [0, 4, 7]], ['min', 'm', 'Minor', 'minor', [0, 3, 7]],
+    ['7', '7', 'Dominant 7th', '7', [0, 4, 7, 10]], ['maj7', 'M7', 'Major 7th', 'maj7', [0, 4, 7, 11]], ['m7', 'm7', 'Minor 7th', 'm7', [0, 3, 7, 10]],
+    ['5', '5', 'Power chord: root, 5th, and octave', '5', [0, 7, 12]]];
+  const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
+  $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
+  $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
+  // Tapping the dots: they hop, with a chord (A major 7 on opening, C major on closing), and the chord switch appears (or goes away).
+  function triadTapped(tg) {
+    const st = state.settings;
+    st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
+    tg.classList.toggle('on', !!st.chords);
+    tg.classList.remove('hop'); void tg.getBoundingClientRect(); tg.classList.add('hop');
+    setTimeout(() => tg.classList.remove('hop'), 700);
+    // A chord, lightly rolled, in the same plain root-position voicing as the chord switch: opening plays
+    // A₃ major 7, closing C₃ major.
+    audio();
+    const t = actx.currentTime, notes = st.chords ? [57, 61, 64, 68] : [48, 52, 55];
+    notes.forEach((n, i) => setTimeout(() => playOne(n, false, 0.5 / Math.sqrt(notes.length)), i * 18));
+    if (rangesHover) { rangesHover.press(notes); setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 900); }
+    rtaColor = noteColor(st.chords ? 9 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
+    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
+  }
+  const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
+  // One oscillator playing harmonics k0…k1 of f at the given amplitudes (a custom waveform; the browser
+  // band-limits it, so there's no aliasing).
+  function harmonicWave(k0, k1, amp) {
+    const re = new Float32Array(k1 + 1), im = new Float32Array(k1 + 1);
+    for (let k = k0; k <= k1; k++) im[k] = amp(k);
+    return actx.createPeriodicWave(re, im, { disableNormalization: true });
+  }
+  // Warm rather than buzzy: the harmonics fall off faster than a sawtooth's 1/k, with a subtle vibrato
+  // (4.5 Hz, ±2 cents, barely there) that sets in over the first second.
+  const heldWave = (f, gainAt) => harmonicWave(1, topHarmonic(f), k => 0.36 / k ** 1.6 * gainAt(k * f));
+  function releaseHeld() {
+    if (!held) return;
+    const t = actx.currentTime;
+    for (const { osc, g, lfo } of held.voices) {
+      g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.12);
+      osc.stop(t + 0.15); lfo.stop(t + 0.15);
+    }
+    held = null;
+    rtaUntil = t + 0.15;
+    $('stopTone').hidden = true;
+    if (rangesHover) rangesHover.press([]);
+  }
+  function retuneHeld() {
+    if (!held) return;
+    const gainAt = throughGain();
+    for (const v of held.voices) v.osc.setPeriodicWave(heldWave(v.f, gainAt));
+  }
+  // Tap a key: play the chosen chord on it (or the single note). With another finger already down
+  // ('add'), a held tone joins the ones sounding instead of replacing them.
+  function playNote(n, add) {
+    audio();
+    if (!state.settings.played) {
+      state.settings.played = true; save(); document.querySelectorAll('.play-hint').forEach(e => e.remove());
+      setTimeout(() => { if (rangesHover) rangesHover.addTriad(); }, 900);
+    }
+    const hold = state.settings.sound === 'held';
+    if (!(hold && add && held)) releaseHeld();
+    const [, , , short, steps] = chordOf(), notes = steps.map(d => n + d).filter(m => m >= 21 && m <= 108);
+    const t = actx.currentTime, level = 1 / Math.sqrt(notes.length);
+    if (hold) { held = held || { roots: [], notes: [], voices: [] }; held.roots.push(n); held.notes.push(...notes); }
+    for (const m of notes) playOne(m, hold, level);
+    const f = midiFreq(n);
+    rtaColor = noteColor(((n % 12) + 12) % 12);
+    rtaUntil = hold ? Infinity : Math.max(rtaUntil, t + 1.2 + 3.5 * (108 - n) / 87);
+    if (hold) {
+      const b = $('stopTone'), nn = nearestNote(f);
+      b.hidden = false; b.style.setProperty('--note', noteColor(nn.pc));
+      b.querySelector('.lbl').innerHTML = 'Stop ' + (held.roots.length > 1 ? held.roots.map(r => noteNameHtml(nearestNote(midiFreq(r)).name)).join(' ')
+        : noteNameHtml(nn.name) + (short ? ' ' + short : ''));
+    }
+    if (rangesHover) {
+      rangesHover.press(hold ? held.notes : notes);
+      if (!hold) { clearTimeout(playNote.unpress); playNote.unpress = setTimeout(() => { if (!held && rangesHover && fingers.size < 2) rangesHover.press([]); }, 450); }
+    }
+    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
+  }
+  function playOne(n, hold, level) {
+    const ctx = actx, f = midiFreq(n), t = ctx.currentTime;
+    const len = 1.2 + 3.5 * (108 - n) / 87;   // low notes ring longer
+    const gainAt = throughGain(), K = topHarmonic(f);
+    if (hold) {
+      const osc = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), depth = ctx.createGain();
+      osc.frequency.value = f; osc.setPeriodicWave(heldWave(f, gainAt));
+      lfo.frequency.value = 4.5; lfo.connect(depth); depth.connect(osc.detune);
+      depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(0, t + 0.3); depth.gain.linearRampToValueAtTime(2, t + 1.2);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + 0.08);
+      osc.connect(g); g.connect(master);
+      osc.start(t); lfo.start(t);
+      held.voices.push({ f, osc, g, lfo });
+    } else {
+      // Piano: each part starts at once and dies away, the higher harmonics quieter and faster. The first
+      // 8 harmonics get their own oscillator; above that, one oscillator per octave band of harmonics.
+      // The lowest notes' fundamentals are weak on a real piano, too.
+      const amp = k => 0.5 / k ** 1.3 * (k === 1 && f < 110 ? 0.5 : 1) * gainAt(k * f);
+      const parts = [];
+      for (let k = 1; k <= Math.min(8, K); k++) parts.push([k, k, k]);
+      for (let k0 = 9; k0 <= K; k0 *= 2) { const k1 = Math.min(K, 2 * k0 - 1); parts.push([k0, k1, Math.sqrt(k0 * k1)]); }
+      for (const [k0, k1, kc] of parts) {
+        const osc = ctx.createOscillator(), g = ctx.createGain();
+        osc.frequency.value = f; osc.setPeriodicWave(harmonicWave(k0, k1, amp));
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(level, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + len / Math.sqrt(kc));
+        osc.connect(g); g.connect(master);
+        osc.start(t); osc.stop(t + len + 0.05);
+      }
+    }
+  }
+  // The mic the piano is heard through (if it's still on the chart), and the menu to pick it.
+  const throughMic = () => state.mics.find(m => m.visible && m.id === state.settings.through) || null;
+  function syncThrough() {
+    const sel = $('through'), mic = throughMic();
+    sel.innerHTML = '<option value="">No mic</option>' +
+      state.mics.filter(m => m.visible).map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
+    sel.value = mic ? mic.id : '';
+  }
+  $('through').onchange = ev => { state.settings.through = ev.target.value; save(); retuneHeld(); };
+  $('stopTone').onclick = releaseHeld;
+  $('rangesBox').addEventListener('toggle', () => { if (!$('rangesBox').open && actx) releaseHeld(); });
+  // One frame of the spectrum: per pixel column, the loudest FFT bin in it, from −110 dB (bottom of the
+  // chart) to −20 dB (three quarters up). Its own scale, independent of the mics' dB axis.
+  let rtaBuf = null;
+  function rtaFrame() {
+    const done = actx.currentTime > rtaUntil + 0.2;
+    if (rtaPath && rtaPath.isConnected) {
+      if (done) { rtaPath.setAttribute('d', ''); rtaLabel.setAttribute('visibility', 'hidden'); }
+      else {
+        if (!rtaBuf) rtaBuf = new Float32Array(analyser.frequencyBinCount);
+        analyser.getFloatFrequencyData(rtaBuf);
+        const binHz = actx.sampleRate / analyser.fftSize, bottom = M.t + PH;
+        let d = `M${M.l},${bottom}`;
+        for (let x = M.l; x <= M.l + PW; x++) {
+          const i0 = Math.floor(fOfX(x - 0.5) / binHz), i1 = Math.max(i0, Math.floor(fOfX(x + 0.5) / binHz));
+          let v = -Infinity;
+          for (let i = i0; i <= i1 && i < rtaBuf.length; i++) v = Math.max(v, rtaBuf[i]);
+          const h = Math.min(1, Math.max(0, (v + 110) / 90)) * PH * 0.75;
+          d += `L${x},${(bottom - h).toFixed(1)}`;
+        }
+        rtaPath.setAttribute('d', d + `L${M.l + PW},${bottom}Z`);
+        rtaPath.style.fill = rtaPath.style.stroke = rtaColor;
+        rtaLabel.setAttribute('visibility', 'visible');
+      }
+    }
+    if (done) rtaRunning = false; else requestAnimationFrame(rtaFrame);
+  }
+  // The overtones of frequency f, when shown: [[2, 2f], [3, 3f], … up to the chosen harmonic], within the chart.
+  const overtoneCount = () => state.settings.overtones ? 16 : 0;
+  const overtonesOf = f => Array.from({ length: Math.max(0, overtoneCount() - 1) }, (_, i) => [i + 2, (i + 2) * f]).filter(([, fk]) => fk <= FMAX);
+  // Higher overtones are drawn fainter.
+  const overtoneOpacity = k => Math.max(0.25, 0.75 - 0.5 * (k - 2) / 14);
 
   function computeYRange() {
     const s = state.settings, r = s.yRange;
-    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves.
-    const centred = s.ref || (s.normMode !== 'sens' && s.normMode !== 'none');
+    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves. The manufacturers' graphs
+    // (as in the source) are 0 dB around 1 kHz too; own data in absolute dB (e.g. SPL) gets the auto range.
+    // Judged on the on-axis curves, so moving the angle slider never switches the range.
+    const nearZero = () => state.mics.every(m => {
+      if (!m.visible) return true;
+      const v = valueAt(resample(m.points), 1000);
+      return v === null || Math.abs(v) < 10;
+    });
+    const centred = s.ref || (s.normMode !== 'sens' && (s.normMode !== 'none' || nearZero()));
     if (r !== 'auto' && centred) {
       // "lo,hi" for an asymmetric range, or a single number n for ±n
       const [lo, hi] = r.includes(',') ? r.split(',').map(Number) : [-Number(r), Number(r)];
@@ -411,6 +1001,9 @@
   }
 
   function draw() {
+    if (state.settings.view === 'polar' && state.settings.dim === '3d') return drawPolar3D();
+    $('polar3d').hidden = true; svg.style.display = state.mics.length ? '' : 'none';
+    if (state.settings.view === 'polar') return drawPolar();
     sizeChart();
     svg.textContent = '';
     computeYRange();
@@ -427,35 +1020,55 @@
       t.textContent = fmtF(f);
     }
     const step = (yHi - yLo) > 40 ? 10 : (yHi - yLo) > 12 ? 5 : 1;
+    const unitLabel = state.settings.normMode === 'sens' && !state.settings.ref ? 'dBV' : 'dB';
+    // Unlabeled minor dB lines between the labelled ones.
+    const minor = step === 10 ? 5 : step === 5 ? 1 : 0;
+    if (minor) for (let d = Math.ceil(yLo / minor) * minor; d <= yHi; d += minor) {
+      if (d % step === 0) continue;
+      el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: 'var(--grid-minor)', 'stroke-width': 1 }, grid);
+    }
     for (let d = Math.ceil(yLo / step) * step; d <= yHi; d += step) {
       el('line', { x1: M.l, x2: M.l + PW, y1: yOf(d), y2: yOf(d), stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
-      const t = el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
-      t.textContent = d > 0 ? '+' + d : d < 0 ? '−' + -d : '0';
+      const t = narrowChart()
+        ? el('text', { x: M.l + 4, y: yOf(d) - 3, 'text-anchor': 'start', class: 'inlabel' }, grid)
+        : el('text', { x: M.l - 6, y: yOf(d) + 4, 'text-anchor': 'end' }, grid);
+      t.textContent = (d > 0 ? '+' + d : d < 0 ? '−' + -d : '0') + (narrowChart() && d + step > yHi ? ' ' + unitLabel : '');
     }
-    const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = state.settings.normMode === 'sens' && !state.settings.ref ? 'dBV' : 'dB';
+    // The unit: above the axis labels, or on narrow screens appended to the top label (above).
+    if (!narrowChart()) { const unit = el('text', { x: M.l - 6, y: M.t - 12, 'text-anchor': 'end' }, grid); unit.textContent = unitLabel; }
     const hz = el('text', { x: M.l + PW, y: H - 1, 'text-anchor': 'end' }, grid); hz.textContent = 'Hz';
 
     el('clipPath', { id: 'plotClip' }, svg).appendChild(el('rect', { x: M.l, y: M.t, width: PW, height: PH }));
     const plot = el('g', { 'clip-path': 'url(#plotClip)' }, svg);
+    rtaPath = el('path', { class: 'rta' }, plot);
+    rtaLabel = el('text', { x: M.l + PW - 6, y: M.t + PH - 6, 'text-anchor': 'end', class: 'rta-label', visibility: 'hidden' }, svg);
+    rtaLabel.textContent = 'Spectrum of the played note';
     const i0 = Math.max(0, gridIndex(FMIN) - 1), i1 = Math.min(GRID.length - 1, gridIndex(FMAX) + 1);
     const visible = state.mics.filter(m => m.visible);
     const ends = [];
     for (const m of visible) {
       const c = curves.get(m.id);
-      let d = '', pen = false, last = null;
+      // Solid inside the manufacturer's rated frequency range (and off axis, the polar data's range), faded outside.
+      const rr = solidRange(m);
+      const inRange = f => !rr || (f >= rr[0] * 0.999 && f <= rr[1] * 1.001);
+      let dIn = '', dOut = '', prev = null, prevIn = null, last = null;
       for (let i = i0; i <= i1; i++) {
-        if (c[i] === null) { pen = false; continue; }
-        d += (pen ? 'L' : 'M') + xOf(GRID[i]).toFixed(1) + ',' + yOf(c[i]).toFixed(1);
-        pen = true; last = i;
+        if (c[i] === null) { prev = null; continue; }
+        const pt = xOf(GRID[i]).toFixed(1) + ',' + yOf(c[i]).toFixed(1);
+        const ir = inRange(GRID[i]);
+        const seg = prev === null ? 'M' + pt : prevIn === ir ? 'L' + pt : 'M' + prev + 'L' + pt;
+        if (ir) dIn += seg; else dOut += seg;
+        prev = pt; prevIn = ir; last = i;
       }
-      if (!d) continue;
+      if (!dIn && !dOut) continue;
       // Only dim the others while the hovered mic is actually on the chart.
       const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
-      el('path', {
-        d, fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
+      const attrs = {
+        fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
         'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dashOf(m),
-        opacity: dim ? 0.2 : 1
-      }, plot);
+      };
+      if (dOut) el('path', { ...attrs, d: dOut, opacity: dim ? 0.08 : 0.3 }, plot);
+      if (dIn) el('path', { ...attrs, d: dIn, opacity: dim ? 0.2 : 1 }, plot);
       if (last !== null) ends.push({ m, y: yOf(c[last]), x: xOf(GRID[last]) });
     }
     // Direct labels at line ends when there are few series (placed inside, right-aligned, de-overlapped)
@@ -469,93 +1082,817 @@
     }
     // hover layer
     const cross = el('line', { y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const harm = el('g', {}, svg);
     const dots = el('g', { visibility: 'hidden' }, svg);
     const hit = el('rect', { x: M.l, y: M.t, width: PW, height: PH, fill: 'transparent' }, svg);
-    const onMove = ev => {
+    // Show the readout for frequency f. From a mouse on the chart, the tooltip follows the pointer; from a
+    // finger (or from the instrument ranges below) it sits at the top of the chart, on the other side, so
+    // it isn't hidden under the finger.
+    const show = (f, ev, pinned) => {
       if (!visible.length) return;
-      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      const f = Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       const x = xOf(f);
       cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
       dots.textContent = ''; dots.setAttribute('visibility', 'visible');
+      // Overtones (if on): a dashed line at each, numbered at the top, and where it meets each curve a small ring.
+      harm.textContent = '';
+      let lastLabel = x;
+      for (const [k, fk] of overtonesOf(f)) {
+        const xk = xOf(fk);
+        const op = overtoneOpacity(k);
+        el('line', { x1: xk, x2: xk, y1: M.t, y2: M.t + PH, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: op }, harm);
+        if (xk - lastLabel >= 14) { el('text', { x: xk, y: M.t + 10, 'text-anchor': 'middle', class: 'ot-num', opacity: op / 0.75 }, harm).textContent = k; lastLabel = xk; }
+        for (const m of visible) {
+          const v = valueAt(curves.get(m.id), fk);
+          if (v !== null) el('circle', { cx: xk, cy: yOf(v), r: 3, fill: 'var(--surface)', stroke: colorOf(m), 'stroke-width': 1.5, opacity: Math.min(1, op / 0.75 + 0.1) }, harm);
+        }
+      }
       const rows = [];
       for (const m of visible) {
         const v = valueAt(curves.get(m.id), f);
         if (v === null) continue;
-        rows.push({ m, v });
+        const rr = solidRange(m);
+        rows.push({ m, v, out: rr && (f < rr[0] || f > rr[1]) });
         el('circle', { cx: x, cy: yOf(v), r: 4, fill: colorOf(m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots);
       }
       rows.sort((a, b) => b.v - a.v);
       const tip = $('tip');
-      tip.innerHTML = `<div class="f">${fmtF(f)} Hz</div>` + (rows.length ? rows.map(r =>
-        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v">${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
+      const ots = overtonesOf(f);
+      tip.innerHTML = `<div class="f">${fmtF(f)} Hz${noteHtml(f)}${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` +
+        // Only the first few overtones' notes, to keep the readout small.
+        (ots.length ? `<div class="ots">Overtones: ${ots.slice(0, 7).map(([, fk]) => noteNameHtml(nearestNote(fk).name)).join(' ')}${ots.length > 7 ? ' …' : ''}</div>` : '') + (rows.length ? rows.map(r =>
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range or polar data"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
+      tip.style.display = 'block';
+      const wrap = $('chartWrap').getBoundingClientRect(), tw = tip.offsetWidth;
+      const px = x * wrap.width / W;
+      if (pinned) {
+        tip.style.left = (px > wrap.width / 2 ? 4 : wrap.width - tw - 4) + 'px';
+        tip.style.top = '0px';
+      } else {
+        tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
+        tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
+      }
+    };
+    const hide = () => { cross.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); harm.textContent = ''; $('tip').style.display = 'none'; };
+    chartHover = { show, hide };
+    const onMove = ev => {
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const f = Math.min(FMAX, Math.max(FMIN, fOfX(pt.matrixTransform(svg.getScreenCTM().inverse()).x)));
+      show(f, ev, ev.pointerType !== 'mouse');
+      if (rangesHover) rangesHover.show(f);
+    };
+    // A finger lifting also 'leaves': keep the readout then, until a tap elsewhere (below).
+    const onLeave = ev => { if (ev.pointerType !== 'mouse') return; hide(); if (rangesHover) rangesHover.hide(); };
+    hit.addEventListener('pointermove', onMove);
+    hit.addEventListener('pointerdown', onMove);
+    hit.addEventListener('pointerleave', onLeave);
+  }
+
+  // ---------- polar view: the shown mics' polar patterns at one frequency, overlaid ----------
+  const P_LO = -30, P_HI = 5;
+  function drawPolar() {
+    chartHover = null; rtaPath = rtaLabel = null;
+    W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
+    const visible = state.mics.filter(m => m.visible && offaxisOf(m));
+    const legend = W >= 560;
+    H = Math.round(legend ? Math.min(460, Math.max(320, W * 0.55)) : Math.min(W, 460));
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.textContent = '';
+    // Legend on the right, as wide as the longest name (about 6.6 px per character at 11 px bold).
+    const legW = legend ? 36 + 6.6 * Math.max(0, ...visible.map(m => m.name.length)) : 0;
+    const R = Math.max(80, Math.min((H - 44) / 2, W / 2 - 34, legend ? (W - legW - 60) / 2 : Infinity));
+    const cx = legend ? Math.min(W / 2, W - legW - 30 - R) : W / 2, cy = H / 2 + 2;
+    const f = POLAR_FREQS[state.settings.polarF] || 1000;
+    const rOf = d => Math.max(0, (Math.max(P_LO, d) - P_LO) / (P_HI - P_LO)) * R;
+    const pt = (a, d, side) => { const r = rOf(d), t = a * Math.PI / 180; return [cx + side * r * Math.sin(t), cy - r * Math.cos(t)]; };
+    const grid = el('g', {}, svg);
+    for (let d = P_LO + 5; d <= P_HI; d += 5) {
+      el('circle', { cx, cy, r: rOf(d), fill: 'none', stroke: d === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, grid);
+    }
+    for (let a = 0; a < 180; a += 30) {
+      const [x1, y1] = pt(a, P_HI, 1), [x2, y2] = pt(a, P_HI, -1);
+      el('line', { x1, y1, x2: 2 * cx - x1, y2: 2 * cy - y1, stroke: 'var(--grid)', 'stroke-width': 1 }, grid);
+      if (a) el('line', { x1: x2, y1: y2, x2: 2 * cx - x2, y2: 2 * cy - y2, stroke: 'var(--grid)', 'stroke-width': 1 }, grid);
+    }
+    for (let a = 0; a <= 180; a += 30) {
+      const t = a * Math.PI / 180, r = R + 11;
+      const lab = el('text', { x: cx + r * Math.sin(t), y: cy - r * Math.cos(t) + 4, 'text-anchor': a === 0 || a === 180 ? 'middle' : 'start' }, grid);
+      lab.textContent = a + '°';
+    }
+    for (const d of [0, -10, -20]) {
+      const lab = el('text', { x: cx - 3, y: cy - rOf(d) + 12, 'text-anchor': 'end' }, grid);
+      lab.textContent = d ? '−' + -d : '0 dB';
+    }
+    const fl = el('text', { x: 4, y: 14, 'text-anchor': 'start', style: 'font-weight:600;fill:var(--ink-2)' }, grid);
+    fl.textContent = fmtF(f) + 'Hz';
+    // Curves: 0–180° on the right, mirrored on the left.
+    const plot = el('g', {}, svg);
+    const shapes = [];
+    for (const m of visible) {
+      const oa = offaxisOf(m);
+      const ang = []; for (let a = 0; a <= 180; a += 2.5) ang.push(a);
+      const ds = ang.map(a => polarDb(oa, f, a));
+      const pts = [...ang.map((a, i) => pt(a, ds[i], 1)), ...ang.slice().reverse().map((a, i) => pt(a, ds[ds.length - 1 - i], -1))];
+      const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
+      el('path', { d: 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L') + 'Z', fill: 'none', stroke: colorOf(m),
+        'stroke-width': highlight === m.id ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-dasharray': dashOf(m), opacity: dim ? 0.2 : 1 }, plot);
+      shapes.push({ m, oa });
+    }
+    if (legend && shapes.length) {
+      const x0 = cx + R + 34;
+      shapes.forEach(({ m }, k) => {
+        const y = 30 + k * 18;
+        el('line', { x1: x0, x2: x0 + 16, y1: y - 4, y2: y - 4, stroke: colorOf(m), 'stroke-width': 3, 'stroke-dasharray': dashOf(m) }, svg);
+        const t = el('text', { x: x0 + 22, y, class: 'direct', style: `fill:${colorOf(m)}` }, svg);
+        t.textContent = m.name;
+      });
+    }
+    // Hover: the angle under the pointer and each mic's level there.
+    const spoke = el('line', { x1: cx, y1: cy, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const dots = el('g', { visibility: 'hidden' }, svg);
+    const hit = el('circle', { cx, cy, r: R, fill: 'transparent' }, svg);
+    const onMove = ev => {
+      if (!shapes.length) return;
+      const q = svg.createSVGPoint(); q.x = ev.clientX; q.y = ev.clientY;
+      const p = q.matrixTransform(svg.getScreenCTM().inverse());
+      const side = p.x < cx ? -1 : 1;
+      const a = Math.round(Math.atan2(Math.abs(p.x - cx), cy - p.y) * 180 / Math.PI / 5) * 5;
+      const [ex, ey] = pt(a, P_HI, side);
+      spoke.setAttribute('x2', ex); spoke.setAttribute('y2', ey); spoke.setAttribute('visibility', 'visible');
+      dots.textContent = ''; dots.setAttribute('visibility', 'visible');
+      const rows = shapes.map(({ m, oa }) => ({ m, v: polarDb(oa, f, a) })).sort((x, y) => y.v - x.v);
+      for (const r of rows) { const [x, y] = pt(a, r.v, side); el('circle', { cx: x, cy: y, r: 4, fill: colorOf(r.m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots); }
+      const tip = $('tip');
+      tip.innerHTML = `<div class="f">${a}° · ${fmtF(f)} Hz</div>` + rows.map(r =>
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v">${fmtD(r.v)} dB</span></div>`).join('');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect();
       const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
       tip.style.left = (px + 14 + tw > wrap.width ? px - 14 - tw : px + 14) + 'px';
       tip.style.top = Math.max(0, ev.clientY - wrap.top - tip.offsetHeight / 2) + 'px';
     };
-    const onLeave = () => { cross.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; };
     hit.addEventListener('pointermove', onMove);
     hit.addEventListener('pointerdown', onMove);
-    hit.addEventListener('pointerleave', onLeave);
+    hit.addEventListener('pointerleave', () => { spoke.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); $('tip').style.display = 'none'; });
   }
 
-  function drawTable() {
-    const wrap = $('tableWrap');
-    const visible = state.mics.filter(m => m.visible);
-    if (!visible.length) { wrap.innerHTML = ''; return; }
-    let h = '<table><thead><tr><th>dB at</th>' + TABLE_FREQS.map(f => `<th>${fmtF(f)}</th>`).join('') + '</tr></thead><tbody>';
-    for (const m of visible) {
-      const c = curves.get(m.id);
-      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>` +
-        TABLE_FREQS.map(f => { const v = valueAt(c, f); return `<td>${v === null ? '–' : fmtD(v)}</td>`; }).join('') + '</tr>';
+  // ---------- 3D polar view: each shown mic's polar pattern revolved around its axis ("balloon") ----------
+  // The manufacturers' plots give one plane (0–180°); the shape is assumed the same all around the axis.
+  // Radius on the same dB scale as the 2D plot: 0 dB = the outer sphere, −30 dB = the centre.
+  const view3d = { yaw: -0.65, pitch: 0.4 };
+  let balloons = [];
+  function drawPolar3D() {
+    const box = $('polar3d');
+    svg.style.display = 'none'; box.hidden = false; box.innerHTML = '';
+    const visible = state.mics.filter(m => m.visible && offaxisOf(m));
+    const f = POLAR_FREQS[state.settings.polarF] || 1000;
+    const Wd = $('chartWrap').clientWidth || 800;
+    const cols = Math.max(1, Math.min(visible.length, Math.floor(Wd / 170)));
+    const size = Math.min(300, Math.floor((Wd - (cols - 1) * 12) / cols));
+    box.style.gridTemplateColumns = `repeat(${cols}, ${size}px)`;
+    balloons = visible.map(m => {
+      const cell = document.createElement('div');
+      const cv = document.createElement('canvas');
+      const name = document.createElement('div');
+      name.className = 'p3d-name'; name.style.color = colorOf(m); name.textContent = m.name;
+      cell.append(cv, name); box.appendChild(cell);
+      return { cv, m, f, size };
+    });
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = visible.length ? `${fmtF(f)}Hz · drag to rotate · assumes the pattern is the same all around the mic's axis`
+      : 'None of the shown mics has polar data.';
+    box.appendChild(hint);
+    balloons.forEach(renderBalloon);
+  }
+  function renderBalloon({ cv, m, f, size }) {
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = size * dpr; cv.height = size * dpr; cv.style.width = cv.style.height = size + 'px';
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const R = size * 0.34, cx = size / 2, cy = size / 2;
+    const oa = offaxisOf(m), NT = 30, NP = 40;
+    const rad = [];
+    for (let i = 0; i <= NT; i++) rad.push(Math.max(0, (Math.max(-30, polarDb(oa, f, i * 180 / NT)) + 30) / 30));
+    const cyw = Math.cos(view3d.yaw), syw = Math.sin(view3d.yaw), cp = Math.cos(view3d.pitch), sp = Math.sin(view3d.pitch);
+    // Model: the mic's front along +x. Rotate (yaw about the vertical, then pitch), project orthographically.
+    const rot = (x, y, z) => { const x1 = x * cyw + z * syw, z1 = -x * syw + z * cyw; return [x1, y * cp - z1 * sp, y * sp + z1 * cp]; };
+    const V = [];
+    for (let i = 0; i <= NT; i++) {
+      const t = i * Math.PI / NT, row = [];
+      for (let j = 0; j <= NP; j++) {
+        const ph = j * 2 * Math.PI / NP, r = rad[i];
+        row.push(rot(r * Math.cos(t), r * Math.sin(t) * Math.cos(ph), r * Math.sin(t) * Math.sin(ph)));
+      }
+      V.push(row);
     }
-    wrap.innerHTML = h + '</tbody></table>';
-    drawSpecs(visible);
+    // Reference: the 0 dB sphere's outline, and the front direction.
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--axis').trim() || '#c3c2b7';
+    ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+    const hex = resolvedHex(m), rgb = [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16));
+    const L = [-0.45, 0.6, 0.66];
+    const faces = [];
+    for (let i = 0; i < NT; i++) for (let j = 0; j < NP; j++) {
+      const a = V[i][j], b = V[i + 1][j], c = V[i + 1][j + 1], d = V[i][j + 1];
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+      let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+      if (Math.hypot(...n) < 1e-9) { const e = [c[0] - b[0], c[1] - b[1], c[2] - b[2]]; n = [u[1] * e[2] - u[2] * e[1], u[2] * e[0] - u[0] * e[2], u[0] * e[1] - u[1] * e[0]]; }
+      const nl = Math.hypot(...n) || 1;
+      const lit = 0.35 + 0.65 * Math.abs((n[0] * L[0] + n[1] * L[1] + n[2] * L[2]) / nl);
+      faces.push({ pts: [a, b, c, d], z: (a[2] + b[2] + c[2] + d[2]) / 4, lit });
+    }
+    faces.sort((p, q) => p.z - q.z);
+    for (const fc of faces) {
+      const col = `rgb(${rgb.map(v => Math.round(Math.min(255, v * fc.lit + 40 * fc.lit ** 6))).join(',')})`;
+      ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      fc.pts.forEach((p, k) => (k ? ctx.lineTo : ctx.moveTo).call(ctx, cx + p[0] * R, cy - p[1] * R));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    // Front arrow, drawn on top.
+    const fr = rot(1.25, 0, 0), tip = [cx + fr[0] * R, cy - fr[1] * R];
+    ctx.strokeStyle = ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink-2').trim() || '#52514e';
+    ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(cx + rot(1.02, 0, 0)[0] * R, cy - rot(1.02, 0, 0)[1] * R); ctx.lineTo(...tip); ctx.stroke();
+    ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    const lx = Math.max(18, Math.min(size - 18, tip[0])), ly = Math.max(12, Math.min(size - 4, tip[1] + (fr[1] >= 0 ? -6 : 14)));
+    // Outlined in the background colour, so it stays readable over the shape.
+    ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fcfcfb';
+    ctx.strokeText('front', lx, ly); ctx.fillText('front', lx, ly);
+  }
+  // Drag on any balloon to rotate them all together.
+  {
+    let drag = null;
+    $('polar3d').addEventListener('pointerdown', ev => {
+      if (ev.target.tagName !== 'CANVAS') return;
+      drag = { x: ev.clientX, y: ev.clientY }; ev.target.setPointerCapture(ev.pointerId);
+    });
+    $('polar3d').addEventListener('pointermove', ev => {
+      if (!drag) return;
+      view3d.yaw += (ev.clientX - drag.x) * 0.012;
+      view3d.pitch = Math.max(-1.5, Math.min(1.5, view3d.pitch + (ev.clientY - drag.y) * 0.012));
+      drag = { x: ev.clientX, y: ev.clientY };
+      balloons.forEach(renderBalloon);
+    });
+    ['pointerup', 'pointercancel'].forEach(t => $('polar3d').addEventListener(t, () => { drag = null; }));
   }
 
-  function drawSpecs(visible) {
-    const withSpecs = visible.filter(m => m.specs);
-    const wrap = $('specWrap');
-    $('specPanel').hidden = !withSpecs.length;
-    if (!withSpecs.length) { wrap.innerHTML = ''; return; }
-    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    const mv = dbv => typeof dbv === 'number' ? `<br><span class="meta">${(1000 * 10 ** (dbv / 20)).toFixed(1)} mV/Pa</span>` : '';
-    let h = `<table><thead><tr><th>Mic</th><th style="text-align:left">Type · pattern</th>
-      <th>Sensitivity</th><th>Self-noise</th><th>Max SPL</th><th>Impedance</th><th>Range</th></tr></thead><tbody>`;
-    for (const m of withSpecs) {
-      const sp = m.specs;
-      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>
-        <td style="text-align:left;white-space:normal;min-width:9em">${esc(sp.type || '–')}<br><span class="meta">${esc(sp.pattern || '')}</span></td>
-        <td>${num(sp.sens, ' dBV')}${mv(sp.sens)}</td><td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td>
-        <td>${num(sp.imp, ' Ω')}</td><td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td></tr>`;
+  // Which shown mics have no polar data (hidden off-axis / in the polar view), and which lack this frequency.
+  function drawPolarHint() {
+    const s = state.settings;
+    const polar = s.view === 'polar', angle = Number(s.angle) || 0;
+    const shown = state.mics.filter(m => m.visible);
+    const none = shown.filter(m => !offaxisOf(m)).map(m => m.name);
+    // Always shown: what's missing from the chart. Behind the ⓘ: how the off-axis data is made.
+    let w = '';
+    if ((polar || angle) && none.length) w += `No polar data for ${none.join(', ')}` + (polar ? '. ' : ' (hidden off axis). ');
+    if (polar) {
+      const f = POLAR_FREQS[s.polarF];
+      const edge = shown.filter(m => { const oa = offaxisOf(m); return oa && (f < oa.f[0] || f > oa.f[oa.f.length - 1]); });
+      if (edge.length) w += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtHz(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}`; }).join('; ') + '. ';
+      if (!shown.some(m => offaxisOf(m))) w += 'All library mics have polar data; your own curves don\'t. ';
     }
-    wrap.innerHTML = h + '</tbody></table>';
+    $('polarWarn').textContent = w; $('polarWarn').hidden = !w;
+    // The off-axis note (behind the ⓘ next to Angle / Frequency). Same at every angle; it names only
+    // shown mics whose polar plot covers less than the usual 250 Hz–16 kHz.
+    const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
+    const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
+    const cover = '(mostly 250 Hz–16 kHz' + (narrow.length ? '; ' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join(', ') : '') + ')';
+    $('polarNote').innerHTML = polar
+      ? `<p>These are the manufacturers' polar plots, which are only drawn for a handful of frequencies ${cover}. ` +
+        'If a mic\'s plot doesn\'t include the chosen frequency, the nearest one is shown.</p>'
+      : '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the manufacturer\'s polar plot says the mic is at that angle. ' +
+        `Polar plots are only drawn for a handful of frequencies ${cover}, so in between the values are interpolated, and beyond them the curve is faded.</p>`;
   }
+
+  // Instrument ranges under the chart, on the same frequency axis: solid = the notes (fundamentals),
+  // faint = their overtones, up to the 8th harmonic (three octaves up).
+  // [label, lowest note, highest note, soft low end?, soft high end?] (MIDI note numbers).
+  // A soft end is a typical limit rather than a hard one (voices; the violin's top): drawn faded.
+  // Sounding pitch; transposing instruments are listed at the notes they actually produce.
+  const GROUP_COLOR = { 'Strings': 'var(--s2)', 'Voices': 'var(--s5)', 'Woodwinds': 'var(--s3)', 'Brass': 'var(--s4)', 'Plucked & keys': 'var(--s1)' };
+  const INSTRUMENTS = [
+    ['Strings', [['violin', 'Violin', 55, 100, false, true], ['viola', 'Viola', 48, 88, false, true],
+      ['cello', 'Cello', 36, 81, false, true], ['doublebass', 'Double bass', 28, 67, false, true]]],
+    // Female / male voice: an average voice (about a mezzo-soprano's and a baritone's range), not all voice types together.
+    ['Voices', [['female', 'Female voice', 57, 81, true, true], ['male', 'Male voice', 45, 69, true, true],
+      ['soprano', 'Soprano', 60, 84, true, true], ['alto', 'Alto', 53, 77, true, true], ['tenor', 'Tenor', 48, 72, true, true],
+      ['baritone', 'Baritone', 45, 69, true, true], ['bassvoice', 'Bass (voice)', 40, 64, true, true]]],
+    ['Woodwinds', [['piccolo', 'Piccolo', 74, 108, false, true], ['flute', 'Flute', 60, 98, false, true],
+      ['oboe', 'Oboe', 58, 91, false, true], ['clarinet', 'Clarinet (B♭)', 50, 94, false, true],
+      ['sopranosax', 'Soprano sax', 56, 88, false, true], ['altosax', 'Alto sax', 49, 80, false, true],
+      ['tenorsax', 'Tenor sax', 44, 75, false, true], ['baritonesax', 'Baritone sax', 36, 69, false, true],
+      ['bassoon', 'Bassoon', 34, 75, false, true]]],
+    ['Brass', [['trumpet', 'Trumpet (B♭)', 52, 82, false, true], ['horn', 'French horn', 35, 77, false, true],
+      ['trombone', 'Trombone', 40, 77, false, true], ['tuba', 'Tuba', 26, 65, false, true]]],
+    ['Plucked & keys', [['guitar', 'Guitar', 40, 88, false, false], ['bassguitar', 'Bass guitar', 28, 67, false, false],
+      ['ukulele', 'Ukulele', 60, 81, false, false], ['harp', 'Harp', 24, 103, false, false],
+      ['piano', 'Piano (standard 88 keys)', 21, 108, false, false]]],
+  ];
+  const ALL_INSTRUMENTS = INSTRUMENTS.flatMap(([group, list]) => list.map(r => [...r, GROUP_COLOR[group]]));
+  const DEFAULT_INSTRUMENTS = ['violin', 'guitar', 'piano', 'female', 'male'];
+  // Chips to pick which instruments are shown (behind 'Choose instruments').
+  function drawInstrumentPicker() {
+    const box = $('instChips'), sel = state.settings.instruments;
+    box.innerHTML = '';
+    for (const [group, list] of INSTRUMENTS) {
+      const h = document.createElement('div'); h.className = 'lib-head'; h.textContent = group; box.appendChild(h);
+      const row = document.createElement('div'); row.className = 'chips';
+      for (const [id, label] of list) {
+        const on = sel.includes(id), b = document.createElement('button');
+        b.className = 'chip' + (on ? ' on' : '');
+        b.innerHTML = (on ? `<span class="dot" style="background:${GROUP_COLOR[group]}"></span>` : '<span class="plus">+</span>') + esc(label.replace(/ \(.*\)/, ''));
+        b.title = label;
+        b.onclick = () => { state.settings.instruments = on ? sel.filter(x => x !== id) : [...sel, id]; save(); drawInstrumentPicker(); drawRanges(); };
+        row.appendChild(b);
+      }
+      box.appendChild(row);
+    }
+  }
+  function drawRanges() {
+    const g = $('ranges');
+    if (!$('rangesBox').open || state.settings.view === 'polar') return;
+    const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
+    // The first row starts below the legend line at the top right.
+    // Keys keep the same proportions on every screen: as long as about 3.3 white-key widths.
+    const whiteW = xOf(440 * 2 ** (1 / 7)) - xOf(440), kbH = Math.round(Math.min(46, Math.max(20, whiteW * 3.3)));
+    const rowH = 25, top = 32, kbY = rows.length ? top + (rows.length - 1) * rowH + 13 : 22, h = kbY + kbH + 33;
+    g.setAttribute('viewBox', `0 0 ${W} ${h}`);
+    g.textContent = '';
+    const mf = n => 440 * 2 ** ((n - 69) / 12);
+    const nm = n => { const nn = nearestNote(mf(n)); return nn.name; };
+    for (const f of [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
+      el('line', { x1: xOf(f), x2: xOf(f), y1: 0, y2: kbY - 3, stroke: 'var(--grid)', 'stroke-width': 1 }, g);
+    }
+    const defs = el('defs', {}, g);
+    const fmtHzShort = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + ' kHz' : Math.round(f) + ' Hz';
+    rows.forEach(([, label, lo, hi, softLo, softHi, color], i) => {
+      const y = top + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
+      const xa = xOf(mf(softLo ? lo - FADE : lo)), xb = xOf(Math.min(FMAX, mf(hi) * 8));
+      const at = x => ((x - xa) / (xb - xa)).toFixed(4);
+      // One bar per row; a gradient gives the solid notes, the faint overtones, and the soft ends.
+      const grad = el('linearGradient', { id: 'rg' + i, gradientUnits: 'userSpaceOnUse', x1: xa, x2: xb, y1: 0, y2: 0 }, defs);
+      const stop = (x, o) => el('stop', { offset: at(x), 'stop-color': color, 'stop-opacity': o }, grad);
+      if (softLo) { stop(xa, 0); stop(xOf(mf(lo + 2)), 0.85); } else stop(xa, 0.85);
+      if (softHi) { stop(xOf(mf(hi - 2)), 0.85); stop(xOf(mf(hi + FADE)), 0.22); }
+      else { stop(xOf(mf(hi)), 0.85); stop(xOf(mf(hi)), 0.22); }
+      stop(xb, 0.12);
+      const row = el('g', {}, g);
+      const range = `${softLo ? '±' : ''}${nm(lo)} (${fmtHzShort(mf(lo))}) – ${softHi ? '±' : ''}${nm(hi)} (${fmtHzShort(mf(hi))})`;
+      el('title', {}, row).textContent = `${label}: ${range}` + (softLo || softHi ? '. ± = a typical limit, not a hard one.' : '');
+      el('rect', { x: xa, y, width: Math.max(0, xb - xa), height: 8, rx: 3, fill: `url(#rg${i})` }, row);
+      // Label: the instrument name, then its range in lighter, smaller type.
+      const t = el('text', { x: xOf(mf(lo)), y: y - 4, class: 'rl' }, row);
+      const setLabel = name => {
+        t.textContent = '';
+        el('tspan', { class: 'rl-name' }, t).textContent = name;
+        noteText(el('tspan', { class: 'rl-range', dx: 5 }, t), range);
+      };
+      setLabel(label);
+      // Narrow screens: drop the label's parenthetical, and slide it left so it stays inside the chart.
+      if (t.getComputedTextLength() > W - 8) setLabel(label.replace(/ \(.*\)/, ''));
+      const over = xOf(mf(lo)) + t.getComputedTextLength() - (W - 4);
+      if (over > 0) t.setAttribute('x', Math.max(4, xOf(mf(lo)) - over));
+    });
+    // The 88 piano keys under the piano row, at their frequencies. C's labelled; middle C and A4 = 440 Hz marked.
+    const isBlack = n => [1, 3, 6, 8, 10].includes(n % 12);
+    const kb = el('g', {}, g);
+    const keys = {};   // MIDI note -> [rect, its own fill]
+    for (const black of [false, true]) for (let n = 21; n <= 108; n++) {
+      if (isBlack(n) !== black) continue;
+      // As on a real keyboard, the 7 white keys of an octave are equally wide; a black key spans ±½ semitone.
+      const wk = [0, 2, 4, 5, 7, 9, 11].indexOf(n % 12), oc = 12 * Math.floor(n / 12) - 0.5;
+      const lo = black ? n - 0.5 : oc + wk * 12 / 7, hi = black ? n + 0.5 : oc + (wk + 1) * 12 / 7;
+      const xa = xOf(mf(lo)), xb = xOf(mf(hi));
+      const mark = n === 60 ? noteColor(0) : n === 69 ? noteColor(9) : null;
+      const fill = mark || (black ? '#2b2b29' : '#f6f5f1');
+      keys[n] = [el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
+        fill, stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb), fill, (xa + xb) / 2, black, xa, xb];
+    }
+    for (let o = 1; o <= 8; o++) {
+      const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
+      noteText(t, 'C' + o);
+    }
+    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 27, 'text-anchor': 'end', style: `fill:${noteColor(0)}` }, kb);
+    mc.textContent = 'middle C';
+    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 27, 'text-anchor': 'start', style: `fill:${noteColor(9)}` }, kb);
+    noteText(a4, 'A4 = 440 Hz');
+    // A small hint that the keys play, next to the keyboard's top end; gone once a note has been played.
+    if (!state.settings.played) {
+      const hint = el('text', { x: xOf(mf(108.5)) + 6, y: kbY + kbH * 0.6, class: 'play-hint' }, kb);
+      hint.textContent = '♪ playable';
+    }
+    // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
+    const pressG = el('g', {}, kb);   // marks on the keys that are sounding
+    let filled = [];                  // keys coloured in fully (several fingers)
+    const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
+    const harm = el('g', {}, g);
+    let lit = null;
+    const unlight = () => { if (lit) { lit[0].setAttribute('fill', lit[1]); lit = null; } };
+    rangesHover = {
+      show(f) {
+        const x = xOf(f);
+        line.setAttribute('x1', x); line.setAttribute('x2', x); line.setAttribute('visibility', 'visible');
+        const nn = nearestNote(f), n = Math.round(69 + 12 * Math.log2(f / 440));
+        unlight();
+        if (keys[n]) { lit = keys[n]; lit[0].setAttribute('fill', noteColor(nn.pc)); }
+        // Overtones (if on): dashed lines, and a dot in its note colour on each overtone's nearest key.
+        harm.textContent = '';
+        for (const [k, fk] of overtonesOf(f)) {
+          const xk = xOf(fk), key = keys[Math.round(69 + 12 * Math.log2(fk / 440))];
+          el('line', { x1: xk, x2: xk, y1: 0, y2: kbY - 3, stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3', opacity: overtoneOpacity(k) }, harm);
+          if (key) el('circle', { cx: key[2], cy: key[3] ? kbY + kbH * 0.6 - 3.5 : kbY + kbH - 4, r: 2.6,
+            fill: noteColor(nearestNote(fk).pc), stroke: '#fff', 'stroke-width': 0.8 }, harm);
+        }
+      },
+      hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
+      // The three dots (once a note has been played): a C major triad, C, E, and G in their note colours,
+      // just right of the keyboard's top end. Tap them for the chord switch.
+      addTriad() {
+        if (kb.querySelector('.triad')) return;
+        const x = keys[108][5] + 16, y = kbY + kbH;
+        const tg = el('g', { class: 'triad' + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
+        el('title', {}, tg).textContent = '♫';
+        // An equilateral triangle (C bottom left, E bottom right, G on top), centred on the keys' height.
+        const r0 = Math.min(3.2, kbH / 7), R = r0 * 1.7, r = r0 * 0.75, cy = -kbH / 2 + R * 0.25;
+        el('rect', { x: -6, y: -kbH - 4, width: 2 * R + 12, height: kbH + 6, fill: 'transparent' }, tg);   // easier to tap
+        [[210, 0], [330, 4], [90, 7]].forEach(([deg, pc]) => el('circle', { class: 'dot', cx: R + R * Math.cos(deg * Math.PI / 180), cy: cy - R * Math.sin(deg * Math.PI / 180), r, fill: noteColor(pc) }, tg));
+        tg.addEventListener('pointerdown', ev => ev.stopPropagation());
+        tg.addEventListener('pointermove', ev => ev.stopPropagation());
+        tg.addEventListener('click', ev => { ev.stopPropagation(); triadTapped(tg); });
+      },
+      // Mark the keys that sound: a bar in each one's note colour at the bottom of the key, or, when
+      // playing with several fingers ('full'), the whole key in its note colour.
+      press(notes, full) {
+        pressG.textContent = '';
+        for (const k of filled) k[0].setAttribute('fill', k[1]);
+        filled = [];
+        for (const m of notes) {
+          const k = keys[m]; if (!k) continue;
+          if (full) { k[0].setAttribute('fill', noteColor(((m % 12) + 12) % 12)); filled.push(k); continue; }
+          const bh = k[3] ? kbH * 0.6 : kbH, w = Math.max(2, k[5] - k[4] - 3);
+          el('rect', { x: k[2] - w / 2, y: kbY + bh - 6, width: w, height: 4, rx: 1.5, fill: noteColor(((m % 12) + 12) % 12), stroke: '#fff', 'stroke-width': 0.8 }, pressG);
+        }
+      },
+      // The piano key at (x, y) in this SVG's coordinates, as a MIDI note number, or null.
+      keyAt(x, y) {
+        if (y < kbY || y > kbY + kbH) return null;
+        const hit = ([n, k]) => (k[3] ? y <= kbY + kbH * 0.6 : true) && x >= k[4] && x <= k[5];
+        const e = Object.entries(keys), b = e.find(([n, k]) => k[3] && hit([n, k])) || e.find(([n, k]) => !k[3] && hit([n, k]));
+        return b ? Number(b[0]) : null;
+      },
+    };
+    if (held) rangesHover.press(held.notes);
+    if (state.settings.played) rangesHover.addTriad();
+    const k = el('text', { x: W - 12, y: 11, 'text-anchor': 'end', class: 'ranges-legend' }, g);
+    k.textContent = 'Faded top ends: approx. instrument limits, and overtones (up to the 8th harmonic)';
+    if (k.getComputedTextLength() > W - 16) k.textContent = 'Faded top ends: approx. limits, and overtones (up to the 8th harmonic)';
+  }
+  $('rangesBox').addEventListener('toggle', drawRanges);
+  {
+    // Over the piano, the readout snaps to the key under the pointer; pressing a key plays it, and
+    // dragging across the keys with the button (or finger) down plays each key it reaches.
+    // Several fingers play several keys (each finger tracked on its own).
+    const onMove = ev => {
+      if (!rangesHover) return;
+      const pt = $('ranges').createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const p = pt.matrixTransform($('ranges').getScreenCTM().inverse()), n = rangesHover.keyAt(p.x, p.y);
+      if (ev.type === 'pointerdown') {
+        fingers.set(ev.pointerId, n);
+        // One finger tapping the key that holds a tone stops it; any other key plays.
+        const others = fingers.size > 1;
+        if (n !== null) { if (held && !others && held.roots.length === 1 && held.roots[0] === n) releaseHeld(); else playNote(n, others); }
+      } else if (fingers.has(ev.pointerId) && n !== fingers.get(ev.pointerId)) {
+        if (n !== null) playNote(n, fingers.size > 1);
+        fingers.set(ev.pointerId, n);
+      }
+      // With several fingers down we're just playing: no frequency line or readout, only the keys lit.
+      if (fingers.size > 1) { markFingers(); return; }
+      const f = n !== null ? midiFreq(n) : Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
+      rangesHover.show(f);
+      if (chartHover) chartHover.show(f, ev, true);
+    };
+    const markFingers = () => {
+      rangesHover.hide(); if (chartHover) chartHover.hide();
+      const steps = chordOf()[4];
+      rangesHover.press(held ? held.notes : [...fingers.values()].filter(k => k !== null).flatMap(k => steps.map(d => k + d)), true);
+    };
+    const lift = ev => {
+      fingers.delete(ev.pointerId);
+      if (!rangesHover) return;
+      if (fingers.size > 1) markFingers();
+      else if (held) rangesHover.press(held.notes);
+      else if (!fingers.size) setTimeout(() => { if (!fingers.size && !held && rangesHover) rangesHover.press([]); }, 250);
+    };
+    const onLeave = ev => { lift(ev); if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
+    $('ranges').addEventListener('pointermove', onMove);
+    $('ranges').addEventListener('pointerdown', onMove);
+    $('ranges').addEventListener('pointerleave', onLeave);
+    ['pointerup', 'pointercancel'].forEach(t => $('ranges').addEventListener(t, lift));
+  }
+  $('instEdit').onclick = () => {
+    const box = $('instChips'), open = box.hidden;
+    box.hidden = !open; $('instEdit').setAttribute('aria-expanded', open);
+    $('instEdit').textContent = open ? 'Done' : 'Choose instruments';
+    if (open) drawInstrumentPicker();
+  };
+
+
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- mic list ----------
+  // Table name: for an unrenamed library variant, show the model plus a pattern icon (or the variant, small).
+  function libVariant(m) {
+    const e = m.lib && LIBRARY.find(x => x.name === m.lib);
+    return e && e.pattern && m.name === e.name ? e : null;
+  }
+  function nameHtml(m) {
+    const e = libVariant(m);
+    if (!e) return esc(m.name);
+    const icon = patternIcon(e.pattern);
+    return esc(e.model) + (icon ? ' ' + icon.replace('class="pat"', `class="pat" role="img" aria-label="${esc(e.pattern)}"`)
+                                : ` <span class="variant">${esc(e.pattern.replace(/^with /, '+ '))}</span>`);
+  }
+  const nameLen = m => { const e = libVariant(m); return e ? e.model.length + 2 : m.name.length; };
+
+  // Info card (modal) for one mic: description, specs, source graph, links, rename/remove.
+  const fmtNum = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+  const SPEC_ROWS = [
+    ['Type', sp => esc(sp.type || '–') + (sp.electret ? ' <span class="per">(electret)</span>' : '')],
+    ['Sensitivity', sp => typeof sp.sens === 'number' ? `${fmtNum(sp.sens, ' dBV')} · ${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa` : '–'],
+    ['Self-noise', sp => fmtNum(sp.noise, ' dB(A)')],
+    ['Max SPL', sp => fmtNum(sp.maxspl, ' dB')],
+    ['Impedance', sp => fmtNum(sp.imp, ' Ω')],
+    ['Rated range', sp => sp.range ? esc(sp.range) + ' Hz' : '–'],
+  ];
+  const variantLabel = e => patternIcon(e.pattern) ? patternIcon(e.pattern) + `<span class="vl">${esc(e.pattern)}</span>` : esc(e.pattern);
+
+  // Info card (modal). Library mics with several patterns/variants share one card per model.
+  function openInfo(m) {
+    const e = m.lib && LIBRARY.find(x => x.name === m.lib);
+    const variants = e ? LIBRARY.filter(x => (x.model || x.name) === (e.model || e.name)) : [];
+    if (variants.length > 1 && m.name === e.name) return openModel(e.model);
+    renderCard({ title: esc(m.name), swatch: colorOf(m), e: e || {}, specsList: [[null, m.specs || {}]], mic: m });
+  }
+  function openModel(model) {
+    const variants = LIBRARY.filter(x => (x.model || x.name) === model);
+    renderCard({ title: esc(model), e: variants[0], specsList: variants.map(v => [v, v.specs || {}]), variants });
+  }
+  // width/height attributes let the browser reserve the image's space before it loads.
+  const dims = sz => Array.isArray(sz) ? ` width="${sz[0]}" height="${sz[1]}" style="aspect-ratio:${sz[0]}/${sz[1]}"` : '';
+  // Long press (touch or mouse): run fn, and swallow the click that follows the release.
+  function onLongPress(el, fn) {
+    let timer = null, x0 = 0, y0 = 0, fired = false;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    el.addEventListener('pointerdown', ev => {
+      fired = false; x0 = ev.clientX; y0 = ev.clientY;
+      timer = setTimeout(() => { fired = true; timer = null; fn(); }, 500);
+    });
+    el.addEventListener('pointermove', ev => { if (timer && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) cancel(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => el.addEventListener(t, cancel));
+    el.addEventListener('click', ev => { if (fired) { fired = false; ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);
+    el.addEventListener('contextmenu', ev => ev.preventDefault());
+  }
+  // Card for a library entry, from the library (long press): the model card, or this mic's own card.
+  function openLibEntry(entry) {
+    const model = entry.model || entry.name;
+    if (LIBRARY.filter(x => (x.model || x.name) === model).length > 1) return openModel(model);
+    const mic = state.mics.find(x => x.lib === entry.name);
+    if (mic) return openInfo(mic);
+    renderCard({ title: esc(entry.name), e: entry, specsList: [[entry, entry.specs || {}]], addEntry: entry });
+  }
+  function renderCard({ title, swatch, e, specsList, mic, variants, addEntry }) {
+    const dlg = $('infoCard');
+    // Specs: one value if all variants agree, else one line per variant.
+    const specRow = ([label, f]) => {
+      const vals = specsList.map(([, sp]) => f(sp));
+      const v = vals.every(x => x === vals[0]) ? vals[0]
+        : specsList.map(([ve, sp]) => `<span class="per" title="${esc(ve.pattern)}">${patternIcon(ve.pattern) || esc(ve.pattern)}</span>${f(sp)}`).join('<br>');
+      return `<dt>${label}</dt><dd>${v}</dd>`;
+    };
+    const ICON_OUT = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3 7 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const ICON_DOC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5.5L13 5v9.5H4zM9.5 1.5V5H13M6.5 8.5h4M6.5 11h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+    const links = [
+      e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${ICON_OUT}Product page <span class="dom">${esc(new URL(e.url).hostname.replace(/^www\./, ''))}</span></a>` : '',
+      e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">${ICON_DOC}Manual (PDF)</a>` : '',
+    ].filter(Boolean).join('');
+    // Photo size from its shape: about the same area for every photo, so thin mics get taller, not smaller.
+    const small = innerWidth < 560;
+    const photoBox = sz => {
+      const r = Array.isArray(sz) ? sz[0] / sz[1] : 1, A = small ? 19000 : 32000;
+      const h = Math.min(small ? 250 : 300, Math.max(110, Math.sqrt(A / r))), w = Math.min(small ? 150 : 230, r * h);
+      return `width:${Math.round(w)}px;height:${Math.round(w / r)}px`;
+    };
+    const photos = e.photo ? [{ src: e.photo, size: e.photoSize }, ...(e.photosExtra || [])] : [];
+    const tile = (label, value, wide) => `<div class="spec${wide ? ' wide' : ''}"><dt>${label}</dt><dd>${value}</dd></div>`;
+    const specTiles = (variants ? tile(variants.every(v => patternIcon(v.pattern)) ? 'Patterns' : 'Variants', '<span class="card-chips"></span>', true)
+      : tile('Pattern', specsList[0][1].pattern ? (patternIcon(specsList[0][1].pattern) || '') + esc(specsList[0][1].pattern) : '–'))
+      + SPEC_ROWS.map(([label, f]) => { const r = specRow([label, f]); return tile(label, r.slice(r.indexOf('<dd>') + 4, -5)); }).join('');
+    // Graphs side by side at the same height: each column as wide as its image's shape.
+    const graphs = [
+      e.polar && [e.polar, e.polarSize, `Manufacturer's polar diagram for ${e.model || title}`],
+      e.graph && [e.graph, e.graphSize, `Manufacturer's frequency-response graph for ${e.model || title}`],
+    ].filter(Boolean);
+    const cols = graphs.map(([, sz]) => (Array.isArray(sz) ? sz[0] / sz[1] : 1.5).toFixed(3) + 'fr').join(' ');
+    const actions = [
+      mic ? '<button class="rename">Rename</button>' : '',
+      addEntry ? '<button class="add primary">Add to chart</button>'
+        : variants && !state.mics.some(x => variants.some(v => v.name === x.lib)) ? ''
+        : `<button class="remove">${variants ? 'Remove all from chart' : 'Remove from chart'}</button>`,
+    ].join('');
+    dlg.innerHTML = `
+      <div class="card-head">
+        ${swatch ? `<span class="sw big" style="background:${swatch}"></span>` : ''}
+        <h3>${title}</h3>
+        <button class="link close" title="Close" aria-label="Close">✕</button>
+      </div>
+      ${e.manufacturer ? `<p class="card-maker">${esc(e.manufacturer)}${e.price ? ` · <span title="Approximate new price (euro street price, 2025)">approx. ${esc(e.price.replace(/^~/, ''))}</span>` : ''}</p>` : ''}
+      <div class="card-intro${photos.length ? '' : ' no-photo'}">
+        ${photos.length ? `<div class="card-photos">
+            <img class="main" src="${esc(photos[0].src)}" alt="${esc(e.model || title)}" style="${photoBox(photos[0].size)}">
+            ${photos.length > 1 ? `<div class="thumbs">${photos.map((ph, i) =>
+              `<button type="button" class="thumb${i ? '' : ' on'}" data-src="${esc(ph.src)}" data-box="${photoBox(ph.size)}" aria-label="Photo ${i + 1}"><img src="${esc(ph.src)}" alt=""></button>`).join('')}</div>` : ''}
+          </div>` : ''}
+        <div class="card-text">
+          ${e.quote ? `<blockquote class="card-quote" title="${esc(e.quoteBy || '')}">“${esc(e.quote)}”</blockquote>` : ''}
+          ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : e.name || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
+          ${links ? `<div class="card-links">${links}</div>` : ''}
+        </div>
+      </div>
+      <h4 class="card-sec">Specs</h4>
+      <dl class="card-specs">${specTiles}</dl>
+      ${graphs.length ? `<h4 class="card-sec">From the manufacturer</h4>
+      <div class="card-graphs" style="--cols:${cols}">${graphs.map(([src, sz, alt]) =>
+        `<figure class="card-graph"><a href="${esc(src)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(src)}" alt="${esc(alt)}"${dims(sz)}></a></figure>`).join('')}</div>
+      ${e.note ? `<p class="card-note">${esc(e.note)}</p>` : ''}
+      ${e.source ? `<p class="card-source">Source: ${esc(e.source)}</p>` : ''}` : ''}
+      ${actions ? `<div class="card-foot">${actions}</div>` : ''}`;
+    if (variants) {
+      // One chip per pattern/variant: tap to add it to / remove it from the chart.
+      const box = dlg.querySelector('.card-chips');
+      for (const v of variants) {
+        const on = state.mics.find(x => x.lib === v.name);
+        const btn = document.createElement('button');
+        btn.className = 'chip' + (on ? ' on' : '');
+        btn.title = (on ? 'Remove ' : 'Add ') + v.name;
+        btn.innerHTML = (on ? `<span class="dot" style="background:${colorOf(on)}"></span>` : '<span class="plus">+</span>') + variantLabel(v);
+        btn.onclick = () => {
+          if (on) state.mics = state.mics.filter(x => x !== on); else addFromLibrary(v);
+          update(); openModel(e.model);
+        };
+        box.appendChild(btn);
+      }
+    }
+    // Extra photos: tap a thumbnail to show it large.
+    dlg.querySelectorAll('.card-photos .thumb').forEach(t => t.onclick = () => {
+      const main = dlg.querySelector('.card-photos .main');
+      main.src = t.dataset.src; main.style.cssText = t.dataset.box;
+      dlg.querySelectorAll('.card-photos .thumb').forEach(x => x.classList.toggle('on', x === t));
+    });
+    dlg.querySelector('.close').onclick = () => dlg.close();
+    if (mic) dlg.querySelector('.rename').onclick = () => {
+      const n = prompt('Rename mic', mic.name);
+      if (n && n.trim()) { mic.name = n.trim(); update(); openInfo(mic); }
+    };
+    const rm = dlg.querySelector('.remove'), add = dlg.querySelector('.add');
+    if (rm) rm.onclick = () => {
+      const gone = variants ? state.mics.filter(x => variants.some(v => v.name === x.lib)) : [mic];
+      state.mics = state.mics.filter(x => !gone.includes(x));
+      dlg.close(); update();
+    };
+    if (add) add.onclick = () => { addFromLibrary(addEntry); dlg.close(); update(); };
+    if (!dlg.open) dlg.showModal();
+  }
+  // What each column of the Selected microphones table means (header tooltip, and popup on tap).
+  const COL_HELP = {
+    'Pattern': 'The polar pattern: the directions the mic picks up from. <b>Cardioid</b>: mostly from the front. <b>Super- / hypercardioid</b>: narrower, with a small lobe at the back. <b>Omni</b>: all around. <b>Figure-8</b>: front and back, not the sides.',
+    'Type': 'How the mic turns sound into a signal. More (and the drawings these are based on): <a href="http://hyperphysics.phy-astr.gsu.edu/hbase/Audio/mic.html" target="_blank" rel="noopener">Microphones on HyperPhysics</a>.%TYPES%' +
+      '<h4 class="type-h">Dynamic</h4><p>A coil on the diaphragm moves in a magnet\'s field. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</p>' +
+      '<h4 class="type-h">Condenser</h4><p>The diaphragm and a fixed plate form a charged capacitor; sound changes the gap, and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).</p><ul>' +
+      '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller sound; the classic studio vocal mic. Its pattern changes more with frequency (below), so sound from the sides or back is coloured.</li>' +
+      '<li><b>Small diaphragm</b> (about ½″): more neutral, with nearly the same pattern at all frequencies; for acoustic instruments, overheads, and stereo pairs.</li>' +
+      '</ul>%DIAGRAM%%ELECTRET%<p><b>Electret condensers</b> (of any size) have their charge built into the material, so the capsule needs no polarising voltage. Like every condenser, they still have a tiny amplifier behind the capsule that needs a little power: phantom power, a battery, or a recorder\'s “plug-in power”. Here: the AT2020, DPA 4099, and Ovid CC 100.</p>' +
+      '<h4 class="type-h">Ribbon</h4><p>A thin metal ribbon hanging in a magnetic field; naturally figure-8. Its highs roll off gently from about 8–10 kHz, softening sibilance and cymbals, hence “smooth” or “warm”. Low output (needs a quiet, high-gain preamp), and delicate: keep it out of wind and plosives.</p><p>Most ribbons are passive and don\'t need phantom power; with a correctly wired cable it can\'t reach the ribbon anyway. But a faulty cable, or plugging in while phantom is on, can jolt the ribbon and stretch it, so switch phantom off before connecting one, especially an older one. Newer active ribbons have a built-in amplifier and do need phantom power.</p>',
+    'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
+    'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
+    'Max SPL': 'The loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies, typically 0.5–1 %).',
+    'Impedance': 'The output impedance. Pro mics are typically 50–300 Ω, which any modern preamp handles; it rarely matters when comparing mics.',
+    'Range': 'The rated frequency range, as the manufacturer states it. Outside it, the curve is drawn faded.',
+  };
+  // Column help as HTML; the Type help gets a diagram of two real mics' polar patterns at three
+  // frequencies: a large diaphragm's pattern changes shape with frequency, a small diaphragm's hardly does.
+  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '').replace('%TYPES%', key === 'Type' ? typeSchematics() : '').replace('%ELECTRET%', key === 'Type' ? electretSchematic() : '');
+  // Three simple cross-sections: how a dynamic, a condenser, and a ribbon mic turn sound into a signal.
+  // The mic types, explained in a panel of their own (like the mic details).
+  function openTypeCard() {
+    const dlg = $('infoCard');
+    dlg.innerHTML = `<div class="card-head"><h3>Microphone types</h3><button class="link close" title="Close" aria-label="Close">✕</button></div>
+      <div class="type-card">${helpHtml('Type')}</div>`;
+    dlg.querySelector('.close').onclick = () => dlg.close();
+    $('capTip').hidden = true;
+    if (!dlg.open) dlg.showModal();
+  }
+  function typeSchematics() {
+    // In the style of HyperPhysics' microphone drawings: sound in on the left, the moving part in blue,
+    // and the electrical signal coming out as a red squiggle.
+    const waves = (x, y) => [0, 6, 12].map(d => `<path d="M${x + d} ${y - 14} q-5 14 0 28" class="ts-wave"/>`).join('');
+    const sig = (x, y) => `<path d="M${x} ${y} l3 0 l2 -7 l2 11 l2 -9 l2 6 l2 -3 l3 0" class="ts-sig"/>`;
+    const svg = (body, label) => `<figure><svg viewBox="0 0 140 110">${body}</svg><figcaption>${label}</figcaption></figure>`;
+    const dyn = svg(`${waves(4, 55)}
+      <path d="M104 26 H64 V40 H76 V51 H58 V59 H76 V70 H64 V84 H104 Z" class="ts-mag"/>
+      <path d="M28 24 L47 45 M28 86 L47 65" class="ts-dia"/>
+      ${[49, 53, 57, 61].map(x => `<ellipse cx="${x}" cy="55" rx="2.2" ry="10" class="ts-coil"/>`).join('')}
+      <path d="M50 66 V96 H104 M58 66 V92 H104" class="ts-thin"/>${sig(106, 94)}
+      <text x="84" y="22" class="ts-t" text-anchor="middle">magnet</text><text x="55" y="40" class="ts-t" text-anchor="middle">coil</text>
+      <text x="22" y="100" class="ts-t" text-anchor="middle">cone</text>
+      <text x="70" y="57.6" class="ts-pole" style="font-size:6.5px" text-anchor="middle">N</text>
+      <text x="90" y="36" class="ts-pole" style="font-size:7px" text-anchor="middle">S</text><text x="90" y="80" class="ts-pole" style="font-size:7px" text-anchor="middle">S</text>`, '<b>Dynamic</b><br><span>sound moves a cone; the coil on it moves in a magnet’s field</span>');
+    const con = svg(`${waves(4, 55)}
+      <rect x="32" y="22" width="3" height="66" class="ts-diaf"/>
+      <rect x="40" y="22" width="6" height="66" class="ts-plate"/>
+      <path d="M33.5 22 V12 H60 l2 -3 l3 6 l3 -6 l3 6 l3 -6 l3 6 l2 -3 H104" class="ts-thin"/>${sig(106, 12)}
+      <path d="M96 12 V40 M88 42 H104 M92 47 H100 M88 52 H104 M92 57 H100 M96 59 V98 H43 V88" class="ts-thin"/>
+      <circle cx="96" cy="12" r="1.5" class="ts-dot"/>
+      <text x="108" y="50" class="ts-t">battery</text><text x="70" y="24" class="ts-t" text-anchor="middle">resistor</text>
+      <text x="85" y="45" class="ts-pm" text-anchor="end">+</text><text x="85" y="60" class="ts-pm" text-anchor="end">−</text>
+      <text x="33" y="106" class="ts-t" text-anchor="middle">diaphragm</text><text x="50" y="74" class="ts-t">back plate</text>`, '<b>Condenser</b><br><span>sound changes the gap between diaphragm and plate, charged by a voltage</span>');
+    // A ring magnet seen from the front, with its poles facing each other across the slot at the top; the
+    // pleated ribbon hangs in that slot and moves in and out of the page.
+    const pleats = Array.from({ length: 5 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 3.5`).join(' ');
+    const rib = svg(`${waves(4, 84)}
+      <path d="M77 29.7 A35 35 0 1 1 63 29.7 V44.2 A21 21 0 1 0 77 44.2 Z" class="ts-mag"/>
+      <text x="58.5" y="37" class="ts-pole" text-anchor="middle">N</text><text x="81.5" y="37" class="ts-pole" text-anchor="middle">S</text>
+      <path d="M66 27.5 ${pleats} M74 27.5 ${pleats}" class="ts-dia"/>
+      ${Array.from({ length: 5 }, (_, i) => `<path d="M${66 + (i % 2 ? 2.5 : 0)} ${27.5 + i * 3.5} h8" class="ts-fold"/>`).join('')}
+      <path d="M70 27.5 V12 H104 M72 45 Q96 48 96 20 V16 H104" class="ts-thin"/>${sig(106, 14)}
+      <text x="75" y="24" class="ts-pm">+</text><text x="64" y="52" class="ts-pm" text-anchor="end">−</text>
+      <text x="40" y="106" class="ts-t" text-anchor="middle">magnet</text><text x="62" y="20" class="ts-t" text-anchor="end">ribbon</text>`,
+      '<b>Ribbon</b><br><span>a thin, pleated metal ribbon moves in the gap of a magnet</span>');
+    return `<div class="type-schematics">${dyn}${con}${rib}</div>`;
+  }
+  // An electret capsule in cross-section, after HyperPhysics: the charged film, the perforated back plate, the
+  // air behind it, and the tiny amplifier (FET) that still needs power.
+  function electretSchematic() {
+    const waves = [0, 6, 12].map(d => `<path d="M${3 + d} 30 q-5 14 0 28" class="ts-wave"/>`).join('');
+    const holes = [16, 25, 34, 43, 52, 61].map(y => `<rect x="31" y="${y}" width="4" height="6" class="ts-plate"/>`).join('');
+    const charges = [22, 34, 46, 58, 70].map(y => `<text x="26.5" y="${y}" class="ts-q" text-anchor="middle">+</text>`).join('');
+    return `<figure class="ts-electret"><svg viewBox="0 0 150 92">${waves}
+      <path d="M18 10 H72 V78 H18 V74 H68 V14 H18 Z" class="ts-mag"/>
+      <rect x="20" y="14" width="2" height="60" class="ts-diaf"/>${charges}${holes}
+      <text x="52" y="32" class="ts-t" text-anchor="middle">air</text>
+      <path d="M35 44 H80 M91 44 H108 M84.5 40 V24 H108" class="ts-thin"/>
+      <path d="M80 36 L91 44 L80 52 Z" class="ts-amp"/>${`<path d="M110 44 l3 0 l2 -7 l2 11 l2 -9 l2 6 l2 -3 l3 0" class="ts-sig"/>`}
+      <text x="110" y="26" class="ts-t">power</text><text x="85" y="62" class="ts-t" text-anchor="middle">FET</text>
+      <text x="18" y="89" class="ts-t">charged film</text></svg>
+      <figcaption><b>Electret capsule</b><br><span>the film keeps its charge; the tiny amplifier still needs power</span></figcaption></figure>`;
+  }
+  function typeDiagram() {
+    const FREQS = [[1000, 'var(--ink-2)', '1 kHz'], [8000, '#d95926', '8 kHz'], [16000, '#3987e5', '16 kHz']];
+    const plot = (name, label) => {
+      const e = LIBRARY.find(x => x.name === name), oa = e && e.offaxis;
+      if (!oa) return '';
+      const R = 50, c = 60, rad = db => R * Math.max(0, 1 + db / 30);
+      let g = [0, -10, -20].map(d => `<circle cx="${c}" cy="${c}" r="${rad(d)}" fill="none" stroke="var(--grid)"/>`).join('')
+        + `<line x1="${c}" y1="${c - R}" x2="${c}" y2="${c + R}" stroke="var(--grid)"/><line x1="${c - R}" y1="${c}" x2="${c + R}" y2="${c}" stroke="var(--grid)"/>`;
+      for (const [f, col] of FREQS) {
+        const pts = [];
+        for (let a = 0; a <= 360; a += 5) { const r = rad(polarDb(oa, f, a > 180 ? 360 - a : a)), th = a * Math.PI / 180; pts.push(`${(c + r * Math.sin(th)).toFixed(1)},${(c - r * Math.cos(th)).toFixed(1)}`); }
+        g += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+      }
+      return `<figure><svg viewBox="0 -4 120 122" width="120" height="122">${g}<text x="${c}" y="7" text-anchor="middle" font-size="7" fill="var(--muted)">front</text></svg><figcaption>${label}</figcaption></figure>`;
+    };
+    return `<div class="type-diagram">${plot('Neumann U 87 Ai (cardioid)', 'Large diaphragm<br><span>U 87 Ai, cardioid</span>')}${plot('Schoeps MK 4', 'Small diaphragm<br><span>Schoeps MK 4</span>')}</div>`
+      + `<div class="type-legend">${FREQS.map(([, col, l]) => `<span><i style="background:${col}"></i>${l}</span>`).join('')} · rings every 10 dB</div>`;
+  }
   function drawList() {
-    const ul = $('micList');
-    ul.innerHTML = '';
+    const table = $('micTable');
+    $('micEmpty').hidden = state.mics.length > 0;
+    table.hidden = !state.mics.length;
+    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th class="toggle" aria-label="Show"></th><th class="tight" aria-label="Remove"></th>${['Pattern', 'Type', 'Sensitivity', 'Self-noise', 'Max SPL', 'Impedance', 'Range'].map(h =>
+      `<th class="help" data-help="${h}" title="${h === 'Type' ? 'Dynamic, condenser, or ribbon: how the mic turns sound into a signal. Click for diagrams and more.' : esc(COL_HELP[h].replace(/<[^>]+>/g, ''))}">${h}</th>`).join('')}</tr></thead>`;
+    const tbody = document.createElement('tbody');
     for (const m of state.mics) {
-      const li = document.createElement('li');
-      if (!m.visible) li.className = 'off';
-      li.innerHTML = `
-        <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
-        <input type="color" title="Change color" value="${resolvedHex(m)}">
-        <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
-        <span class="meta">${m.points.length} pts</span>
-        <button class="link" title="Remove">✕</button>`;
-      const [cb, color, name, , del] = li.children;
+      const sp = m.specs || {};
+      const tr = document.createElement('tr');
+      if (!m.visible) tr.className = 'off';
+      tr.innerHTML = `
+        <td class="sticky"><div class="mcell">
+          <input type="color" title="Change color" value="${resolvedHex(m)}">
+          <span class="name${nameLen(m) > 14 ? ' long' : ''}" title="${esc(m.name)} — tap for info">${nameHtml(m)}</span>
+        </div></td>
+        <td class="toggle"><input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}"></td>
+        <td class="tight"><button class="link" title="Remove ${esc(m.name)}">✕</button></td>
+        <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
+        <td class="type"><div title="${esc(sp.type || '')}">${esc(sp.type || '–')}</div></td>
+        <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
+        <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
+        <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>`;
+      const cb = tr.querySelector('input[type=checkbox]'), color = tr.querySelector('input[type=color]');
+      const name = tr.querySelector('.name'), del = tr.querySelector('button.link');
       cb.onchange = () => { m.visible = cb.checked; update(); };
-      name.onclick = () => {
-        const n = prompt('Rename mic', m.name);
-        if (n && n.trim()) { m.name = n.trim(); update(); }
-      };
+      name.onclick = () => openInfo(m);
       color.oninput = () => { m.color = color.value; update(); };
       del.onclick = () => {
         state.mics = state.mics.filter(x => x !== m);
@@ -563,13 +1900,16 @@
         update();
       };
       // Hover-highlight with a real mouse only; touch has no "leave", so it would stick.
-      li.onpointerenter = e => { if (e.pointerType === 'mouse') { highlight = m.id; draw(); } };
-      li.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
-      ul.appendChild(li);
+      tr.onpointerenter = ev => { if (ev.pointerType === 'mouse') { highlight = m.id; draw(); } };
+      tr.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
+      tbody.appendChild(tr);
     }
-    const sel = $('refMic');
-    sel.innerHTML = '<option value="">— nothing —</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
-    sel.value = state.settings.ref;
+    table.appendChild(tbody);
+    // Fade the right edge while there are more columns to scroll to.
+    const wrap = table.parentElement;
+    const edge = () => wrap.classList.toggle('more', wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 2);
+    if (!wrap.dataset.edge) { wrap.dataset.edge = 1; wrap.addEventListener('scroll', edge, { passive: true }); addEventListener('resize', edge); }
+    requestAnimationFrame(edge);
   }
   function resolvedHex(m) {
     if (m.color) return m.color;
@@ -582,7 +1922,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); drawLibrary(); draw(); drawTable();
+    drawList(); drawLibrary(); draw(); drawRanges(); syncThrough(); if (actx) retuneHeld(); drawPolarHint();
   }
 
   // ---------- controls ----------
@@ -591,13 +1931,45 @@
     $('normMode').value = s.normMode; $('normFreq').value = s.normFreq;
     $('normFreqBox').hidden = s.normMode !== 'freq';
     $('sensHint').hidden = s.normMode !== 'sens';
-    $('smooth').value = s.smooth; $('yRange').value = s.yRange;
+    $('yRange').value = s.yRange;
+    const polar = s.view === 'polar';
+    $('chartPanel').classList.toggle('polar', polar);
+    document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === s.view));
+    document.querySelectorAll('#dimSeg button').forEach(b => b.setAttribute('aria-selected', b.dataset.dim === s.dim));
+    document.querySelectorAll('#harmSeg button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.h) === overtoneCount())));
+    document.querySelectorAll('#soundSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sound === (s.sound || 'piano'))));
+    $('chordField').hidden = !s.chords;
+    document.querySelectorAll('#chordSeg button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.chord === chordOf()[0])));
+    $('sensHint').hidden = polar || s.normMode !== 'sens';
+    $('angle').value = s.angle; $('angleLabel').textContent = '· ' + s.angle + '°' + (Number(s.angle) ? '' : ' (on axis)');
+    $('polarF').value = s.polarF; $('polarFLabel').textContent = '· ' + fmtF(POLAR_FREQS[s.polarF]) + 'Hz';
+    drawSmoothDots();
+  }
+  // Smoothing: five tap dots, growing with the amount of smoothing.
+  const SMOOTH_STEPS = [['0', 'none'], ['12', '1/12 oct'], ['6', '1/6 oct'], ['3', '1/3 oct'], ['1', '1 oct']];
+  function drawSmoothDots() {
+    const box = $('smoothDots'), cur = state.settings.smooth;
+    box.innerHTML = '';
+    SMOOTH_STEPS.forEach(([v, label], i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'dot-btn' + (v === cur ? ' on' : '');
+      b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', v === cur); b.title = 'Smoothing: ' + label;
+      b.innerHTML = `<span style="width:${6 + i * 3}px;height:${6 + i * 3}px"></span>`;
+      b.onclick = () => { state.settings.smooth = v; syncControls(); update(); };
+      box.appendChild(b);
+    });
+    const hit = SMOOTH_STEPS.find(([v]) => v === cur);
+    $('smoothLabel').textContent = '· ' + (hit ? hit[1] : cur + ' oct');
   }
   $('normMode').onchange = e => { state.settings.normMode = e.target.value; syncControls(); update(); };
   $('normFreq').onchange = e => { const v = Number(e.target.value); if (v > 0) state.settings.normFreq = v; update(); };
-  $('smooth').onchange = e => { state.settings.smooth = e.target.value; update(); };
-  $('refMic').onchange = e => { state.settings.ref = e.target.value; update(); };
   $('yRange').onchange = e => { state.settings.yRange = e.target.value; update(); };
+  $('angle').oninput = e => { state.settings.angle = Number(e.target.value); syncControls(); update(); };
+  $('polarF').oninput = e => { state.settings.polarF = Number(e.target.value); syncControls(); update(); };
+  document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => { state.settings.view = b.dataset.view; syncControls(); update(); });
+  document.querySelectorAll('#dimSeg button').forEach(b => b.onclick = () => { state.settings.dim = b.dataset.dim; syncControls(); update(); });
+  document.querySelectorAll('#soundSeg button').forEach(b => b.onclick = () => { state.settings.sound = b.dataset.sound; save(); syncControls(); if (actx) releaseHeld(); });
+  document.querySelectorAll('#harmSeg button').forEach(b => b.onclick = () => { state.settings.overtones = b.dataset.h !== '0'; save(); syncControls(); });
 
   function msg(id, text, err) { const m = $(id); m.textContent = text; m.classList.toggle('err', !!err); }
 
@@ -635,40 +2007,134 @@
     if (entry.specs) m.specs = { ...entry.specs };
     return m;
   }
+  // Polar-pattern icon: r(θ) = |a + (1−a)·cos θ|, front pointing up.
+  const PATTERN_A = { 'Omni': 1, 'Wide cardioid': 0.7, 'Cardioid': 0.5, 'Supercardioid': 0.37, 'Hypercardioid': 0.25, 'Figure-8': 0 };
+  function patternIcon(pattern) {
+    const a = PATTERN_A[pattern];
+    if (a === undefined) return null;
+    const pts = [];
+    for (let k = 0; k <= 72; k++) {
+      const t = k / 72 * 2 * Math.PI, r = Math.abs(a + (1 - a) * Math.cos(t));
+      pts.push([r * Math.sin(t), -r * Math.cos(t)]);
+    }
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + (p[0] - cx).toFixed(3) + ' ' + (p[1] - cy).toFixed(3)).join('') + 'Z';
+    return `<svg class="pat" viewBox="-1.15 -1.15 2.3 2.3" aria-hidden="true"><path d="${d}"/></svg>`;
+  }
   function drawLibrary() {
-    const ul = $('libList');
-    ul.innerHTML = '';
+    const chips = $('libChips');
+    chips.innerHTML = '';
     const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
     const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
-    let lastOwned = null;
-    for (const model of [...models.filter(owned), ...models.filter(m => !owned(m))]) {
-      if (owned(model) !== lastOwned && models.some(m => !owned(m))) {
-        lastOwned = owned(model);
-        const h = document.createElement('li');
+    const split = models.some(m => !owned(m));
+    const variants = model => LIBRARY.filter(e => (e.model || e.name) === model);
+    // One chip per model. A single-curve mic: tap to add / remove. A mic with several patterns or variants:
+    // tap opens a quick picker; its dots show which are on the chart. Long press: the info card, for any mic.
+    const chip = model => {
+      const vs = variants(model);
+      const shown = vs.map(v => state.mics.find(x => x.lib === v.name)).filter(Boolean);
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (shown.length ? ' on' : '');
+      btn.innerHTML = (shown.length ? shown.map(m => `<span class="dot" style="background:${colorOf(m)}"></span>`).join('') : '<span class="plus">+</span>') +
+        esc(model);
+      btn.dataset.model = model;
+      if (vs.length > 1) {
+        btn.title = `${model}: pick patterns`;
+        btn.setAttribute('aria-haspopup', 'dialog');
+        btn.onclick = () => pickerModel === model ? closePicker() : openPicker(model, btn);
+      } else {
+        const m = shown[0];
+        btn.title = (m ? 'Remove ' : 'Add ') + model;
+        btn.onclick = () => { if (m) state.mics = state.mics.filter(x => x !== m); else addFromLibrary(vs[0]); update(); };
+      }
+      onLongPress(btn, () => openLibEntry(vs[0]));
+      return btn;
+    };
+    for (const group of [models.filter(owned), models.filter(m => !owned(m))]) {
+      if (!group.length) continue;
+      if (split) {
+        const h = document.createElement('div');
         h.className = 'lib-head';
-        h.textContent = lastOwned ? 'My mics' : 'Other mics (future / window shopping)';
-        ul.appendChild(h);
+        h.textContent = owned(group[0]) ? 'My mics' : 'Other mics';
+        chips.appendChild(h);
       }
-      const entries = LIBRARY.filter(e => (e.model || e.name) === model);
-      const li = document.createElement('li');
-      li.className = 'lib-item';
-      const desc = entries[0].desc ? `<br><span class="lib-desc">${esc(entries[0].desc)}</span>` : '';
-      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(entries[0].source || '')}</span></span>
-        <span class="lib-btns"></span>`;
-      const box = li.querySelector('.lib-btns');
-      for (const entry of entries) {
-        const added = state.mics.some(m => m.lib === entry.name);
-        const btn = document.createElement('button');
-        btn.textContent = (added ? '✓ ' : '+ ') + (entry.pattern || 'Add');
-        btn.disabled = added;
-        btn.title = added ? 'Already on the chart' : `Add ${entry.name}`;
-        btn.onclick = () => { addFromLibrary(entry); update(); };
-        box.appendChild(btn);
-      }
-      ul.appendChild(li);
+      const row = document.createElement('div');
+      row.className = 'chips';
+      for (const model of group) row.appendChild(chip(model));
+      chips.appendChild(row);
     }
     $('libBox').hidden = !LIBRARY.length;
+    // Keep an open picker in sync (the chips were just rebuilt).
+    if (pickerModel) {
+      const a = [...chips.querySelectorAll('.chip')].find(b => b.dataset.model === pickerModel);
+      if (a) openPicker(pickerModel, a); else closePicker();
+    }
   }
+
+  let pickerModel = null;
+  function openPicker(model, anchor) {
+    const pk = $('picker');
+    pickerModel = model;
+    pk.innerHTML = '';
+    for (const v of LIBRARY.filter(e => (e.model || e.name) === model)) {
+      const m = state.mics.find(x => x.lib === v.name);
+      const b = document.createElement('button');
+      b.className = 'chip' + (m ? ' on' : '');
+      b.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : '<span class="plus">+</span>') + variantLabel(v);
+      b.title = (m ? 'Remove ' : 'Add ') + v.name;
+      b.onclick = () => { if (m) state.mics = state.mics.filter(x => x !== m); else addFromLibrary(v); update(); };
+      pk.appendChild(b);
+    }
+    const info = document.createElement('button');
+    info.className = 'info'; info.textContent = 'Info'; info.title = 'Info card for ' + model;
+    info.onclick = () => { closePicker(); openModel(model); };
+    pk.appendChild(info);
+    pk.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    pk.style.top = (r.bottom + scrollY + 6) + 'px';
+    pk.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - pk.offsetWidth - 8)) + scrollX + 'px';
+  }
+  function closePicker() { pickerModel = null; $('picker').hidden = true; }
+  // A small popup under an element (tap again to close); used for control captions and table headers.
+  function showTip(anchor, html, key) {
+    const tip = $('capTip');
+    if (!tip.hidden && tip.dataset.for === key) { tip.hidden = true; return; }
+    tip.innerHTML = html; tip.dataset.for = key; tip.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    tip.style.top = (r.bottom + scrollY + 4) + 'px';
+    tip.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - tip.offsetWidth - 8)) + scrollX + 'px';
+  }
+  // Tap a control's caption: its tooltip text (touch screens have no hover).
+  document.querySelectorAll('.controls .field > .cap, .ranges-bar .field > .cap').forEach(cap => cap.addEventListener('click', ev => {
+    if (ev.target.closest('.info-btn')) return;
+    const text = cap.closest('.field').title;
+    if (text) showTip(cap, esc(text), text);
+  }));
+  // Touch: a readout left after lifting the finger goes away with a tap anywhere else.
+  document.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'mouse' || ev.target.closest('#chart, #ranges')) return;
+    if (chartHover) chartHover.hide();
+    if (rangesHover) rangesHover.hide();
+  });
+  // The (i) next to Angle / Frequency: the off-axis note, as a popover.
+  document.querySelectorAll('.polar-info').forEach(b => b.addEventListener('click', () => showTip(b, $('polarNote').innerHTML, 'polarNote')));
+  // Tap a table column header: what that column means.
+  $('micTable').addEventListener('click', ev => {
+    const th = ev.target.closest('th[data-help]');
+    if (th && th.dataset.help === 'Type') openTypeCard();
+    else if (th) showTip(th, helpHtml(th.dataset.help), th.dataset.help);
+  });
+  document.addEventListener('pointerdown', ev => {
+    if (!ev.target.closest('.controls .field > .cap, .ranges-bar .field > .cap, th[data-help], .polar-info, #capTip')) $('capTip').hidden = true;
+  });
+
+  // Close the picker on a tap elsewhere (its own chip toggles it), or with Esc.
+  document.addEventListener('pointerdown', ev => {
+    if (pickerModel && !ev.target.closest('#picker') && !(ev.target.closest('.chip') && ev.target.closest('.chip').dataset.model === pickerModel)) closePicker();
+  });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && pickerModel) closePicker(); });
+
 
   // ---------- save / share ----------
   const exportObj = () => ({ app: 'mic-compare', version: 1, settings: state.settings, mics: state.mics });
@@ -734,12 +2200,33 @@
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
 
+
+
+  // Every ⓘ button shows/hides the note it controls (the Angle and Frequency ones share one).
+  document.querySelectorAll('.info-btn[aria-controls]').forEach(b => b.onclick = () => {
+    const id = b.getAttribute('aria-controls'), note = $(id), open = note.hidden;
+    note.hidden = !open;
+    document.querySelectorAll(`.info-btn[aria-controls="${id}"]`).forEach(x => x.setAttribute('aria-expanded', open));
+  });
+
+  // Close the info card when tapping the backdrop.
+  $('infoCard').addEventListener('click', ev => { if (ev.target === ev.currentTarget) ev.currentTarget.close(); });
+
   // ---------- init ----------
   const hadSaved = load();
   const shared = location.hash.startsWith('#d=');
   loadFromHash().then(() => {
     // First visit: start with the whole library on screen.
     if (!hadSaved && !shared) LIBRARY.filter(e => e.auto).forEach(addFromLibrary);
+    // The 'Relative to' control is gone; don't keep a hidden reference from older saves or links.
+    state.settings.ref = '';
+    if (!SMOOTH_STEPS.some(([v]) => v === state.settings.smooth)) state.settings.smooth = '12';
+    const st = state.settings;
+    if (st.view !== 'polar') st.view = 'resp';
+    if (st.dim !== '3d') st.dim = '2d';
+    st.angle = Math.min(180, Math.max(0, Math.round((Number(st.angle) || 0) / 15) * 15));
+    if (!(st.polarF >= 0 && st.polarF < POLAR_FREQS.length)) st.polarF = 2;
+    st.instruments = Array.isArray(st.instruments) ? st.instruments.filter(id => ALL_INSTRUMENTS.some(r => r[0] === id)) : DEFAULT_INSTRUMENTS.slice();
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
@@ -748,9 +2235,12 @@
     syncControls();
     update();
     if (state.mics.length) $('addBox').open = false;
+    // Notes & Instruments: open or closed as it was left.
+    if (st.rangesOpen) $('rangesBox').open = true;
+    $('rangesBox').addEventListener('toggle', () => { state.settings.rangesOpen = $('rangesBox').open; save(); });
   });
   let lastW = 0;
-  new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); } }).observe($('chartWrap'));
+  new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); drawRanges(); } }).observe($('chartWrap'));
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawList);
 })();
 </script>

@@ -1,11 +1,14 @@
 ---
-title: "Mic Response Compare"
+title: "Mic Atlas"
 date: 2026-09-25
-image: mic-compare.png
+image: mic-compare.jpg
 link: /mics.html
 ---
 
-Overlay and compare microphone frequency-response curves.
-Paste or drop the data (CSV, REW export, or a curve traced from a spec sheet),
-then normalize, smooth, or view everything relative to one reference mic.
-Comes with curves for my own mics, traced from their spec sheets.
+Compare microphones: their frequency-response curves, on axis or at any angle, and their
+polar patterns. The frequency axis lines up with the ranges
+of instruments and voices and with a piano keyboard, so you can see which notes a mic brings
+out or leaves behind. And the keyboard plays: a small browser synth, with chords and a live
+spectrum of every note, that you can hear through any of the mics, from any angle. Comes
+with curves and specs for my own mics and ten others, read from the manufacturers' spec
+sheets; you can add your own data too.
