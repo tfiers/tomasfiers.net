@@ -798,9 +798,9 @@
     tg.classList.remove('hop'); void tg.getBoundingClientRect(); tg.classList.add('hop');
     setTimeout(() => tg.classList.remove('hop'), 700);
     // A chord, lightly rolled, in the same plain root-position voicing as the chord switch: opening plays
-    // A₃ major 7, closing C₄ major.
+    // A₃ major 7, closing C₃ major.
     audio();
-    const t = actx.currentTime, notes = st.chords ? [57, 61, 64, 68] : [60, 64, 67];
+    const t = actx.currentTime, notes = st.chords ? [57, 61, 64, 68] : [48, 52, 55];
     notes.forEach((n, i) => setTimeout(() => playOne(n, false, 0.5 / Math.sqrt(notes.length)), i * 18));
     if (rangesHover) { rangesHover.press(notes); setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 900); }
     rtaColor = noteColor(st.chords ? 9 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
