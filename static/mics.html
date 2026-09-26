@@ -235,6 +235,10 @@
   details { margin-top: 12px; }
   #rangesBox { margin-top: 4px; }
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; }
+  button.inst-edit { color: var(--accent); font-size: 0.82rem; padding: 4px 0 0; }
+  .inst-chips .lib-head { margin-top: 8px; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .inst-chips { margin: 2px 0 6px; }
+  .inst-chips .chip { padding: 2px 8px; font-size: 0.8rem; }
   #tableBox .table-wrap { margin-top: 8px; }
   summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
@@ -268,15 +272,15 @@
       <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
       </div>
       <div class="hint note src-note" id="srcNote" hidden>
-        <p>All curves come from the makers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Mics table to see its original graphs.</p>
+        <p>All curves come from the manufacturers' own published graphs, both the frequency responses and the polar plots. Where the PDF contains a graph as vector data, the curve is read out exactly; otherwise it's traced from the image (to within about 0.5 dB for response curves and 1 dB for polar plots). Tap a mic's name in the Mics table to see its original graphs.</p>
         <ul>
-          <li>Makers measure in different ways (distance, room, smoothing), so take small differences between brands with a grain of salt.</li>
+          <li>Manufacturers measure in different ways (distance, room, smoothing), so take small differences between brands with a grain of salt.</li>
           <li class="resp-only">A curve is drawn faded outside the mic's rated frequency range.</li>
         </ul>
       </div>
       <div class="controls">
         <div class="field field-level resp-only" title="How the curves are lined up vertically.
-• As in the source: as the maker drew it (usually 0 dB at 1 kHz).
+• As in the source: as the manufacturer drew it (usually 0 dB at 1 kHz).
 • Output: shifted by the published sensitivity, so mics that give a stronger signal sit higher.
 • 0 dB at …: every curve passes through 0 dB at the frequency you choose.
 • 300 Hz–1 kHz average: every curve's average over that range is set to 0 dB.">
@@ -323,6 +327,8 @@
       </div>
       <details id="rangesBox" class="resp-only">
         <summary>Instrument ranges</summary>
+        <button type="button" class="link inst-edit" id="instEdit" aria-expanded="false" aria-controls="instChips">Choose instruments</button>
+        <div id="instChips" class="inst-chips" hidden></div>
         <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
       </details>
       <p class="hint" id="polarWarn" hidden></p>
@@ -335,13 +341,13 @@
     </section>
 
     <section class="panel" id="micPanel">
-      <h2 class="with-info">Microphones <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
+      <h2 class="with-info">Selected microphones <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
       <div class="hint note mic-note" id="micNote" hidden>
         <ul>
           <li><b>Sensitivity:</b> the output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.</li>
           <li><b>Self-noise:</b> the noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less.</li>
-          <li><b>Max SPL:</b> the loudest sound before distortion, as the maker specifies it (their distortion threshold varies).</li>
-          <li>– means the maker doesn't publish it.</li>
+          <li><b>Max SPL:</b> the loudest sound before distortion, as the manufacturer specifies it (their distortion threshold varies).</li>
+          <li>– means the manufacturer doesn't publish it.</li>
         </ul>
         <p>Tap a mic's name for its photo, full specs, links and original graphs.</p>
       </div>
@@ -410,7 +416,7 @@
   const DASHES = ['', '6 4', '2 3', '10 3 2 3'];
 
   const $ = id => document.getElementById(id);
-  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2 } };
+  const state = { mics: [], settings: { normMode: 'none', normFreq: 1000, smooth: '12', ref: '', yRange: '-10,5', view: 'resp', angle: 0, polarF: 2, instruments: ['violin', 'guitar', 'piano', 'female', 'male'] } };
   let highlight = null;
 
   // ---------- persistence ----------
@@ -601,8 +607,9 @@
     const x = 69 + 12 * Math.log2(f / 440), n = Math.round(x), pc = ((n % 12) + 12) % 12;
     return { name: NOTE_NAMES[pc] + (Math.floor(n / 12) - 1), pc, cents: Math.round(100 * (x - n)) };
   }
-  // Each of the 12 notes gets its own colour (around the colour wheel), so a note change is easy to see.
-  const noteColor = pc => `hsl(${pc * 30} 75% 45%)`;
+  // Each of the 12 notes gets its own colour. They go round the colour wheel in the circle of fifths
+  // (C, G, D, …), so neighbouring semitones get clearly different colours and a note change is easy to see.
+  const noteColor = pc => `hsl(${(pc * 7 % 12) * 30} 75% 45%)`;
   const noteHtml = f => {
     const nn = nearestNote(f);
     return ` · <span class="note" style="color:${noteColor(nn.pc)}"><span class="ndot" style="background:${noteColor(nn.pc)}"></span>${nn.name}</span>` +
@@ -614,7 +621,7 @@
 
   function computeYRange() {
     const s = state.settings, r = s.yRange;
-    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves. The makers' graphs
+    // A fixed ±range is centred on 0 dB, which only makes sense for normalized curves. The manufacturers' graphs
     // (as in the source) are 0 dB around 1 kHz too; own data in absolute dB (e.g. SPL) gets the auto range.
     // Judged on the on-axis curves, so moving the angle slider never switches the range.
     const nearZero = () => state.mics.every(m => {
@@ -680,7 +687,7 @@
     const ends = [];
     for (const m of visible) {
       const c = curves.get(m.id);
-      // Solid inside the maker's rated frequency range (and off axis, the polar data's range), faded outside.
+      // Solid inside the manufacturer's rated frequency range (and off axis, the polar data's range), faded outside.
       const rr = solidRange(m);
       const inRange = f => !rr || (f >= rr[0] * 0.999 && f <= rr[1] * 1.001);
       let dIn = '', dOut = '', prev = null, prevIn = null, last = null;
@@ -723,7 +730,6 @@
       const f = Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       const x = xOf(f);
       cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
-      cross.setAttribute('stroke', noteColor(nearestNote(f).pc));
       dots.textContent = ''; dots.setAttribute('visibility', 'visible');
       const rows = [];
       for (const m of visible) {
@@ -858,9 +864,9 @@
     const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
     const cover = '(mostly 250 Hz–16 kHz' + (narrow.length ? '; ' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join(', ') : '') + ')';
     $('polarNote').innerHTML = polar
-      ? `<p>These are the makers' polar plots, which are only drawn for a handful of frequencies ${cover}. ` +
+      ? `<p>These are the manufacturers' polar plots, which are only drawn for a handful of frequencies ${cover}. ` +
         'If a mic\'s plot doesn\'t include the chosen frequency, the nearest one is shown.</p>'
-      : '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the maker\'s polar plot says the mic is at that angle. ' +
+      : '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the manufacturer\'s polar plot says the mic is at that angle. ' +
         `Polar plots are only drawn for a handful of frequencies ${cover}, so in between the values are interpolated, and beyond them the curve is faded.</p>`;
   }
 
@@ -868,14 +874,47 @@
   // faint = their overtones, up to the 8th harmonic (three octaves up).
   // [label, lowest note, highest note, soft low end?, soft high end?] (MIDI note numbers).
   // A soft end is a typical limit rather than a hard one (voices; the violin's top): drawn faded.
-  const RANGES = [
-    ['Violin', 55, 100, false, true], ['Female voice (alto–soprano)', 53, 84, true, true], ['Male voice (bass–tenor)', 40, 72, true, true],
-    ['Guitar', 40, 88, false, false], ['Piano (standard 88 keys)', 21, 108, false, false],
+  // Sounding pitch; transposing instruments are listed at the notes they actually produce.
+  const INSTRUMENTS = [
+    ['Strings', [['violin', 'Violin', 55, 100, false, true], ['viola', 'Viola', 48, 88, false, true],
+      ['cello', 'Cello', 36, 81, false, true], ['doublebass', 'Double bass', 28, 67, false, true]]],
+    ['Voices', [['female', 'Female voice (alto–soprano)', 53, 84, true, true], ['male', 'Male voice (bass–tenor)', 40, 72, true, true],
+      ['soprano', 'Soprano', 60, 84, true, true], ['alto', 'Alto', 53, 77, true, true], ['tenor', 'Tenor', 48, 72, true, true],
+      ['baritone', 'Baritone', 45, 69, true, true], ['bassvoice', 'Bass (voice)', 40, 64, true, true]]],
+    ['Woodwinds', [['piccolo', 'Piccolo', 74, 108, false, true], ['flute', 'Flute', 60, 98, false, true],
+      ['oboe', 'Oboe', 58, 91, false, true], ['clarinet', 'Clarinet (B♭)', 50, 94, false, true],
+      ['altosax', 'Alto sax', 49, 80, false, true], ['tenorsax', 'Tenor sax', 44, 75, false, true], ['bassoon', 'Bassoon', 34, 75, false, true]]],
+    ['Brass', [['trumpet', 'Trumpet (B♭)', 52, 82, false, true], ['horn', 'French horn', 35, 77, false, true],
+      ['trombone', 'Trombone', 40, 77, false, true], ['tuba', 'Tuba', 26, 65, false, true]]],
+    ['Plucked & keys', [['guitar', 'Guitar', 40, 88, false, false], ['bassguitar', 'Bass guitar', 28, 67, false, false],
+      ['ukulele', 'Ukulele', 60, 81, false, false], ['harp', 'Harp', 24, 103, false, false],
+      ['piano', 'Piano (standard 88 keys)', 21, 108, false, false]]],
   ];
+  const ALL_INSTRUMENTS = INSTRUMENTS.flatMap(([, list]) => list);
+  const DEFAULT_INSTRUMENTS = ['violin', 'guitar', 'piano', 'female', 'male'];
+  // Chips to pick which instruments are shown (behind 'Choose instruments').
+  function drawInstrumentPicker() {
+    const box = $('instChips'), sel = state.settings.instruments;
+    box.innerHTML = '';
+    for (const [group, list] of INSTRUMENTS) {
+      const h = document.createElement('div'); h.className = 'lib-head'; h.textContent = group; box.appendChild(h);
+      const row = document.createElement('div'); row.className = 'chips';
+      for (const [id, label] of list) {
+        const on = sel.includes(id), b = document.createElement('button');
+        b.className = 'chip' + (on ? ' on' : '');
+        b.innerHTML = (on ? '<span class="dot" style="background:var(--accent)"></span>' : '<span class="plus">+</span>') + esc(label.replace(/ \(.*\)/, ''));
+        b.title = label;
+        b.onclick = () => { state.settings.instruments = on ? sel.filter(x => x !== id) : [...sel, id]; save(); drawInstrumentPicker(); drawRanges(); };
+        row.appendChild(b);
+      }
+      box.appendChild(row);
+    }
+  }
   function drawRanges() {
     const g = $('ranges');
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
-    const rowH = 25, kbY = 16 + (RANGES.length - 1) * rowH + 13, kbH = 20, h = kbY + kbH + 48;
+    const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
+    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 20, h = kbY + kbH + 48;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
@@ -885,7 +924,7 @@
     }
     const defs = el('defs', {}, g);
     const fmtHzShort = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + ' kHz' : Math.round(f) + ' Hz';
-    RANGES.forEach(([label, lo, hi, softLo, softHi], i) => {
+    rows.forEach(([, label, lo, hi, softLo, softHi], i) => {
       const y = 16 + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
       const xa = xOf(mf(softLo ? lo - FADE : lo)), xb = xOf(Math.min(FMAX, mf(hi) * 8));
       const at = x => ((x - xa) / (xb - xa)).toFixed(4);
@@ -928,10 +967,15 @@
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
     a4.textContent = 'A4 = 440 Hz';
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
-    k.textContent = 'solid: notes · faint: overtones (up to the 8th harmonic) · faded end / ~: no hard limit';
-    if (k.getComputedTextLength() > PW) k.textContent = 'solid: notes · faint: overtones · faded / ~: no hard limit';
+    k.textContent = 'Light: overtones · fading end (~): approximate limit';
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
+  $('instEdit').onclick = () => {
+    const box = $('instChips'), open = box.hidden;
+    box.hidden = !open; $('instEdit').setAttribute('aria-expanded', open);
+    $('instEdit').textContent = open ? 'Done' : 'Choose instruments';
+    if (open) drawInstrumentPicker();
+  };
 
   function drawTable() {
     const wrap = $('tableWrap');
@@ -1421,6 +1465,7 @@
     if (st.view !== 'polar') st.view = 'resp';
     st.angle = Math.min(180, Math.max(0, Math.round((Number(st.angle) || 0) / 15) * 15));
     if (!(st.polarF >= 0 && st.polarF < POLAR_FREQS.length)) st.polarF = 2;
+    st.instruments = Array.isArray(st.instruments) ? st.instruments.filter(id => ALL_INSTRUMENTS.some(r => r[0] === id)) : DEFAULT_INSTRUMENTS.slice();
     // Keep specs of library mics up to date with the library file.
     for (const m of state.mics) {
       const entry = m.lib && LIBRARY.find(e => e.name === m.lib);
