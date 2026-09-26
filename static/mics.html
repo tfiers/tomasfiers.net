@@ -253,6 +253,8 @@
   details { margin-top: 4px; }
   #rangesBox { margin-top: 4px; }
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
+  svg .rta { fill-opacity: 0.18; stroke-opacity: 0.6; stroke-width: 1; stroke-linejoin: round; }
+  svg .rta-label { fill: var(--muted); font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
   svg .ot-num { fill: var(--muted); font-size: 9.5px; }
   .tip .ots { color: var(--muted); font-size: 0.72rem; margin: -2px 0 4px; }
   svg .rl-name { fill: var(--ink-2); font-weight: 500; }
@@ -666,6 +668,67 @@
   let curves = new Map();
   // Linked hover between the chart and the instrument ranges: each sets these when drawn.
   let chartHover = null, rangesHover = null;
+  const midiFreq = n => 440 * 2 ** ((n - 69) / 12);
+
+  // ---------- the playable piano, and a live spectrum (RTA) of what it plays, drawn on the chart ----------
+  // A simple additive piano-like tone: harmonics 1–16, each quieter and dying away faster than the one
+  // below; it rings out as if the sustain pedal were down. The spectrum is measured from the actual sound.
+  let actx = null, master = null, analyser = null, rtaPath = null, rtaLabel = null, rtaUntil = 0, rtaRunning = false, rtaColor = '';
+  function audio() {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value = 0.3;
+      const comp = actx.createDynamicsCompressor();
+      analyser = actx.createAnalyser(); analyser.fftSize = 16384; analyser.smoothingTimeConstant = 0.5;
+      master.connect(comp); comp.connect(analyser); analyser.connect(actx.destination);
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function playNote(n) {
+    const ctx = audio(), f = midiFreq(n), t = ctx.currentTime;
+    const len = 1.2 + 3.5 * (108 - n) / 87;   // low notes ring longer
+    for (let k = 1; k <= 16 && k * f < 18000; k++) {
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.frequency.value = k * f;
+      // The lowest notes' fundamentals are weak on a real piano, too.
+      const amp = 0.5 / k ** 1.3 * (k === 1 && f < 110 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(amp, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len / Math.sqrt(k));
+      osc.connect(g); g.connect(master);
+      osc.start(t); osc.stop(t + len + 0.05);
+    }
+    rtaColor = noteColor(((n % 12) + 12) % 12);
+    rtaUntil = Math.max(rtaUntil, t + len);
+    if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
+  }
+  // One frame of the spectrum: per pixel column, the loudest FFT bin in it, from −110 dB (bottom of the
+  // chart) to −20 dB (three quarters up). Its own scale, independent of the mics' dB axis.
+  let rtaBuf = null;
+  function rtaFrame() {
+    const done = actx.currentTime > rtaUntil + 0.2;
+    if (rtaPath && rtaPath.isConnected) {
+      if (done) { rtaPath.setAttribute('d', ''); rtaLabel.setAttribute('visibility', 'hidden'); }
+      else {
+        if (!rtaBuf) rtaBuf = new Float32Array(analyser.frequencyBinCount);
+        analyser.getFloatFrequencyData(rtaBuf);
+        const binHz = actx.sampleRate / analyser.fftSize, bottom = M.t + PH;
+        let d = `M${M.l},${bottom}`;
+        for (let x = M.l; x <= M.l + PW; x++) {
+          const i0 = Math.floor(fOfX(x - 0.5) / binHz), i1 = Math.max(i0, Math.floor(fOfX(x + 0.5) / binHz));
+          let v = -Infinity;
+          for (let i = i0; i <= i1 && i < rtaBuf.length; i++) v = Math.max(v, rtaBuf[i]);
+          const h = Math.min(1, Math.max(0, (v + 110) / 90)) * PH * 0.75;
+          d += `L${x},${(bottom - h).toFixed(1)}`;
+        }
+        rtaPath.setAttribute('d', d + `L${M.l + PW},${bottom}Z`);
+        rtaPath.style.fill = rtaPath.style.stroke = rtaColor;
+        rtaLabel.setAttribute('visibility', 'visible');
+      }
+    }
+    if (done) rtaRunning = false; else requestAnimationFrame(rtaFrame);
+  }
   // The overtones of frequency f, when shown: [[2, 2f], [3, 3f], … up to the 8th harmonic], within the chart.
   const overtonesOf = f => state.settings.overtones ? [2, 3, 4, 5, 6, 7, 8].map(k => [k, k * f]).filter(([, fk]) => fk <= FMAX) : [];
 
@@ -738,6 +801,9 @@
 
     el('clipPath', { id: 'plotClip' }, svg).appendChild(el('rect', { x: M.l, y: M.t, width: PW, height: PH }));
     const plot = el('g', { 'clip-path': 'url(#plotClip)' }, svg);
+    rtaPath = el('path', { class: 'rta' }, plot);
+    rtaLabel = el('text', { x: M.l + PW - 6, y: M.t + PH - 6, 'text-anchor': 'end', class: 'rta-label', visibility: 'hidden' }, svg);
+    rtaLabel.textContent = 'Spectrum of the played note';
     const i0 = Math.max(0, gridIndex(FMIN) - 1), i1 = Math.min(GRID.length - 1, gridIndex(FMAX) + 1);
     const visible = state.mics.filter(m => m.visible);
     const ends = [];
@@ -843,7 +909,7 @@
   // ---------- polar view: the shown mics' polar patterns at one frequency, overlaid ----------
   const P_LO = -30, P_HI = 5;
   function drawPolar() {
-    chartHover = null;
+    chartHover = null; rtaPath = rtaLabel = null;
     W = Math.max(300, Math.round($('chartWrap').clientWidth || 800));
     const visible = state.mics.filter(m => m.visible && offaxisOf(m));
     const legend = W >= 560;
@@ -1067,8 +1133,10 @@
   const INSTRUMENTS = [
     ['Strings', [['violin', 'Violin', 55, 100, false, true], ['viola', 'Viola', 48, 88, false, true],
       ['cello', 'Cello', 36, 81, false, true], ['doublebass', 'Double bass', 28, 67, false, true]]],
-    // An average voice (the most common types: mezzo-soprano and baritone), not the extremes of trained singers.
-    ['Voices', [['female', 'Female voice', 57, 81, true, true], ['male', 'Male voice', 45, 69, true, true]]],
+    // Female / male voice: an average voice (about a mezzo-soprano's and a baritone's range), not all voice types together.
+    ['Voices', [['female', 'Female voice', 57, 81, true, true], ['male', 'Male voice', 45, 69, true, true],
+      ['soprano', 'Soprano', 60, 84, true, true], ['alto', 'Alto', 53, 77, true, true], ['tenor', 'Tenor', 48, 72, true, true],
+      ['baritone', 'Baritone', 45, 69, true, true], ['bassvoice', 'Bass (voice)', 40, 64, true, true]]],
     ['Woodwinds', [['piccolo', 'Piccolo', 74, 108, false, true], ['flute', 'Flute', 60, 98, false, true],
       ['oboe', 'Oboe', 58, 91, false, true], ['clarinet', 'Clarinet (B♭)', 50, 94, false, true],
       ['sopranosax', 'Soprano sax', 56, 88, false, true], ['altosax', 'Alto sax', 49, 80, false, true],
@@ -1104,7 +1172,7 @@
     const g = $('ranges');
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
     const rows = ALL_INSTRUMENTS.filter(r => state.settings.instruments.includes(r[0]));
-    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 20, h = kbY + kbH + 48;
+    const rowH = 25, kbY = rows.length ? 16 + (rows.length - 1) * rowH + 13 : 6, kbH = 34, h = kbY + kbH + 48;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
@@ -1155,7 +1223,7 @@
       const mark = n === 60 ? noteColor(0) : n === 69 ? noteColor(9) : null;
       const fill = mark || (black ? '#2b2b29' : '#f6f5f1');
       keys[n] = [el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
-        fill, stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb), fill, (xa + xb) / 2, black];
+        fill, stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb), fill, (xa + xb) / 2, black, xa, xb];
     }
     for (let o = 1; o <= 8; o++) {
       const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
@@ -1165,6 +1233,8 @@
     mc.textContent = 'middle C';
     const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: `fill:${noteColor(9)}` }, kb);
     a4.textContent = 'A4 = 440 Hz';
+    const play = el('text', { x: W - Math.max(M.r, 6), y: kbY + kbH + 24, 'text-anchor': 'end' }, kb);
+    play.textContent = W < 520 ? 'Tap to play' : 'Click or drag across the keys to play';
     // Hover (here or on the chart): a line at that frequency, and the nearest piano key lit in its note colour.
     const line = el('line', { y1: 0, y2: kbY + kbH, stroke: 'var(--muted)', 'stroke-width': 1, visibility: 'hidden' }, g);
     const harm = el('g', {}, g);
@@ -1187,6 +1257,13 @@
         }
       },
       hide() { line.setAttribute('visibility', 'hidden'); unlight(); harm.textContent = ''; },
+      // The piano key at (x, y) in this SVG's coordinates, as a MIDI note number, or null.
+      keyAt(x, y) {
+        if (y < kbY || y > kbY + kbH) return null;
+        const hit = ([n, k]) => (k[3] ? y <= kbY + kbH * 0.6 : true) && x >= k[4] && x <= k[5];
+        const e = Object.entries(keys), b = e.find(([n, k]) => k[3] && hit([n, k])) || e.find(([n, k]) => !k[3] && hit([n, k]));
+        return b ? Number(b[0]) : null;
+      },
     };
     const k = el('text', { x: W - Math.max(M.r, 6), y: h - 4, 'text-anchor': 'end' }, g);
     k.textContent = 'Faded top end: approximate instrument limit (±), and overtones up to the 8th harmonic';
@@ -1194,17 +1271,25 @@
   }
   $('rangesBox').addEventListener('toggle', drawRanges);
   {
+    // Over the piano, the readout snaps to the key under the pointer; pressing a key plays it, and
+    // dragging across the keys with the button (or finger) down plays each key it reaches.
+    let down = false, lastKey = null;
     const onMove = ev => {
       if (!rangesHover) return;
       const pt = $('ranges').createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
-      const f = Math.min(FMAX, Math.max(FMIN, fOfX(pt.matrixTransform($('ranges').getScreenCTM().inverse()).x)));
+      const p = pt.matrixTransform($('ranges').getScreenCTM().inverse()), n = rangesHover.keyAt(p.x, p.y);
+      if (ev.type === 'pointerdown') { down = true; lastKey = null; }
+      if (down && n !== null && n !== lastKey) playNote(n);
+      lastKey = n;
+      const f = n !== null ? midiFreq(n) : Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       rangesHover.show(f);
       if (chartHover) chartHover.show(f, ev, true);
     };
-    const onLeave = ev => { if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
+    const onLeave = ev => { down = false; if (ev.pointerType !== 'mouse') return; if (rangesHover) rangesHover.hide(); if (chartHover) chartHover.hide(); };
     $('ranges').addEventListener('pointermove', onMove);
     $('ranges').addEventListener('pointerdown', onMove);
     $('ranges').addEventListener('pointerleave', onLeave);
+    ['pointerup', 'pointercancel'].forEach(t => $('ranges').addEventListener(t, () => { down = false; }));
   }
   $('instEdit').onclick = () => {
     const box = $('instChips'), open = box.hidden;
