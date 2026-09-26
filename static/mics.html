@@ -123,6 +123,8 @@
   }
   .tip .f { font-weight: 600; margin-bottom: 4px; }
   .tip .cents { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
+  .tip .note { white-space: nowrap; }
+  .tip .ndot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 1px 0; }
   .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
   .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
@@ -332,7 +334,7 @@
     </section>
 
     <section class="panel" id="micPanel">
-      <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
+      <h2 class="with-info">Microphones <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
       <div class="hint note mic-note" id="micNote" hidden>
         <ul>
           <li><b>Sensitivity:</b> the output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.</li>
@@ -598,10 +600,16 @@
   // Nearest note (equal temperament, A4 = 440 Hz) and how far off, in cents.
   const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   function nearestNote(f) {
-    const x = 69 + 12 * Math.log2(f / 440), n = Math.round(x);
-    return { name: NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), cents: Math.round(100 * (x - n)) };
+    const x = 69 + 12 * Math.log2(f / 440), n = Math.round(x), pc = ((n % 12) + 12) % 12;
+    return { name: NOTE_NAMES[pc] + (Math.floor(n / 12) - 1), pc, cents: Math.round(100 * (x - n)) };
   }
-  const noteHtml = f => { const nn = nearestNote(f); return ` · ${nn.name}` + (nn.cents ? `<span class="cents"> ${nn.cents > 0 ? '+' : '−'}${Math.abs(nn.cents)}¢</span>` : ''); };
+  // Each of the 12 notes gets its own colour (around the colour wheel), so a note change is easy to see.
+  const noteColor = pc => `hsl(${pc * 30} 75% 45%)`;
+  const noteHtml = f => {
+    const nn = nearestNote(f);
+    return ` · <span class="note" style="color:${noteColor(nn.pc)}"><span class="ndot" style="background:${noteColor(nn.pc)}"></span>${nn.name}</span>` +
+      (nn.cents ? `<span class="cents"> ${nn.cents > 0 ? '+' : '−'}${Math.abs(nn.cents)}¢</span>` : '');
+  };
   const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
 
   let curves = new Map();
@@ -717,6 +725,7 @@
       const f = Math.min(FMAX, Math.max(FMIN, fOfX(p.x)));
       const x = xOf(f);
       cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
+      cross.setAttribute('stroke', noteColor(nearestNote(f).pc));
       dots.textContent = ''; dots.setAttribute('visibility', 'visible');
       const rows = [];
       for (const m of visible) {
@@ -866,13 +875,13 @@
   function drawRanges() {
     const g = $('ranges');
     if (!$('rangesBox').open || state.settings.view === 'polar') return;
-    const rowH = 25, h = RANGES.length * rowH + 22;
+    const rowH = 25, kbY = 16 + (RANGES.length - 1) * rowH + 13, kbH = 20, h = kbY + kbH + 48;
     g.setAttribute('viewBox', `0 0 ${W} ${h}`);
     g.textContent = '';
     const mf = n => 440 * 2 ** ((n - 69) / 12);
     const nm = n => { const nn = nearestNote(mf(n)); return nn.name; };
     for (const f of [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
-      el('line', { x1: xOf(f), x2: xOf(f), y1: 0, y2: h - 18, stroke: 'var(--grid)', 'stroke-width': 1 }, g);
+      el('line', { x1: xOf(f), x2: xOf(f), y1: 0, y2: kbY - 3, stroke: 'var(--grid)', 'stroke-width': 1 }, g);
     }
     RANGES.forEach(([label, lo, hi], i) => {
       const y = 16 + i * rowH, x0 = xOf(mf(lo)), x1 = xOf(mf(hi)), x2 = xOf(Math.min(FMAX, mf(hi) * 8));
@@ -883,6 +892,26 @@
       const t = el('text', { x: x0, y: y - 3 }, row);
       t.textContent = `${label} · ${nm(lo)}–${nm(hi)}`;
     });
+    // The 88 piano keys under the piano row, at their frequencies. C's labelled; middle C and A4 = 440 Hz marked.
+    const isBlack = n => [1, 3, 6, 8, 10].includes(n % 12);
+    const kb = el('g', {}, g);
+    for (const black of [false, true]) for (let n = 21; n <= 108; n++) {
+      if (isBlack(n) !== black) continue;
+      // A white key reaches halfway to its white neighbours' own edges; a black key spans ±½ semitone.
+      const lo = black || isBlack(n - 1) ? n - 0.5 - (black ? 0 : 0.5) : n - 0.5, hi = black || isBlack(n + 1) ? n + 0.5 + (black ? 0 : 0.5) : n + 0.5;
+      const xa = xOf(mf(Math.max(lo, 20.5))), xb = xOf(mf(Math.min(hi, 108.5)));
+      const mark = n === 60 ? 'var(--accent)' : n === 69 ? 'var(--s2)' : null;
+      el('rect', { x: xa, y: kbY, width: Math.max(0.5, xb - xa), height: black ? kbH * 0.6 : kbH,
+        fill: mark || (black ? '#2b2b29' : '#f6f5f1'), stroke: black ? 'none' : '#a9a79d', 'stroke-width': 0.6 }, kb);
+    }
+    for (let o = 1; o <= 8; o++) {
+      const t = el('text', { x: xOf(mf(12 * (o + 1))), y: kbY + kbH + 12, 'text-anchor': 'middle' }, kb);
+      t.textContent = 'C' + o;
+    }
+    const mc = el('text', { x: xOf(mf(60)) + 3, y: kbY + kbH + 24, 'text-anchor': 'end', style: 'fill:var(--accent)' }, kb);
+    mc.textContent = 'middle C';
+    const a4 = el('text', { x: xOf(440) - 3, y: kbY + kbH + 24, 'text-anchor': 'start', style: 'fill:var(--s2)' }, kb);
+    a4.textContent = 'A4 = 440 Hz';
     const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
     k.textContent = 'solid: notes · faint: overtones (up to the 8th harmonic)';
   }
