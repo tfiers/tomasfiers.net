@@ -1478,12 +1478,13 @@
       // colours, just right of the keyboard's top end. Tap them for the chord switch.
       addTriad(arrive) {
         if (kb.querySelector('.triad')) return;
-        const x = keys[108][5] + 12, y = kbY + kbH;
+        const x = keys[108][5] + 10, y = kbY + kbH;
         const tg = el('g', { class: 'triad' + (arrive ? ' arrive' : '') + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
         el('title', {}, tg).textContent = '♫';
-        const r = Math.min(4, kbH / 7.5), st = r * 2.25;   // sized to fit the keys' height
-        el('rect', { x: -12, y: -kbH - 6, width: 28, height: kbH + 8, fill: 'transparent' }, tg);   // easier to tap
-        [[0, 0], [r, 4], [0, 7]].forEach(([dx, pc], i) => el('circle', { class: 'dot', cx: dx, cy: -r - 1.5 - i * st, r, fill: noteColor(pc) }, tg));
+        // An equilateral triangle, G on top, sized to fit the keys' height.
+        const r = Math.min(4.2, kbH / 5), R = r * 1.65, cy = -kbH / 2 + R * 0.25;
+        el('rect', { x: -4, y: -kbH - 6, width: 4 * R + 8, height: kbH + 8, fill: 'transparent' }, tg);   // easier to tap
+        [[210, 0], [330, 4], [90, 7]].forEach(([deg, pc]) => el('circle', { class: 'dot', cx: R + R * Math.cos(deg * Math.PI / 180), cy: cy - R * Math.sin(deg * Math.PI / 180), r, fill: noteColor(pc) }, tg));
         tg.addEventListener('pointerdown', ev => ev.stopPropagation());
         tg.addEventListener('pointermove', ev => ev.stopPropagation());
         tg.addEventListener('click', ev => { ev.stopPropagation(); triadTapped(tg); });
