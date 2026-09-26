@@ -147,6 +147,7 @@
   .card-intro { margin-top: 10px; display: flow-root; }
   .card-photo { float: right; max-height: 170px; max-width: 42%; margin: 0 0 8px 14px; border-radius: 8px; background: #fff; }
   .card-quote { margin: 0 0 6px; font-size: 0.9rem; font-style: italic; color: var(--ink-2); }
+  .card-graph a { display: block; cursor: zoom-in; }
   .card-quote footer { font-style: normal; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
   .card-desc { color: var(--ink-2); font-size: 0.9rem; margin: 0 0 4px; }
   .card-specs { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 12px 0; font-size: 0.9rem; }
@@ -645,7 +646,6 @@
     const links = [
       e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">Official page</a>` : '',
       e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">Manual (PDF)</a>` : '',
-      e.graph ? `<a href="${esc(e.graph)}" target="_blank" rel="noopener">Source graph (full size)</a>` : '',
     ].filter(Boolean).join('');
     dlg.innerHTML = `
       <div class="card-head">
@@ -655,7 +655,7 @@
       </div>
       <div class="card-intro">
         ${e.photo ? `<img class="card-photo" src="${esc(e.photo)}" alt="${esc(e.model || m.name)}">` : ''}
-        ${e.quote ? `<blockquote class="card-quote">“${esc(e.quote)}”<footer>— as marketed, ${esc(e.quoteBy || '')}</footer></blockquote>` : ''}
+        ${e.quote ? `<blockquote class="card-quote" title="${esc(e.quoteBy || '')}">“${esc(e.quote)}”</blockquote>` : ''}
         ${e.desc ? `<p class="card-desc">${esc(e.desc)}</p>` : m.lib || e.quote ? '' : '<p class="card-desc">Your own data.</p>'}
       </div>
       <dl class="card-specs">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
@@ -664,7 +664,7 @@
         <button class="rename">Rename</button>
         <button class="remove" style="color:var(--danger)">Remove from chart</button>
       </div>
-      ${e.graph ? `<figure class="card-graph"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(m.name)}" loading="lazy"><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
+      ${e.graph ? `<figure class="card-graph"><a href="${esc(e.graph)}" target="_blank" rel="noopener" title="Open full size"><img src="${esc(e.graph)}" alt="Manufacturer's frequency-response graph for ${esc(m.name)}" loading="lazy"></a><figcaption>${esc(e.source || '')}</figcaption></figure>` : ''}`;
     dlg.querySelector('.close').onclick = () => dlg.close();
     dlg.querySelector('.rename').onclick = () => {
       const n = prompt('Rename mic', m.name);
