@@ -108,12 +108,22 @@
   .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
   .mics .meta { color: var(--muted); font-size: 0.75rem; }
   #libList .name { white-space: normal; }
-  #libList .lib-head { border-bottom: none; padding: 10px 0 0; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
   #libList .meta a { color: var(--accent); }
   .lib-desc { font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; display: inline-block; margin: 2px 0; }
   #libList .lib-item { display: block; }
-  .lib-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .lib-btns button { font-size: 0.78rem; padding: 3px 7px; }
+  #libChips .lib-head { margin-top: 10px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; white-space: nowrap; }
+  .chip .plus { color: var(--muted); }
+  .chip.on { border-color: var(--muted); font-weight: 600; }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .chip-group { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-top: 6px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .chip-group::-webkit-scrollbar { display: none; }
+  .chip-group.more { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
+  .chip-group .chip { padding: 2px 8px; font-size: 0.8rem; flex: none; }
+  .chip-model { font-size: 0.85rem; color: var(--ink-2); margin: 0 4px 0 2px; white-space: nowrap; flex: none; }
+  #libInfo { margin-top: 10px; }
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
@@ -201,8 +211,12 @@
 
         <details id="libBox" open>
           <summary>Library</summary>
-          <ul class="mics" id="libList"></ul>
-          <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these. Faded parts of a curve lie outside the manufacturer's rated frequency range.</p>
+          <div id="libChips"></div>
+          <details id="libInfo">
+            <summary>About these curves</summary>
+            <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these. Faded parts of a curve lie outside the manufacturer's rated frequency range.</p>
+            <ul class="mics" id="libList"></ul>
+          </details>
         </details>
 
         <details id="addBox" open>
@@ -663,42 +677,71 @@
     if (entry.specs) m.specs = { ...entry.specs };
     return m;
   }
+  const PATTERN_SHORT = { 'Cardioid': 'card', 'Omni': 'omni', 'Hypercardioid': 'hyper', 'Figure-8': 'fig-8',
+    'Wide cardioid': 'wide', 'with XLR adapter': 'XLR', '20 cm': '20 cm' };
   function drawLibrary() {
-    const ul = $('libList');
-    ul.innerHTML = '';
+    const chips = $('libChips'), ul = $('libList');
+    chips.innerHTML = ''; ul.innerHTML = '';
     const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
     const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
-    let lastOwned = null;
-    for (const model of [...models.filter(owned), ...models.filter(m => !owned(m))]) {
-      if (owned(model) !== lastOwned && models.some(m => !owned(m))) {
-        lastOwned = owned(model);
-        const h = document.createElement('li');
+    const split = models.some(m => !owned(m));
+    // Chip for one library entry: tap to add, tap again to remove.
+    const chip = (entry, label, plus = true) => {
+      const m = state.mics.find(x => x.lib === entry.name);
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (m ? ' on' : '');
+      btn.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : plus ? '<span class="plus">+</span>' : '') + esc(label);
+      btn.title = (m ? 'Remove ' : 'Add ') + entry.name;
+      btn.onclick = () => {
+        if (m) {
+          state.mics = state.mics.filter(x => x !== m);
+          if (state.settings.ref === m.id) state.settings.ref = '';
+        } else addFromLibrary(entry);
+        update();
+      };
+      return btn;
+    };
+    for (const group of [models.filter(owned), models.filter(m => !owned(m))]) {
+      if (!group.length) continue;
+      if (split) {
+        const h = document.createElement('div');
         h.className = 'lib-head';
-        h.textContent = lastOwned ? 'My mics' : 'Other mics';
-        ul.appendChild(h);
+        h.textContent = owned(group[0]) ? 'My mics' : 'Other mics';
+        chips.appendChild(h);
       }
-      const entries = LIBRARY.filter(e => (e.model || e.name) === model);
-      const li = document.createElement('li');
-      li.className = 'lib-item';
-      const desc = entries[0].desc ? `<br><span class="lib-desc">${esc(entries[0].desc)}</span>` : '';
-      const e0 = entries[0];
+      const variants = model => LIBRARY.filter(e => (e.model || e.name) === model);
+      const single = group.filter(m => variants(m).length === 1 && !variants(m)[0].pattern);
+      // Single-curve mics share one wrapping row of chips.
+      if (single.length) {
+        const row = document.createElement('div');
+        row.className = 'chips';
+        for (const model of single) row.appendChild(chip(variants(model)[0], model));
+        chips.appendChild(row);
+      }
+      // Multi-variant mics: one line each (scrolls sideways if too wide), name + a chip per pattern.
+      for (const model of group.filter(m => !single.includes(m))) {
+        const g = document.createElement('div');
+        g.className = 'chip-group';
+        g.innerHTML = `<span class="chip-model">${esc(model)}</span>`;
+        for (const e of variants(model)) g.appendChild(chip(e, PATTERN_SHORT[e.pattern] || e.pattern, false));
+        chips.appendChild(g);
+        // Fade the right edge while there is more to scroll to.
+        const edge = () => g.classList.toggle('more', g.scrollLeft + g.clientWidth < g.scrollWidth - 2);
+        g.addEventListener('scroll', edge, { passive: true });
+        requestAnimationFrame(edge);
+      }
+    }
+    // Details (description, source, links) live in the collapsed "About these curves".
+    for (const model of [...models.filter(owned), ...models.filter(m => !owned(m))]) {
+      const e0 = LIBRARY.find(e => (e.model || e.name) === model);
       const links = [
         e0.graph ? `<a href="${esc(e0.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
         e0.url ? `<a href="${esc(e0.url)}" target="_blank" rel="noopener">official page</a>` : '',
         e0.pdf ? `<a href="${esc(e0.pdf)}" target="_blank" rel="noopener">manual (PDF)</a>` : '',
       ].filter(Boolean).join(' · ');
-      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(e0.source || '')}${links ? ' · ' + links : ''}</span></span>
-        <span class="lib-btns"></span>`;
-      const box = li.querySelector('.lib-btns');
-      for (const entry of entries) {
-        const added = state.mics.some(m => m.lib === entry.name);
-        const btn = document.createElement('button');
-        btn.textContent = (added ? '✓ ' : '+ ') + (entry.pattern || 'Add');
-        btn.disabled = added;
-        btn.title = added ? 'Already on the chart' : `Add ${entry.name}`;
-        btn.onclick = () => { addFromLibrary(entry); update(); };
-        box.appendChild(btn);
-      }
+      const li = document.createElement('li');
+      li.className = 'lib-item';
+      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${e0.desc ? `<br><span class="lib-desc">${esc(e0.desc)}</span>` : ''}<br><span class="meta">${esc(e0.source || '')}${links ? ' · ' + links : ''}</span></span>`;
       ul.appendChild(li);
     }
     $('libBox').hidden = !LIBRARY.length;
