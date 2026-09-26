@@ -646,7 +646,7 @@
         lastOwned = owned(model);
         const h = document.createElement('li');
         h.className = 'lib-head';
-        h.textContent = lastOwned ? 'My mics' : 'Other mics (future / window shopping)';
+        h.textContent = lastOwned ? 'My mics' : 'Other mics';
         ul.appendChild(h);
       }
       const entries = LIBRARY.filter(e => (e.model || e.name) === model);
