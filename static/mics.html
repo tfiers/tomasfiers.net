@@ -210,6 +210,7 @@
   .chip-group.more { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
   .chip-group .chip { padding: 2px 8px; font-size: 0.8rem; flex: none; }
   .chip, .chip-model { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .chip-model { cursor: pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
   .chip-model { font-size: 0.85rem; color: var(--ink-2); margin: 0 4px 0 2px; white-space: nowrap; flex: none; }
   button:disabled { color: var(--muted); cursor: default; }
 
@@ -301,7 +302,7 @@
 
     <section class="panel" id="micPanel">
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press).</p>
+      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press a mic, or tap the name of a multi-pattern one).</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -1148,7 +1149,8 @@
         const g = document.createElement('div');
         g.className = 'chip-group';
         g.innerHTML = `<span class="chip-model">${esc(model)}</span>`;
-        onLongPress(g.firstChild, () => openModel(model));
+        // The name isn't a switch, so a plain tap opens the card.
+        g.firstChild.onclick = () => openModel(model);
         for (const e of variants(model)) g.appendChild(chip(e, VARIANT_SHORT[e.pattern] || e.pattern, false, patternIcon(e.pattern)));
         chips.appendChild(g);
         // Fade the right edge while there is more to scroll to.
