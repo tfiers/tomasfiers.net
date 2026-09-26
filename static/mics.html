@@ -254,11 +254,10 @@
       <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
       </div>
       <div class="hint note src-note" id="srcNote" hidden>
-        <p><b>Frequency</b> shows how strongly each mic picks up each pitch, in dB (up = more). <b>Polar</b> shows how much quieter it gets away from the front, at one frequency.</p>
         <ul>
-          <li>The curves are the makers' own published graphs: read exactly from the PDF where possible, otherwise traced (±0.5 dB). Each mic's card shows the original.</li>
-          <li>Makers measure differently (distance, room, smoothing), so differences of a dB or two mean little.</li>
-          <li>Faded = outside the mic's rated frequency range.</li>
+          <li>Curves from the manufacturers' published graphs: read from the PDF's vector data where available, otherwise traced (±0.5 dB). Each mic's card shows the source graph.</li>
+          <li>Measurement conditions differ between makers (distance, room, smoothing), so small differences aren't meaningful.</li>
+          <li>Faded: outside the rated frequency range.</li>
         </ul>
       </div>
       <div class="controls">
@@ -317,12 +316,12 @@
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
       <div class="hint note mic-note" id="micNote" hidden>
         <ul>
-          <li><b>Sensitivity:</b> output for a sound of 1 Pa (94 dB SPL). Higher = louder signal, less preamp gain needed.</li>
-          <li><b>Self-noise:</b> the mic's own hiss, A-weighted. Lower = quieter.</li>
-          <li><b>Max SPL:</b> the loudest sound it handles before distorting.</li>
-          <li>– = not published by the maker.</li>
+          <li><b>Sensitivity:</b> open-circuit output at 1 kHz, 94 dB SPL (1 Pa).</li>
+          <li><b>Self-noise:</b> equivalent noise level, A-weighted.</li>
+          <li><b>Max SPL:</b> as specified by the maker; the distortion threshold varies (typically 0.5–1 % THD).</li>
+          <li>–: not published.</li>
         </ul>
-        <p>Tap a name for the mic's card, with photos, graphs and links. In the library: long-press a mic.</p>
+        <p>Info card: tap a name here, or long-press a mic in the library.</p>
       </div>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
@@ -822,11 +821,10 @@
     const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
     const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
     $('polarNote').innerHTML =
-      '<p>Off axis, a curve is an estimate: the on-axis curve minus the drop the maker\'s polar plot shows at that angle.</p><ul>' +
-      '<li>Polar plots give only a few frequencies, mostly 250 Hz–16 kHz' +
-      (narrow.length ? ' (' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') +
-      '. In between, they are interpolated; outside, the nearest one is used and the curve is faded.</li>' +
-      '<li>Read from the PDF where possible, otherwise traced (±1 dB).</li></ul>';
+      '<p>Off-axis curves: the on-axis response plus the attenuation from the maker\'s polar plot, interpolated between the plotted frequencies ' +
+      '(mostly 250 Hz–16 kHz' + (narrow.length ? '; ' + narrow.map(m => `${esc(m.name)}: ${span(offaxisOf(m))}`).join(', ') : '') +
+      '). Beyond those, the nearest one is held and the curve is faded. ' +
+      'Polar data read from the PDF where available, otherwise traced (±1 dB).</p>';
   }
 
   function drawTable() {
