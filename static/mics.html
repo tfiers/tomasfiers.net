@@ -130,7 +130,7 @@
     /* Phones: the table runs to the screen edges. */
     #micPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding-left: 0; padding-right: 0; }
     #chartPanel { margin: 0 -16px; border-radius: 0; border-left: none; border-right: none; padding: 12px 10px; }
-    #micPanel > h2, #micPanel > .hint { padding: 0 16px; }
+    #micPanel > h2, #micPanel > .hint { padding-left: 16px; padding-right: 16px; }
   }
   .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -166,7 +166,11 @@
   .card-links a { color: var(--accent); }
   .card-actions { display: flex; gap: 8px; justify-content: flex-end; }
   #libBox { margin-top: 0; }
-  .side-note { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .with-info { display: flex; align-items: center; gap: 8px; }
+  .info-btn { width: 20px; height: 20px; padding: 0; border-radius: 50%; font: italic 600 12px/1 Georgia, serif;
+    color: var(--muted); border: 1.5px solid var(--muted); background: none; display: inline-grid; place-items: center; }
+  .info-btn[aria-expanded="true"] { color: var(--surface); background: var(--muted); }
+  .mic-note { margin: -4px 0 10px; }
   h1 { margin-bottom: 16px; }
   .mic-table tr.off .name { color: var(--muted); text-decoration: line-through; }
   .mic-table input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; flex: none; }
@@ -256,7 +260,8 @@
     </section>
 
     <section class="panel" id="micPanel">
-      <h2>Mics</h2>
+      <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the data">i</button></h2>
+      <p class="hint mic-note" id="micNote" hidden>Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -301,7 +306,6 @@
           <p class="msg" id="shareMsg"></p>
           <p class="hint">Your mics are also stored in this browser automatically.</p>
         </details>
-        <p class="hint side-note">Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
       </div>
     </aside>
   </div>
@@ -980,6 +984,13 @@
       history.replaceState(null, '', location.pathname + location.search);
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
+
+  // ⓘ next to 'Mics': show/hide the note about the data.
+  $('micInfoBtn').onclick = ev => {
+    const open = $('micNote').hidden;
+    $('micNote').hidden = !open;
+    ev.currentTarget.setAttribute('aria-expanded', open);
+  };
 
   // Close the info card when tapping the backdrop.
   $('infoCard').addEventListener('click', ev => { if (ev.target === ev.currentTarget) ev.currentTarget.close(); });
