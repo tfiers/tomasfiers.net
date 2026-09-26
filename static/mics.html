@@ -73,6 +73,7 @@
   .src-note { margin: -4px 0 12px; }
   .note p { margin: 0 0 4px; }
   .lib-hint { margin: 4px 0 0; }
+  .note a { color: var(--accent); }
   .note ul { margin: 0 0 4px; padding-left: 1.1em; }
   .note li { margin: 2px 0; }
   .note b { font-weight: 600; color: var(--ink-2); }
@@ -317,8 +318,8 @@
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
       <div class="hint note mic-note" id="micNote" hidden>
         <ul>
-          <li><b>Sensitivity:</b> the output voltage for a 94 dB SPL (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.</li>
-          <li><b>Self-noise:</b> the mic's own noise floor, A-weighted.</li>
+          <li><b>Sensitivity:</b> the output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.</li>
+          <li><b>Self-noise:</b> the mic's own noise floor, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less.</li>
           <li><b>Max SPL:</b> the loudest sound before distortion, as the maker specifies it (their distortion threshold varies).</li>
           <li>– means the maker doesn't publish it.</li>
         </ul>
