@@ -55,7 +55,7 @@ lib=[
       specs=dict(type='Condenser, 16 mm', electret=True, pattern='Cardioid', sens=-37, noise=20, maxspl=144, imp=100, range='20–20k')),
  dict(model='Behringer C-2', points=resample(vec['C-2'], clean=False), auto=False,
       source='Behringer C-2 manual (vector data from the PDF)',
-      specs=dict(type='Condenser, 16 mm', electret=True, pattern='Cardioid', sens=-38, noise=19, maxspl=136, imp=75, range='20–20k')),
+      specs=dict(type='Condenser, 16 mm', pattern='Cardioid', sens=-38, noise=19, maxspl=136, imp=75, range='20–20k')),
  dict(model='sE V7', points=resample(v7), auto=True,
       source='sE V7 manual, 60 cm (2 ft) curve (traced from image)',
       specs=dict(type='Dynamic', pattern='Supercardioid', sens=-54, noise=None, maxspl=None, imp=300, range='40–19k')),

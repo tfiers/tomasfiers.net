@@ -112,7 +112,6 @@ window.MIC_LIBRARY = [
     "source":"Behringer C-2 manual (vector data from the PDF)",
     "specs":{
       "type":"Condenser, 16 mm",
-      "electret":true,
       "pattern":"Cardioid",
       "sens":-38,
       "noise":19,
