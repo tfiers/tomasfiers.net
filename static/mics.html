@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Microphone comparison</title>
+<title>Mic Atlas</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
   :root {
@@ -122,6 +122,7 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; display: none; z-index: 2;
   }
   .tip .f { font-weight: 600; margin-bottom: 4px; }
+  .tip .cents { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
   .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
   .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
@@ -229,6 +230,8 @@
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
+  #rangesBox { margin-top: 4px; }
+  svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; }
   #tableBox .table-wrap { margin-top: 8px; }
   summary { cursor: pointer; color: var(--ink-2); font-size: 0.9rem; }
   .hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0; }
@@ -248,7 +251,7 @@
 </head>
 <body>
 <main>
-  <h1>Microphone comparison</h1>
+  <h1>Mic Atlas</h1>
   <p class="sub">Frequency responses and polar patterns</p>
 
   <div class="layout">
@@ -315,6 +318,10 @@
         <div class="tip" id="tip"></div>
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
+      <details id="rangesBox" class="resp-only">
+        <summary>Instrument ranges</summary>
+        <svg id="ranges" role="img" aria-label="Instrument and voice ranges on the frequency axis"></svg>
+      </details>
       <p class="hint" id="polarWarn" hidden></p>
       <div class="hint note" id="polarNote" hidden></div>
       <details id="tableBox">
@@ -588,6 +595,13 @@
   let yLo = -20, yHi = 10;
   const yOf = d => M.t + (1 - (d - yLo) / (yHi - yLo)) * PH;
   const fmtF = f => f >= 1000 ? (+(f / 1000).toFixed(f >= 10000 ? 1 : 2)).toString() + 'k' : Math.round(f).toString();
+  // Nearest note (equal temperament, A4 = 440 Hz) and how far off, in cents.
+  const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  function nearestNote(f) {
+    const x = 69 + 12 * Math.log2(f / 440), n = Math.round(x);
+    return { name: NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), cents: Math.round(100 * (x - n)) };
+  }
+  const noteHtml = f => { const nn = nearestNote(f); return ` · ${nn.name}` + (nn.cents ? `<span class="cents"> ${nn.cents > 0 ? '+' : '−'}${Math.abs(nn.cents)}¢</span>` : ''); };
   const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
 
   let curves = new Map();
@@ -714,7 +728,7 @@
       }
       rows.sort((a, b) => b.v - a.v);
       const tip = $('tip');
-      tip.innerHTML = `<div class="f">${fmtF(f)} Hz${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` + (rows.length ? rows.map(r =>
+      tip.innerHTML = `<div class="f">${fmtF(f)} Hz${noteHtml(f)}${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` + (rows.length ? rows.map(r =>
         `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range or polar data"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect();
@@ -842,6 +856,37 @@
       : '<p>Off-axis curves are estimated: the on-axis curve, minus how much quieter the maker\'s polar plot says the mic is at that angle. ' +
         `Polar plots are only drawn for a handful of frequencies ${cover}, so in between the values are interpolated, and beyond them the curve is faded.</p>`;
   }
+
+  // Instrument ranges under the chart, on the same frequency axis: solid = the notes (fundamentals),
+  // faint = their overtones, up to the 8th harmonic (three octaves up).
+  const RANGES = [
+    ['Violin', 55, 100], ['Female voice (alto–soprano)', 53, 84], ['Male voice (bass–tenor)', 40, 72],
+    ['Guitar', 40, 88], ['Piano (standard 88 keys)', 21, 108],
+  ];
+  function drawRanges() {
+    const g = $('ranges');
+    if (!$('rangesBox').open || state.settings.view === 'polar') return;
+    const rowH = 25, h = RANGES.length * rowH + 22;
+    g.setAttribute('viewBox', `0 0 ${W} ${h}`);
+    g.textContent = '';
+    const mf = n => 440 * 2 ** ((n - 69) / 12);
+    const nm = n => { const nn = nearestNote(mf(n)); return nn.name; };
+    for (const f of [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]) {
+      el('line', { x1: xOf(f), x2: xOf(f), y1: 0, y2: h - 18, stroke: 'var(--grid)', 'stroke-width': 1 }, g);
+    }
+    RANGES.forEach(([label, lo, hi], i) => {
+      const y = 16 + i * rowH, x0 = xOf(mf(lo)), x1 = xOf(mf(hi)), x2 = xOf(Math.min(FMAX, mf(hi) * 8));
+      const row = el('g', {}, g);
+      el('title', {}, row).textContent = `${label}: ${nm(lo)}–${nm(hi)} (${Math.round(mf(lo))}–${Math.round(mf(hi))} Hz)`;
+      el('rect', { x: x1, y, width: Math.max(0, x2 - x1), height: 8, rx: 3, fill: 'var(--accent)', opacity: 0.22 }, row);
+      el('rect', { x: x0, y, width: x1 - x0, height: 8, rx: 3, fill: 'var(--accent)', opacity: 0.85 }, row);
+      const t = el('text', { x: x0, y: y - 3 }, row);
+      t.textContent = `${label} · ${nm(lo)}–${nm(hi)}`;
+    });
+    const k = el('text', { x: M.l + PW, y: h - 4, 'text-anchor': 'end' }, g);
+    k.textContent = 'solid: notes · faint: overtones (up to the 8th harmonic)';
+  }
+  $('rangesBox').addEventListener('toggle', drawRanges);
 
   function drawTable() {
     const wrap = $('tableWrap');
@@ -1055,7 +1100,7 @@
     curves = processAll();
     $('empty').hidden = state.mics.length > 0;
     svg.style.display = state.mics.length ? '' : 'none';
-    drawList(); drawLibrary(); draw(); drawTable(); drawPolarHint();
+    drawList(); drawLibrary(); draw(); drawRanges(); drawTable(); drawPolarHint();
   }
 
   // ---------- controls ----------
@@ -1341,7 +1386,7 @@
     if (state.mics.length) $('addBox').open = false;
   });
   let lastW = 0;
-  new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); } }).observe($('chartWrap'));
+  new ResizeObserver(() => { const w = $('chartWrap').clientWidth; if (w && w !== lastW) { lastW = w; if (state.mics.length) draw(); drawRanges(); } }).observe($('chartWrap'));
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawList);
 })();
 </script>

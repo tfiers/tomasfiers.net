@@ -1,5 +1,5 @@
 ---
-title: "Microphone comparison"
+title: "Mic Atlas"
 date: 2026-09-25
 image: mic-compare.png
 link: /mics.html
