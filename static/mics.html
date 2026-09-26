@@ -790,20 +790,20 @@
   const chordOf = () => (state.settings.chords && CHORDS.find(c => c[0] === state.settings.chord)) || CHORDS[0];
   $('chordSeg').innerHTML = CHORDS.map(([id, label, name]) => `<button type="button" role="radio" data-chord="${id}" title="${name}">${label}</button>`).join('');
   $('chordSeg').querySelectorAll('button').forEach(b => b.onclick = () => { state.settings.chord = b.dataset.chord; save(); syncControls(); });
-  // Tapping the dots: they hop, with a chord (G7 on opening, resolving to C major on closing), and the chord switch appears (or goes away).
+  // Tapping the dots: they hop, with a chord (A major 7 on opening, C major on closing), and the chord switch appears (or goes away).
   function triadTapped(tg) {
     const st = state.settings;
     st.chords = !st.chords; if (!st.chords) st.chord = ''; save(); syncControls();
     tg.classList.toggle('on', !!st.chords);
     tg.classList.remove('hop'); void tg.getBoundingClientRect(); tg.classList.add('hop');
     setTimeout(() => tg.classList.remove('hop'), 700);
-    // A chord around C₃, played as one (lightly rolled): opening is the tension, a G7; closing is the
-    // resolution, C major.
+    // A chord, lightly rolled, in the same plain root-position voicing as the chord switch: opening plays
+    // A₃ major 7, closing C₄ major.
     audio();
-    const t = actx.currentTime, notes = st.chords ? [43, 50, 53, 59] : [48, 52, 55, 60];
+    const t = actx.currentTime, notes = st.chords ? [57, 61, 64, 68] : [60, 64, 67];
     notes.forEach((n, i) => setTimeout(() => playOne(n, false, 0.5 / Math.sqrt(notes.length)), i * 18));
     if (rangesHover) { rangesHover.press(notes); setTimeout(() => { if (!held && rangesHover) rangesHover.press([]); }, 900); }
-    rtaColor = noteColor(st.chords ? 7 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
+    rtaColor = noteColor(st.chords ? 9 : 0); rtaUntil = Math.max(rtaUntil, t + 4);
     if (!rtaRunning) { rtaRunning = true; requestAnimationFrame(rtaFrame); }
   }
   const topHarmonic = f => Math.max(1, Math.floor(Math.min(20000, actx.sampleRate / 2 - 500) / f));
@@ -1481,7 +1481,7 @@
         const tg = el('g', { class: 'triad' + (state.settings.chords ? ' on' : ''), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, kb);
         el('title', {}, tg).textContent = '♫';
         // An equilateral triangle (C bottom left, E bottom right, G on top), centred on the keys' height.
-        const r = Math.min(3.2, kbH / 7), R = r * 1.7, cy = -kbH / 2 + R * 0.25;
+        const r0 = Math.min(3.2, kbH / 7), R = r0 * 1.7, r = r0 * 0.75, cy = -kbH / 2 + R * 0.25;
         el('rect', { x: -6, y: -kbH - 4, width: 2 * R + 12, height: kbH + 6, fill: 'transparent' }, tg);   // easier to tap
         [[210, 0], [330, 4], [90, 7]].forEach(([deg, pc]) => el('circle', { class: 'dot', cx: R + R * Math.cos(deg * Math.PI / 180), cy: cy - R * Math.sin(deg * Math.PI / 180), r, fill: noteColor(pc) }, tg));
         tg.addEventListener('pointerdown', ev => ev.stopPropagation());
