@@ -1,11 +1,11 @@
 ---
-title: "Mic Response Compare"
+title: "Microphone frequency responses"
 date: 2026-09-25
 image: mic-compare.png
 link: /mics.html
 ---
 
-Overlay and compare microphone frequency-response curves.
-Paste or drop the data (CSV, REW export, or a curve traced from a spec sheet),
-then normalize, smooth, or view everything relative to one reference mic.
-Comes with curves for my own mics, traced from their spec sheets.
+Overlay and compare microphone frequency-response curves, on axis or at any angle,
+and their polar patterns side by side. Comes with curves and specs for my own mics
+and a few others, taken from the manufacturers' spec sheets. You can also add your own
+data (CSV, REW export, or a curve traced from a spec sheet).

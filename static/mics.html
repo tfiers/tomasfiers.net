@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mic Response Compare</title>
+<title>Microphone frequency responses</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
   :root {
@@ -228,7 +228,7 @@
 </head>
 <body>
 <main>
-  <h1>Microphone frequency response compare</h1>
+  <h1>Microphone frequency responses</h1>
 
   <div class="layout">
     <div class="main-col">
@@ -290,7 +290,7 @@
 
     <section class="panel" id="micPanel">
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the data">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
+      <p class="hint mic-note" id="micNote" hidden>Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range (off axis: also outside the frequencies the polar plot covers). Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -409,6 +409,17 @@
     const v = (n, k) => Number(n) * (k ? 1000 : 1);
     return [v(mm[1], mm[2]), v(mm[3], mm[4])];
   }
+  // Where a curve is drawn solid: inside the rated range and, off axis, where the polar plot has data
+  // (beyond its traced frequencies the nearest one is held, which is a guess). null = everywhere.
+  function solidRange(m) {
+    let r = ratedRange(m);
+    const oa = Number(state.settings.angle) ? offaxisOf(m) : null;
+    if (oa) {
+      const lo = oa.f[0] / (oa.f.length === 1 ? 2 : 1), hi = oa.f[oa.f.length - 1] * (oa.f.length === 1 ? 2 : 1);
+      r = r ? [Math.max(r[0], lo), Math.min(r[1], hi)] : [lo, hi];
+    }
+    return r;
+  }
   const colorOf = m => m.color || `var(--s${(m.slot % NSLOTS) + 1})`;
   const dashOf = m => DASHES[Math.floor(m.slot / NSLOTS) % DASHES.length];
 
@@ -481,6 +492,7 @@
     let k = 0; while (fs[k + 1] < f) k++;
     return vals[k] + Math.log(f / fs[k]) / Math.log(fs[k + 1] / fs[k]) * (vals[k + 1] - vals[k]);
   }
+  const fmtHz = f => f >= 1000 ? f / 1000 + ' kHz' : f + ' Hz';
   const polarDb = (oa, f, a) => interpF(oa.f, atAngle(oa, a), f);
 
   function processAll() {
@@ -594,8 +606,8 @@
     const ends = [];
     for (const m of visible) {
       const c = curves.get(m.id);
-      // Solid inside the maker's rated frequency range, faded outside it.
-      const rr = ratedRange(m);
+      // Solid inside the maker's rated frequency range (and off axis, the polar data's range), faded outside.
+      const rr = solidRange(m);
       const inRange = f => !rr || (f >= rr[0] * 0.999 && f <= rr[1] * 1.001);
       let dIn = '', dOut = '', prev = null, prevIn = null, last = null;
       for (let i = i0; i <= i1; i++) {
@@ -642,14 +654,14 @@
       for (const m of visible) {
         const v = valueAt(curves.get(m.id), f);
         if (v === null) continue;
-        const rr = ratedRange(m);
+        const rr = solidRange(m);
         rows.push({ m, v, out: rr && (f < rr[0] || f > rr[1]) });
         el('circle', { cx: x, cy: yOf(v), r: 4, fill: colorOf(m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots);
       }
       rows.sort((a, b) => b.v - a.v);
       const tip = $('tip');
       tip.innerHTML = `<div class="f">${fmtF(f)} Hz${Number(state.settings.angle) ? ' · ' + state.settings.angle + '°' : ''}</div>` + (rows.length ? rows.map(r =>
-        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range or polar data"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect();
       const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
@@ -760,14 +772,14 @@
     if (polar) {
       const f = POLAR_FREQS[s.polarF];
       const edge = shown.filter(m => { const oa = offaxisOf(m); return oa && (f < oa.f[0] || f > oa.f[oa.f.length - 1]); });
-      if (edge.length) t += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtF(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}Hz`; }).join('; ') + '. ';
+      if (edge.length) t += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtHz(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}`; }).join('; ') + '. ';
       if (!shown.some(m => offaxisOf(m))) t += 'All library mics have polar data; your own curves don\'t. ';
     } else if (angle) {
       // Mention mics whose polar plot covers less than the usual 250 Hz–16 kHz.
-      const span = oa => oa.f.length === 1 ? fmtF(oa.f[0]) + ' Hz only' : fmtF(oa.f[0]) + ' Hz–' + fmtF(oa.f[oa.f.length - 1]) + ' Hz';
+      const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
       const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
       t += 'Off axis = on-axis curve + the maker\'s polar plot, which mostly covers 250 Hz–16 kHz' +
-        (narrow.length ? ' (' + narrow.map(m => `${m.name}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') + '; beyond that the nearest is held. ';
+        (narrow.length ? ' (' + narrow.map(m => `${m.name}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') + '; beyond that the nearest is held (faded). ';
     }
     if (polar || angle) t += 'Polar data traced from the manufacturers\' plots, roughly ±1 dB.';
     hint.textContent = t; hint.hidden = !t;
