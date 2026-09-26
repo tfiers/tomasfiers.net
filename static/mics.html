@@ -124,8 +124,7 @@
   }
   .tip .f { font-weight: 600; margin-bottom: 4px; }
   .tip .cents { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
-  .tip .note { white-space: nowrap; }
-  .tip .ndot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 1px 0; }
+  .tip .note { white-space: nowrap; color: #fff; padding: 0 6px; border-radius: 5px; }
   .tip .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   .tip .v { font-variant-numeric: tabular-nums; color: var(--ink); }
   .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; }
@@ -162,6 +161,7 @@
   dialog#infoCard::backdrop { background: rgba(0,0,0,0.35); }
   .card-head { display: flex; align-items: center; gap: 10px; }
   .card-head h3 { margin: 0; font-size: 1.15rem; flex: 1; }
+  .card-maker { margin: 2px 0 0; color: var(--muted); font-size: 0.88rem; }
   .card-head .close { font-size: 1.1rem; }
   .sw.big { width: 14px; height: 14px; border-radius: 4px; }
   .card-intro { margin-top: 10px; display: flow-root; }
@@ -609,10 +609,11 @@
   }
   // Each of the 12 notes gets its own colour. They go round the colour wheel in the circle of fifths
   // (C, G, D, …), so neighbouring semitones get clearly different colours and a note change is easy to see.
-  const noteColor = pc => `hsl(${(pc * 7 % 12) * 30} 75% 45%)`;
+  // OKLCH keeps all 12 equally dark, so white text on them stays readable (also yellow and green).
+  const noteColor = pc => `oklch(0.52 0.17 ${((pc * 7 % 12) * 30 + 25) % 360})`;
   const noteHtml = f => {
     const nn = nearestNote(f);
-    return ` · <span class="note" style="color:${noteColor(nn.pc)}"><span class="ndot" style="background:${noteColor(nn.pc)}"></span>${nn.name}</span>` +
+    return ` · <span class="note" style="background:${noteColor(nn.pc)}">${nn.name}</span>` +
       (nn.cents ? `<span class="cents"> ${nn.cents > 0 ? '+' : '−'}${Math.abs(nn.cents)}¢</span>` : '');
   };
   const fmtD = d => { const r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1); };
@@ -875,6 +876,7 @@
   // [label, lowest note, highest note, soft low end?, soft high end?] (MIDI note numbers).
   // A soft end is a typical limit rather than a hard one (voices; the violin's top): drawn faded.
   // Sounding pitch; transposing instruments are listed at the notes they actually produce.
+  const GROUP_COLOR = { 'Strings': 'var(--s2)', 'Voices': 'var(--s5)', 'Woodwinds': 'var(--s3)', 'Brass': 'var(--s4)', 'Plucked & keys': 'var(--s1)' };
   const INSTRUMENTS = [
     ['Strings', [['violin', 'Violin', 55, 100, false, true], ['viola', 'Viola', 48, 88, false, true],
       ['cello', 'Cello', 36, 81, false, true], ['doublebass', 'Double bass', 28, 67, false, true]]],
@@ -883,14 +885,16 @@
       ['baritone', 'Baritone', 45, 69, true, true], ['bassvoice', 'Bass (voice)', 40, 64, true, true]]],
     ['Woodwinds', [['piccolo', 'Piccolo', 74, 108, false, true], ['flute', 'Flute', 60, 98, false, true],
       ['oboe', 'Oboe', 58, 91, false, true], ['clarinet', 'Clarinet (B♭)', 50, 94, false, true],
-      ['altosax', 'Alto sax', 49, 80, false, true], ['tenorsax', 'Tenor sax', 44, 75, false, true], ['bassoon', 'Bassoon', 34, 75, false, true]]],
+      ['sopranosax', 'Soprano sax', 56, 88, false, true], ['altosax', 'Alto sax', 49, 80, false, true],
+      ['tenorsax', 'Tenor sax', 44, 75, false, true], ['baritonesax', 'Baritone sax', 36, 69, false, true],
+      ['bassoon', 'Bassoon', 34, 75, false, true]]],
     ['Brass', [['trumpet', 'Trumpet (B♭)', 52, 82, false, true], ['horn', 'French horn', 35, 77, false, true],
       ['trombone', 'Trombone', 40, 77, false, true], ['tuba', 'Tuba', 26, 65, false, true]]],
     ['Plucked & keys', [['guitar', 'Guitar', 40, 88, false, false], ['bassguitar', 'Bass guitar', 28, 67, false, false],
       ['ukulele', 'Ukulele', 60, 81, false, false], ['harp', 'Harp', 24, 103, false, false],
       ['piano', 'Piano (standard 88 keys)', 21, 108, false, false]]],
   ];
-  const ALL_INSTRUMENTS = INSTRUMENTS.flatMap(([, list]) => list);
+  const ALL_INSTRUMENTS = INSTRUMENTS.flatMap(([group, list]) => list.map(r => [...r, GROUP_COLOR[group]]));
   const DEFAULT_INSTRUMENTS = ['violin', 'guitar', 'piano', 'female', 'male'];
   // Chips to pick which instruments are shown (behind 'Choose instruments').
   function drawInstrumentPicker() {
@@ -902,7 +906,7 @@
       for (const [id, label] of list) {
         const on = sel.includes(id), b = document.createElement('button');
         b.className = 'chip' + (on ? ' on' : '');
-        b.innerHTML = (on ? '<span class="dot" style="background:var(--accent)"></span>' : '<span class="plus">+</span>') + esc(label.replace(/ \(.*\)/, ''));
+        b.innerHTML = (on ? `<span class="dot" style="background:${GROUP_COLOR[group]}"></span>` : '<span class="plus">+</span>') + esc(label.replace(/ \(.*\)/, ''));
         b.title = label;
         b.onclick = () => { state.settings.instruments = on ? sel.filter(x => x !== id) : [...sel, id]; save(); drawInstrumentPicker(); drawRanges(); };
         row.appendChild(b);
@@ -924,13 +928,13 @@
     }
     const defs = el('defs', {}, g);
     const fmtHzShort = f => f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 1).replace('.0', '') + ' kHz' : Math.round(f) + ' Hz';
-    rows.forEach(([, label, lo, hi, softLo, softHi], i) => {
+    rows.forEach(([, label, lo, hi, softLo, softHi, color], i) => {
       const y = 16 + i * rowH, FADE = 5;   // a soft end fades out over ~5 semitones
       const xa = xOf(mf(softLo ? lo - FADE : lo)), xb = xOf(Math.min(FMAX, mf(hi) * 8));
       const at = x => ((x - xa) / (xb - xa)).toFixed(4);
       // One bar per row; a gradient gives the solid notes, the faint overtones and the soft ends.
       const grad = el('linearGradient', { id: 'rg' + i, gradientUnits: 'userSpaceOnUse', x1: xa, x2: xb, y1: 0, y2: 0 }, defs);
-      const stop = (x, o) => el('stop', { offset: at(x), 'stop-color': 'var(--accent)', 'stop-opacity': o }, grad);
+      const stop = (x, o) => el('stop', { offset: at(x), 'stop-color': color, 'stop-opacity': o }, grad);
       if (softLo) { stop(xa, 0); stop(xOf(mf(lo + 2)), 0.85); } else stop(xa, 0.85);
       if (softHi) { stop(xOf(mf(hi - 2)), 0.85); stop(xOf(mf(hi + FADE)), 0.22); }
       else { stop(xOf(mf(hi)), 0.85); stop(xOf(mf(hi)), 0.22); }
@@ -1068,7 +1072,7 @@
       ? `<dt>${variants.every(v => patternIcon(v.pattern)) ? 'Patterns' : 'Variants'}</dt><dd class="card-chips"></dd>`
       : `<dt>Pattern</dt><dd>${specsList[0][1].pattern ? (patternIcon(specsList[0][1].pattern) || '') + esc(specsList[0][1].pattern) : '–'}</dd>`;
     const links = [
-      e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">Official page</a>` : '',
+      e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">Product page on ${esc(new URL(e.url).hostname.replace(/^www\./, ''))}</a>` : '',
       e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">Manual (PDF)</a>` : '',
     ].filter(Boolean).join('');
     dlg.innerHTML = `
@@ -1077,6 +1081,7 @@
         <h3>${title}</h3>
         <button class="link close" title="Close" aria-label="Close">✕</button>
       </div>
+      ${e.manufacturer ? `<p class="card-maker">${esc(e.manufacturer)}${e.price ? ` · <span title="Approximate new price (euro street price, 2025)">approx. ${esc(e.price.replace(/^~/, ''))}</span>` : ''}</p>` : ''}
       <div class="card-intro">
         ${e.photo && e.photosExtra ? `<div class="card-photos">
             <img class="main" src="${esc(e.photo)}" alt="${esc(e.model || title)}">
