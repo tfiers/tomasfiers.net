@@ -264,16 +264,18 @@
   .ts-wave { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-linecap: round; }
   .ts-dia { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
   .ts-thin { fill: none; stroke: var(--ink-2); stroke-width: 1; }
-  .ts-coil { fill: #d95926; }
+  .ts-coil { fill: none; stroke: var(--accent); stroke-width: 1.3; }
+  .ts-diaf { fill: var(--accent); }
+  .ts-ring { fill: none; stroke: var(--muted); stroke-width: 16; opacity: 0.55; }
+  .ts-sig { fill: none; stroke: #d95926; stroke-width: 1.3; stroke-linejoin: round; }
+  .ts-dot { fill: var(--ink-2); }
   .ts-mag { fill: var(--muted); opacity: 0.55; }
   .ts-plate { fill: var(--ink-2); opacity: 0.7; }
   .ts-hole { fill: var(--surface); }
   .ts-fold { stroke: var(--accent); stroke-width: 0.6; opacity: 0.6; }
-  .type-schematics figure.wide { flex-grow: 1.6; }
-  .type-schematics figure.wide svg { max-width: 250px; }
-  .type-card .type-schematics figure.wide svg { max-width: 300px; }
   .type-card h4.type-h { margin: 16px 0 4px; font-size: 1rem; color: var(--ink); }
   .type-card p { margin: 4px 0; }
+  .type-card a { color: var(--accent); }
   .ts-field { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 2 2; }
   .ts-t { font-size: 7px; fill: var(--muted); }
   .ts-pole { font-size: 9px; font-weight: 600; fill: var(--ink-2); }
@@ -1757,7 +1759,7 @@
   // What each column of the Selected microphones table means (header tooltip, and popup on tap).
   const COL_HELP = {
     'Pattern': 'The polar pattern: the directions the mic picks up from. <b>Cardioid</b>: mostly from the front. <b>Super- / hypercardioid</b>: narrower, with a small lobe at the back. <b>Omni</b>: all around. <b>Figure-8</b>: front and back, not the sides.',
-    'Type': 'How the mic turns sound into a signal. More, with diagrams: <a href="http://hyperphysics.phy-astr.gsu.edu/hbase/Audio/mic.html" target="_blank" rel="noopener">Microphones on HyperPhysics</a>.%TYPES%' +
+    'Type': 'How the mic turns sound into a signal. More (and the drawings these are based on): <a href="http://hyperphysics.phy-astr.gsu.edu/hbase/Audio/mic.html" target="_blank" rel="noopener">Microphones on HyperPhysics</a>.%TYPES%' +
       '<h4 class="type-h">Dynamic</h4><p>A coil on the diaphragm moves in a magnet\'s field. Rugged, needs no power, and takes very loud sources, but gives a lower output (more preamp gain) and less detail in the highs. Stage vocals, guitar amps, drums.</p>' +
       '<h4 class="type-h">Condenser</h4><p>The diaphragm and a fixed plate form a charged capacitor; sound changes the gap, and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).</p><ul>' +
       '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller sound; the classic studio vocal mic. Its pattern changes more with frequency (below), so sound from the sides or back is coloured.</li>' +
@@ -1784,35 +1786,34 @@
     if (!dlg.open) dlg.showModal();
   }
   function typeSchematics() {
-    const waves = x => [0, 6, 12].map(d => `<path d="M${x + d} 38 q-5 12 0 24" class="ts-wave"/>`).join('');
-    const svg = (body, label) => `<figure><svg viewBox="0 0 120 100">${body}</svg><figcaption>${label}</figcaption></figure>`;
-    const dyn = svg(`${waves(6)}
-      <path d="M36 18 q8 32 0 64" class="ts-dia"/>
-      <path d="M39 39 h22 M39 61 h22" class="ts-thin"/>
-      <rect x="61" y="35.5" width="8" height="7" class="ts-coil"/><rect x="61" y="57.5" width="8" height="7" class="ts-coil"/>
-      <path d="M62 24 h44 v52 h-44 v-10 h8 v-10 h-6 v-12 h6 v-10 h-8 z" class="ts-mag"/>
-      <text x="36" y="93" class="ts-t" text-anchor="middle">diaphragm</text><text x="52" y="31" class="ts-t" text-anchor="middle">coil</text>
-      <text x="85" y="18" class="ts-t" text-anchor="middle">magnet</text>`, '<b>Dynamic</b><br><span>a coil on the diaphragm moves in a magnet’s field</span>');
-    const con = svg(`${waves(6)}
-      <path d="M40 18 q3 32 0 64" class="ts-dia"/>
-      <rect x="50" y="18" width="10" height="64" class="ts-plate"/>
-      ${[26, 38, 50, 62, 74].map(y => `<rect x="50" y="${y}" width="10" height="3" class="ts-hole"/>`).join('')}
-      <path d="M40 18 v-6 h40 M55 18 v-2 h25" class="ts-thin"/><text x="84" y="16" class="ts-t">+ V</text>
-      <text x="40" y="93" class="ts-t" text-anchor="middle">diaphragm</text><text x="84" y="52" class="ts-t">back-</text><text x="84" y="61" class="ts-t">plate</text>`,
-      '<b>Condenser</b><br><span>diaphragm and plate form a charged capacitor; sound changes the gap</span>');
-    const pleats = x => `M${x} 18 ` + Array.from({ length: 16 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 4`).join(' ');
-    const rib = `<figure class="wide"><svg viewBox="0 0 190 100">${waves(4)}
-      <rect x="28" y="12" width="48" height="22" class="ts-mag"/><rect x="28" y="66" width="48" height="22" class="ts-mag"/>
-      <text x="52" y="27" class="ts-t ts-pole" text-anchor="middle">N</text><text x="52" y="81" class="ts-t ts-pole" text-anchor="middle">S</text>
-      <path d="M40 36 v28 M64 36 v28" class="ts-field"/>
-      <path d="M50 34 q4 16 0 32" class="ts-dia"/>
-      <text x="52" y="97" class="ts-t" text-anchor="middle">from above</text>
-      <rect x="104" y="18" width="20" height="64" class="ts-mag"/><rect x="154" y="18" width="20" height="64" class="ts-mag"/>
-      <text x="114" y="54" class="ts-t ts-pole" text-anchor="middle">N</text><text x="164" y="54" class="ts-t ts-pole" text-anchor="middle">S</text>
-      <path d="${pleats(132)}" class="ts-dia"/><path d="${pleats(143)}" class="ts-dia"/>
-      ${Array.from({ length: 16 }, (_, i) => `<path d="M${132 + (i % 2 ? 2.5 : 0)} ${18 + i * 4} h11" class="ts-fold"/>`).join('')}
-      <text x="139" y="97" class="ts-t" text-anchor="middle">from the front</text></svg>
-      <figcaption><b>Ribbon</b><br><span>a thin, pleated metal ribbon moves in the field between two magnet poles</span></figcaption></figure>`;
+    // In the style of HyperPhysics' microphone drawings: sound in on the left, the moving part in blue,
+    // and the electrical signal coming out as a red squiggle.
+    const waves = (x, y) => [0, 6, 12].map(d => `<path d="M${x + d} ${y - 14} q-5 14 0 28" class="ts-wave"/>`).join('');
+    const sig = (x, y) => `<path d="M${x} ${y} l3 0 l2 -7 l2 11 l2 -9 l2 6 l2 -3 l3 0" class="ts-sig"/>`;
+    const svg = (body, label) => `<figure><svg viewBox="0 0 140 110">${body}</svg><figcaption>${label}</figcaption></figure>`;
+    const dyn = svg(`${waves(4, 55)}
+      <path d="M104 26 H64 V40 H76 V51 H58 V59 H76 V70 H64 V84 H104 Z" class="ts-mag"/>
+      <path d="M28 24 L47 45 M28 86 L47 65" class="ts-dia"/>
+      ${[49, 53, 57, 61].map(x => `<ellipse cx="${x}" cy="55" rx="2.2" ry="10" class="ts-coil"/>`).join('')}
+      <path d="M50 66 V96 H104 M58 66 V92 H104" class="ts-thin"/>${sig(106, 94)}
+      <text x="84" y="22" class="ts-t" text-anchor="middle">magnet</text><text x="55" y="40" class="ts-t" text-anchor="middle">coil</text>
+      <text x="22" y="100" class="ts-t" text-anchor="middle">cone</text>`, '<b>Dynamic</b><br><span>sound moves a cone; the coil on it moves in a magnet’s field</span>');
+    const con = svg(`${waves(4, 55)}
+      <rect x="32" y="22" width="3" height="66" class="ts-diaf"/>
+      <rect x="40" y="22" width="6" height="66" class="ts-plate"/>
+      <path d="M33.5 22 V12 H60 l2 -3 l3 6 l3 -6 l3 6 l3 -6 l3 6 l2 -3 H104" class="ts-thin"/>${sig(106, 12)}
+      <path d="M96 12 V40 M88 42 H104 M92 47 H100 M88 52 H104 M92 57 H100 M96 59 V98 H43 V88" class="ts-thin"/>
+      <circle cx="96" cy="12" r="1.5" class="ts-dot"/>
+      <text x="108" y="50" class="ts-t">battery</text><text x="70" y="24" class="ts-t" text-anchor="middle">resistor</text>
+      <text x="39" y="106" class="ts-t" text-anchor="middle">diaphragm + plate</text>`, '<b>Condenser</b><br><span>sound changes the gap between diaphragm and plate, charged by a voltage</span>');
+    const pleats = Array.from({ length: 9 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 3.5`).join(' ');
+    const rib = svg(`${waves(4, 80)}
+      <circle cx="70" cy="66" r="26" class="ts-ring" stroke-dasharray="${(0.75 * 2 * Math.PI * 26 - 7).toFixed(1)} 14 ${(0.25 * 2 * Math.PI * 26 - 7).toFixed(1)}"/>
+      <path d="M66 20 ${pleats} M74 20 ${pleats}" class="ts-dia"/>
+      ${Array.from({ length: 9 }, (_, i) => `<path d="M${66 + (i % 2 ? 2.5 : 0)} ${20 + i * 3.5} h8" class="ts-fold"/>`).join('')}
+      <path d="M70 20 V12 H104 M72 51.5 Q88 50 90 20 V16 H104" class="ts-thin"/>${sig(106, 14)}
+      <text x="40" y="104" class="ts-t" text-anchor="middle">magnet</text><text x="50" y="30" class="ts-t" text-anchor="end">ribbon</text>`,
+      '<b>Ribbon</b><br><span>a thin, pleated metal ribbon moves in the gap of a magnet</span>');
     return `<div class="type-schematics">${dyn}${con}${rib}</div>`;
   }
   function typeDiagram() {
