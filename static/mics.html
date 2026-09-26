@@ -658,6 +658,7 @@
       const links = [
         e0.graph ? `<a href="${esc(e0.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
         e0.url ? `<a href="${esc(e0.url)}" target="_blank" rel="noopener">official page</a>` : '',
+        e0.pdf ? `<a href="${esc(e0.pdf)}" target="_blank" rel="noopener">manual (PDF)</a>` : '',
       ].filter(Boolean).join(' · ');
       li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${desc}<br><span class="meta">${esc(e0.source || '')}${links ? ' · ' + links : ''}</span></span>
         <span class="lib-btns"></span>`;
