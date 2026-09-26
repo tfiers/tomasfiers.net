@@ -173,6 +173,7 @@
         <div class="tip" id="tip"></div>
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
+      <p class="hint" id="fadeHint" hidden>Faded: outside the manufacturer's rated frequency range.</p>
       <div class="table-wrap" id="tableWrap"></div>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
@@ -291,6 +292,14 @@
     const used = state.mics.map(m => m.slot);
     for (let i = 0; i < 64; i++) if (!used.includes(i)) return i;
     return used.length;
+  }
+  // Rated range from specs, e.g. "40–19k" -> [40, 19000]; null if unknown.
+  function ratedRange(m) {
+    const r = m.specs && m.specs.range;
+    const mm = typeof r === 'string' && r.match(/^\s*([\d.]+)\s*(k?)\s*[–-]\s*([\d.]+)\s*(k?)/i);
+    if (!mm) return null;
+    const v = (n, k) => Number(n) * (k ? 1000 : 1);
+    return [v(mm[1], mm[2]), v(mm[3], mm[4])];
   }
   const colorOf = m => m.color || `var(--s${(m.slot % NSLOTS) + 1})`;
   const dashOf = m => DASHES[Math.floor(m.slot / NSLOTS) % DASHES.length];
@@ -441,24 +450,34 @@
     const i0 = Math.max(0, gridIndex(FMIN) - 1), i1 = Math.min(GRID.length - 1, gridIndex(FMAX) + 1);
     const visible = state.mics.filter(m => m.visible);
     const ends = [];
+    let anyFaded = false;
     for (const m of visible) {
       const c = curves.get(m.id);
-      let d = '', pen = false, last = null;
+      // Solid inside the maker's rated frequency range, faded outside it.
+      const rr = ratedRange(m);
+      const inRange = f => !rr || (f >= rr[0] * 0.999 && f <= rr[1] * 1.001);
+      let dIn = '', dOut = '', prev = null, prevIn = null, last = null;
       for (let i = i0; i <= i1; i++) {
-        if (c[i] === null) { pen = false; continue; }
-        d += (pen ? 'L' : 'M') + xOf(GRID[i]).toFixed(1) + ',' + yOf(c[i]).toFixed(1);
-        pen = true; last = i;
+        if (c[i] === null) { prev = null; continue; }
+        const pt = xOf(GRID[i]).toFixed(1) + ',' + yOf(c[i]).toFixed(1);
+        const ir = inRange(GRID[i]);
+        const seg = prev === null ? 'M' + pt : prevIn === ir ? 'L' + pt : 'M' + prev + 'L' + pt;
+        if (ir) dIn += seg; else dOut += seg;
+        prev = pt; prevIn = ir; last = i;
       }
-      if (!d) continue;
+      if (!dIn && !dOut) continue;
+      if (dOut) anyFaded = true;
       // Only dim the others while the hovered mic is actually on the chart.
       const dim = highlight && highlight !== m.id && visible.some(v => v.id === highlight);
-      el('path', {
-        d, fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
+      const attrs = {
+        fill: 'none', stroke: colorOf(m), 'stroke-width': highlight === m.id ? 3 : 2,
         'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dashOf(m),
-        opacity: dim ? 0.2 : 1
-      }, plot);
+      };
+      if (dOut) el('path', { ...attrs, d: dOut, opacity: dim ? 0.08 : 0.3 }, plot);
+      if (dIn) el('path', { ...attrs, d: dIn, opacity: dim ? 0.2 : 1 }, plot);
       if (last !== null) ends.push({ m, y: yOf(c[last]), x: xOf(GRID[last]) });
     }
+    $('fadeHint').hidden = !anyFaded;
     // Direct labels at line ends when there are few series (placed inside, right-aligned, de-overlapped)
     if (visible.length <= 8 && ends.length && W >= 520) {
       ends.sort((a, b) => a.y - b.y);
@@ -484,13 +503,14 @@
       for (const m of visible) {
         const v = valueAt(curves.get(m.id), f);
         if (v === null) continue;
-        rows.push({ m, v });
+        const rr = ratedRange(m);
+        rows.push({ m, v, out: rr && (f < rr[0] || f > rr[1]) });
         el('circle', { cx: x, cy: yOf(v), r: 4, fill: colorOf(m), stroke: 'var(--surface)', 'stroke-width': 2 }, dots);
       }
       rows.sort((a, b) => b.v - a.v);
       const tip = $('tip');
       tip.innerHTML = `<div class="f">${fmtF(f)} Hz</div>` + (rows.length ? rows.map(r =>
-        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v">${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
+        `<div class="row"><span style="display:flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(r.m)}"></span>${esc(r.m.name)}</span><span class="v"${r.out ? ' style="color:var(--muted)" title="outside rated range"' : ''}>${fmtD(r.v)} dB</span></div>`).join('') : '<div style="color:var(--muted)">no data here</div>');
       tip.style.display = 'block';
       const wrap = $('chartWrap').getBoundingClientRect();
       const px = ev.clientX - wrap.left, tw = tip.offsetWidth;
