@@ -68,7 +68,9 @@
   .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
   @media (max-width: 620px) { .controls { grid-template-columns: repeat(2, minmax(0,1fr)); } .field-level, .field-wide { grid-column: 1 / -1; } }
   /* Response / Polar view switch; each view shows only its own controls. */
-  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; margin-bottom: 12px; background: var(--page); }
+  .view-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--page); }
+  .src-note { margin: -4px 0 12px; }
   .seg button { border: none; background: none; border-radius: 6px; padding: 3px 12px; font-size: 0.85rem; color: var(--ink-2); }
   .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
   #chartPanel:not(.polar) .polar-only, #chartPanel.polar .resp-only { display: none; }
@@ -236,10 +238,14 @@
   <div class="layout">
     <div class="main-col">
     <section class="panel" id="chartPanel">
+      <div class="view-row">
       <div class="seg" id="viewSeg" role="tablist" aria-label="View">
         <button type="button" role="tab" data-view="resp">Frequency</button>
         <button type="button" role="tab" data-view="polar">Polar</button>
       </div>
+      <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
+      </div>
+      <p class="hint src-note" id="srcNote" hidden>Curves come from the manufacturers' frequency-response graphs (each mic's info card shows the original). Where the PDF holds the curve as vector data it is read exactly; otherwise it is traced from the image, to within about ±0.5 dB. Each maker measures differently (distance, room, smoothing), so compare loosely. Faded parts of a curve lie outside the mic's rated frequency range.</p>
       <div class="controls">
         <div class="field field-level resp-only">
           <span class="cap">Level</span>
@@ -293,8 +299,8 @@
     </section>
 
     <section class="panel" id="micPanel">
-      <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the data">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range (off axis: also outside the frequencies the polar plot covers). Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
+      <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
+      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card.</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -772,7 +778,7 @@
     const shown = state.mics.filter(m => m.visible);
     const none = shown.filter(m => !offaxisOf(m)).map(m => m.name);
     // Always shown: what's missing from the chart. Behind the ⓘ: how the off-axis data is made.
-    let w = '', t = '';
+    let w = '';
     if ((polar || angle) && none.length) w += `No polar data for ${none.join(', ')}` + (polar ? '. ' : ' (hidden off axis). ');
     if (polar) {
       const f = POLAR_FREQS[s.polarF];
@@ -780,18 +786,7 @@
       if (edge.length) w += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtHz(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}`; }).join('; ') + '. ';
       if (!shown.some(m => offaxisOf(m))) w += 'All library mics have polar data; your own curves don\'t. ';
     }
-    if (angle || polar) {
-      // Mention mics whose polar plot covers less than the usual 250 Hz–16 kHz.
-      const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
-      const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
-      t += 'Off axis = on-axis curve + the maker\'s polar plot, which mostly covers 250 Hz–16 kHz' +
-        (narrow.length ? ' (' + narrow.map(m => `${m.name}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') + '; beyond that the nearest is held (faded). ';
-    }
-    t += 'Polar data from the manufacturers\' plots (read from the PDF where possible, else traced, roughly ±1 dB).';
     $('polarWarn').textContent = w; $('polarWarn').hidden = !w;
-    $('polarNote').textContent = t;
-    $('polarNote').hidden = !polarNoteOpen;
-    document.querySelectorAll('.polar-info').forEach(b => b.setAttribute('aria-expanded', polarNoteOpen));
   }
 
   function drawTable() {
@@ -1195,16 +1190,24 @@
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
 
-  // ⓘ next to Angle / Frequency: show/hide how the off-axis data is made.
-  let polarNoteOpen = false;
-  document.querySelectorAll('.polar-info').forEach(b => b.onclick = () => { polarNoteOpen = !polarNoteOpen; drawPolarHint(); });
+  // The off-axis note (behind the ⓘ next to Angle / Frequency) is the same whatever the angle; it names the library mics whose polar plot covers less.
+  {
+    const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
+    const narrow = new Map();
+    for (const e of LIBRARY) if (e.offaxis && (e.offaxis.f[0] > 250 || e.offaxis.f[e.offaxis.f.length - 1] < 16000)) narrow.set(e.model || e.name, span(e.offaxis));
+    $('polarNote').textContent = 'Off axis, a curve is the on-axis curve plus the drop read from the maker\'s polar plot. ' +
+      'The plots are drawn at a few frequencies, mostly 250 Hz–16 kHz' +
+      (narrow.size ? ' (' + [...narrow].map(([m, sp]) => `${m}: ${sp}`).join('; ') + ')' : '') +
+      '; in between they are interpolated, beyond that the nearest one is held and the curve is faded. ' +
+      'Read from the PDF where possible, else traced from the image (roughly ±1 dB). Your own curves have no polar data.';
+  }
 
-  // ⓘ next to 'Mics': show/hide the note about the data.
-  $('micInfoBtn').onclick = ev => {
-    const open = $('micNote').hidden;
-    $('micNote').hidden = !open;
-    ev.currentTarget.setAttribute('aria-expanded', open);
-  };
+  // Every ⓘ button shows/hides the note it controls (the Angle and Frequency ones share one).
+  document.querySelectorAll('.info-btn[aria-controls]').forEach(b => b.onclick = () => {
+    const id = b.getAttribute('aria-controls'), note = $(id), open = note.hidden;
+    note.hidden = !open;
+    document.querySelectorAll(`.info-btn[aria-controls="${id}"]`).forEach(x => x.setAttribute('aria-expanded', open));
+  });
 
   // Close the info card when tapping the backdrop.
   $('infoCard').addEventListener('click', ev => { if (ev.target === ev.currentTarget) ev.currentTarget.close(); });
