@@ -204,14 +204,10 @@
   .chip.icon { padding: 2px 7px; }
   .chip .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; stroke-linejoin: round; }
   .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-  .chip-group { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-top: 6px;
-    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .chip-group::-webkit-scrollbar { display: none; }
-  .chip-group.more { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
-  .chip-group .chip { padding: 2px 8px; font-size: 0.8rem; flex: none; }
-  .chip, .chip-model { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-  .chip-model { cursor: pointer; }
-  .chip-model { font-size: 0.85rem; color: var(--ink-2); margin: 0 4px 0 2px; white-space: nowrap; flex: none; }
+  .chip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .chip .dot + .dot { margin-left: -2px; }
+  .chip .n { color: var(--muted); font-size: 0.75rem; font-weight: 400; }
+  .chip .caret { color: var(--muted); font-size: 0.65rem; margin-left: -2px; }
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
@@ -302,7 +298,7 @@
 
     <section class="panel" id="micPanel">
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press a mic, or tap the name of a multi-pattern one).</p>
+      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press a mic; mics with several patterns (▾) open their card on tap).</p>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -1102,29 +1098,31 @@
     const d = pts.map((p, i) => (i ? 'L' : 'M') + (p[0] - cx).toFixed(3) + ' ' + (p[1] - cy).toFixed(3)).join('') + 'Z';
     return `<svg class="pat" viewBox="-1.15 -1.15 2.3 2.3" aria-hidden="true"><path d="${d}"/></svg>`;
   }
-  const VARIANT_SHORT = { 'with XLR adapter': 'XLR', '20 cm': '20 cm' };
   function drawLibrary() {
     const chips = $('libChips');
     chips.innerHTML = '';
     const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
     const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
     const split = models.some(m => !owned(m));
-    // Chip for one library entry: tap to add, tap again to remove.
-    const chip = (entry, label, plus = true, icon = null) => {
-      const m = state.mics.find(x => x.lib === entry.name);
+    const variants = model => LIBRARY.filter(e => (e.model || e.name) === model);
+    // One chip per model. A single-curve mic: tap to add / remove. A mic with several patterns or variants:
+    // tap opens its card to pick them; its dots show which are on the chart. Long press: the card, for any mic.
+    const chip = model => {
+      const vs = variants(model);
+      const shown = vs.map(v => state.mics.find(x => x.lib === v.name)).filter(Boolean);
       const btn = document.createElement('button');
-      btn.className = 'chip' + (m ? ' on' : '') + (icon ? ' icon' : '');
-      btn.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : plus ? '<span class="plus">+</span>' : '') + (icon || esc(label));
-      if (icon) btn.setAttribute('aria-label', (m ? 'Remove ' : 'Add ') + entry.name);
-      btn.title = (m ? 'Remove ' : 'Add ') + entry.name;
-      btn.onclick = () => {
-        if (m) {
-          state.mics = state.mics.filter(x => x !== m);
-          if (state.settings.ref === m.id) state.settings.ref = '';
-        } else addFromLibrary(entry);
-        update();
-      };
-      onLongPress(btn, () => openLibEntry(entry));
+      btn.className = 'chip' + (shown.length ? ' on' : '');
+      btn.innerHTML = (shown.length ? shown.map(m => `<span class="dot" style="background:${colorOf(m)}"></span>`).join('') : '<span class="plus">+</span>') +
+        esc(model) + (vs.length > 1 ? ` <span class="n">${vs.length}</span><span class="caret">▾</span>` : '');
+      if (vs.length > 1) {
+        btn.title = `${model}: pick patterns`;
+        btn.onclick = () => openModel(model);
+      } else {
+        const m = shown[0];
+        btn.title = (m ? 'Remove ' : 'Add ') + model;
+        btn.onclick = () => { if (m) state.mics = state.mics.filter(x => x !== m); else addFromLibrary(vs[0]); update(); };
+      }
+      onLongPress(btn, () => openLibEntry(vs[0]));
       return btn;
     };
     for (const group of [models.filter(owned), models.filter(m => !owned(m))]) {
@@ -1135,32 +1133,14 @@
         h.textContent = owned(group[0]) ? 'My mics' : 'Other mics';
         chips.appendChild(h);
       }
-      const variants = model => LIBRARY.filter(e => (e.model || e.name) === model);
-      const single = group.filter(m => variants(m).length === 1 && !variants(m)[0].pattern);
-      // Single-curve mics share one wrapping row of chips.
-      if (single.length) {
-        const row = document.createElement('div');
-        row.className = 'chips';
-        for (const model of single) row.appendChild(chip(variants(model)[0], model));
-        chips.appendChild(row);
-      }
-      // Multi-variant mics: one line each (scrolls sideways if too wide), name + a chip per pattern.
-      for (const model of group.filter(m => !single.includes(m))) {
-        const g = document.createElement('div');
-        g.className = 'chip-group';
-        g.innerHTML = `<span class="chip-model">${esc(model)}</span>`;
-        // The name isn't a switch, so a plain tap opens the card.
-        g.firstChild.onclick = () => openModel(model);
-        for (const e of variants(model)) g.appendChild(chip(e, VARIANT_SHORT[e.pattern] || e.pattern, false, patternIcon(e.pattern)));
-        chips.appendChild(g);
-        // Fade the right edge while there is more to scroll to.
-        const edge = () => g.classList.toggle('more', g.scrollLeft + g.clientWidth < g.scrollWidth - 2);
-        g.addEventListener('scroll', edge, { passive: true });
-        requestAnimationFrame(edge);
-      }
+      const row = document.createElement('div');
+      row.className = 'chips';
+      for (const model of group) row.appendChild(chip(model));
+      chips.appendChild(row);
     }
     $('libBox').hidden = !LIBRARY.length;
   }
+
 
   // ---------- save / share ----------
   const exportObj = () => ({ app: 'mic-compare', version: 1, settings: state.settings, mics: state.mics });
