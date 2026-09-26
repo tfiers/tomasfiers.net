@@ -72,7 +72,7 @@ for k,auto in [('card',False),('omni',False),('hyper',False),('fig8',False)]:
     lib.append(dict(model='sE4400', pattern=PAT[k], points=resample(se['se4400_'+k]), auto=auto, owned=False,
         source='sE4400 manual, low cut off (traced from image)', specs=dict(S4400, pattern=PAT[k])))
 dpa=json.load(open('dpa.json'))
-SDPA=dict(type='Condenser clip-on, 5.4 mm', pattern='Supercardioid', sens=-44.5, noise=23, maxspl=142, imp=50, range='80–15k')
+SDPA=dict(type='Condenser (electret) clip-on, 5.4 mm', pattern='Supercardioid', sens=-44.5, noise=23, maxspl=142, imp=50, range='80–15k')
 # Other distances: the 20 cm curve plus the bass change from DPA's proximity-effect graph (10 and 100 cm vs 20 cm).
 prox=json.load(open('dpa_prox.json'))
 def at_dist(pts, d):

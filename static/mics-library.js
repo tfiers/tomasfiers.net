@@ -905,7 +905,7 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, at 10 cm: the 20 cm curve plus the proximity-effect graph's bass boost (vector data from the PDF)",
     "specs":{
-      "type":"Condenser clip-on, 5.4 mm",
+      "type":"Condenser (electret) clip-on, 5.4 mm",
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -988,7 +988,7 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, on axis at 20 cm (vector data from the PDF)",
     "specs":{
-      "type":"Condenser clip-on, 5.4 mm",
+      "type":"Condenser (electret) clip-on, 5.4 mm",
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -1071,7 +1071,7 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, at 1 m: the 20 cm curve plus the proximity-effect graph's bass loss (vector data from the PDF)",
     "specs":{
-      "type":"Condenser clip-on, 5.4 mm",
+      "type":"Condenser (electret) clip-on, 5.4 mm",
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
@@ -1153,7 +1153,7 @@ window.MIC_LIBRARY = [
     "owned":false,
     "source":"DPA 4099 manual, with DAD4099 XLR adapter (80 Hz low cut), 20 cm (vector data from the PDF)",
     "specs":{
-      "type":"Condenser clip-on, 5.4 mm",
+      "type":"Condenser (electret) clip-on, 5.4 mm",
       "pattern":"Supercardioid",
       "sens":-44.5,
       "noise":23,
