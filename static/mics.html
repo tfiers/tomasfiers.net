@@ -61,8 +61,8 @@
     /* Phones: mic list right under the chart, specs after it. */
     .main-col { display: contents; }
     #chartPanel { order: 1; }
-    .layout > aside { order: 2; }
-    #specPanel { order: 3; }
+    #micPanel { order: 2; }
+    .layout > aside { order: 3; }
   }
 
   .controls { display: grid; grid-template-columns: minmax(0,1.7fr) repeat(3, minmax(0,1fr)); gap: 10px 12px; margin-bottom: 12px; align-items: end; }
@@ -106,17 +106,22 @@
 
   .empty { text-align: center; color: var(--muted); padding: 60px 16px; }
 
-  .mics { list-style: none; margin: 0; padding: 0; }
-  .mics li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-  .mics li:last-child { border-bottom: none; }
-  .mics .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
-  .mics li.off .name { color: var(--muted); text-decoration: line-through; }
-  .mics input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; }
-  .mics .meta { color: var(--muted); font-size: 0.75rem; }
-  #libList .name { white-space: normal; }
-  #libList .meta a { color: var(--accent); }
-  .lib-desc { font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; display: inline-block; margin: 2px 0; }
-  #libList .lib-item { display: block; }
+  .mic-wrap { margin-top: 0; }
+  .mic-wrap.more { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+  .mic-table th, .mic-table td { text-align: left; vertical-align: top; }
+  .mic-table td { padding-top: 6px; padding-bottom: 6px; }
+  .mic-table .sticky { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
+  .mic-table .mcell { display: flex; align-items: center; gap: 6px; width: 12.5em; }
+  .mic-table .mcell .name { flex: 1; min-width: 0; white-space: normal; line-height: 1.25; cursor: text;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .mic-table td.about { min-width: 24em; max-width: 30em; white-space: normal; }
+  .mic-table .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.8rem; color: var(--ink-2); line-height: 1.35; }
+  #libBox { margin-top: 0; }
+  .mic-table tr.off .name { color: var(--muted); text-decoration: line-through; }
+  .mic-table input[type=color] { width: 22px; height: 22px; padding: 0; border: none; background: none; cursor: pointer; flex: none; }
+  .mic-table .meta { color: var(--muted); font-size: 0.75rem; }
+  .mic-table .meta a, .mic-table a { color: var(--accent); }
+  .mic-table .pat { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 0.16; vertical-align: -4px; margin-right: 4px; }
   #libChips .lib-head { margin-top: 10px; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
   .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; white-space: nowrap; }
@@ -131,7 +136,6 @@
   .chip-group.more { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
   .chip-group .chip { padding: 2px 8px; font-size: 0.8rem; flex: none; }
   .chip-model { font-size: 0.85rem; color: var(--ink-2); margin: 0 4px 0 2px; white-space: nowrap; flex: none; }
-  #libInfo { margin-top: 10px; }
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
@@ -212,26 +216,18 @@
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
-    <section class="panel" id="specPanel" hidden>
-      <h2>Specs</h2>
-      <div class="table-wrap" id="specWrap" style="margin-top:0"></div>
-      <p class="hint">From the manufacturers' data sheets. Sensitivity: output voltage for 1 Pa (94 dB SPL); ~16 dB between a condenser and a dynamic mic means that much more preamp gain. Self-noise is A-weighted; – = not published.</p>
+    <section class="panel" id="micPanel">
+      <h2>Mics</h2>
+      <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
+      <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
+      <p class="hint">Curves and specs from the manufacturers' graphs and data sheets; each maker measures differently, so compare loosely. Faded parts of a curve lie outside the rated frequency range. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published.</p>
     </section>
     </div>
     <aside>
       <div class="panel">
-        <h2>Mics</h2>
-        <ul class="mics" id="micList"></ul>
-
         <details id="libBox" open>
           <summary>Library</summary>
           <div id="libChips"></div>
-          <details id="libInfo">
-            <summary>About the mics on the chart</summary>
-            <p class="hint">Curves from the manufacturers' graphs. Each maker measures differently (room, distance, smoothing), so compare shapes loosely; your own measurements beat these. Faded parts of a curve lie outside the manufacturer's rated frequency range.</p>
-            <ul class="mics" id="libList"></ul>
-            <p class="hint" id="libInfoEmpty">Add a mic from the library to see its details here.</p>
-          </details>
         </details>
 
         <details id="addBox" open>
@@ -563,7 +559,7 @@
     const wrap = $('tableWrap');
     const visible = state.mics.filter(m => m.visible);
     $('tableBox').hidden = !visible.length;
-    if (!visible.length) { wrap.innerHTML = ''; drawSpecs(visible); return; }
+    if (!visible.length) { wrap.innerHTML = ''; return; }
     let h = '<table><thead><tr><th>dB at</th>' + TABLE_FREQS.map(f => `<th>${fmtF(f)}</th>`).join('') + '</tr></thead><tbody>';
     for (const m of visible) {
       const c = curves.get(m.id);
@@ -571,43 +567,46 @@
         TABLE_FREQS.map(f => { const v = valueAt(c, f); return `<td>${v === null ? '–' : fmtD(v)}</td>`; }).join('') + '</tr>';
     }
     wrap.innerHTML = h + '</tbody></table>';
-    drawSpecs(visible);
   }
 
-  function drawSpecs(visible) {
-    const withSpecs = visible.filter(m => m.specs);
-    const wrap = $('specWrap');
-    $('specPanel').hidden = !withSpecs.length;
-    if (!withSpecs.length) { wrap.innerHTML = ''; return; }
-    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
-    const mv = dbv => typeof dbv === 'number' ? `<br><span class="meta">${(1000 * 10 ** (dbv / 20)).toFixed(1)} mV/Pa</span>` : '';
-    let h = `<table><thead><tr><th>Mic</th><th style="text-align:left">Type · pattern</th>
-      <th>Sensitivity</th><th>Self-noise</th><th>Max SPL</th><th>Impedance</th><th>Range</th></tr></thead><tbody>`;
-    for (const m of withSpecs) {
-      const sp = m.specs;
-      h += `<tr><td><span style="display:inline-flex;gap:6px;align-items:center"><span class="sw" style="background:${colorOf(m)}"></span>${esc(m.name)}</span></td>
-        <td style="text-align:left;white-space:normal;min-width:9em">${esc(sp.type || '–')}<br><span class="meta">${esc(sp.pattern || '')}</span></td>
-        <td>${num(sp.sens, ' dBV')}${mv(sp.sens)}</td><td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td>
-        <td>${num(sp.imp, ' Ω')}</td><td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td></tr>`;
-    }
-    wrap.innerHTML = h + '</tbody></table>';
-  }
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---------- mic list ----------
   function drawList() {
-    const ul = $('micList');
-    ul.innerHTML = '';
+    const table = $('micTable');
+    $('micEmpty').hidden = state.mics.length > 0;
+    table.hidden = !state.mics.length;
+    const num = (v, unit) => typeof v === 'number' ? `${String(v).replace('-', '−')}${unit}` : '–';
+    table.innerHTML = `<thead><tr><th class="sticky">Mic</th><th>Pattern</th><th>Type</th><th>Sensitivity</th><th>Self-noise</th>
+      <th>Max SPL</th><th>Impedance</th><th>Range</th><th>About</th><th>Source</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
     for (const m of state.mics) {
-      const li = document.createElement('li');
-      if (!m.visible) li.className = 'off';
-      li.innerHTML = `
-        <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
-        <input type="color" title="Change color" value="${resolvedHex(m)}">
-        <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
-        <button class="link" title="Remove">✕</button>`;
-      const [cb, color, name, del] = li.children;
+      const sp = m.specs || {};
+      const e = m.lib && LIBRARY.find(x => x.name === m.lib) || {};
+      const links = [
+        e.graph ? `<a href="${esc(e.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
+        e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">official page</a>` : '',
+        e.pdf ? `<a href="${esc(e.pdf)}" target="_blank" rel="noopener">manual (PDF)</a>` : '',
+      ].filter(Boolean).join(' · ');
+      const tr = document.createElement('tr');
+      if (!m.visible) tr.className = 'off';
+      tr.innerHTML = `
+        <td class="sticky"><div class="mcell">
+          <input type="checkbox" ${m.visible ? 'checked' : ''} aria-label="Show ${esc(m.name)}">
+          <input type="color" title="Change color" value="${resolvedHex(m)}">
+          <span class="name" title="${esc(m.name)} — click to rename">${esc(m.name)}</span>
+          <button class="link" title="Remove">✕</button>
+        </div></td>
+        <td>${sp.pattern ? (patternIcon(sp.pattern) || '') + esc(sp.pattern) : '–'}</td>
+        <td>${esc(sp.type || '–')}</td>
+        <td>${num(sp.sens, ' dBV')}${typeof sp.sens === 'number' ? `<br><span class="meta">${(1000 * 10 ** (sp.sens / 20)).toFixed(1)} mV/Pa</span>` : ''}</td>
+        <td>${num(sp.noise, ' dB(A)')}</td><td>${num(sp.maxspl, ' dB')}</td><td>${num(sp.imp, ' Ω')}</td>
+        <td>${sp.range ? esc(sp.range) + ' Hz' : '–'}</td>
+        <td class="about"><div class="clamp" title="${esc(e.desc || '')}">${esc(e.desc || '–')}</div></td>
+        <td title="${esc(e.source || '')}">${links || `<span class="meta">${m.lib ? '–' : 'Your own data'}</span>`}</td>`;
+      const cb = tr.querySelector('input[type=checkbox]'), color = tr.querySelector('input[type=color]');
+      const name = tr.querySelector('.name'), del = tr.querySelector('button.link');
       cb.onchange = () => { m.visible = cb.checked; update(); };
       name.onclick = () => {
         const n = prompt('Rename mic', m.name);
@@ -620,10 +619,16 @@
         update();
       };
       // Hover-highlight with a real mouse only; touch has no "leave", so it would stick.
-      li.onpointerenter = e => { if (e.pointerType === 'mouse') { highlight = m.id; draw(); } };
-      li.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
-      ul.appendChild(li);
+      tr.onpointerenter = ev => { if (ev.pointerType === 'mouse') { highlight = m.id; draw(); } };
+      tr.onpointerleave = () => { if (highlight) { highlight = null; draw(); } };
+      tbody.appendChild(tr);
     }
+    table.appendChild(tbody);
+    // Fade the right edge while there are more columns to scroll to.
+    const wrap = table.parentElement;
+    const edge = () => wrap.classList.toggle('more', wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 2);
+    if (!wrap.dataset.edge) { wrap.dataset.edge = 1; wrap.addEventListener('scroll', edge, { passive: true }); addEventListener('resize', edge); }
+    requestAnimationFrame(edge);
     const sel = $('refMic');
     sel.innerHTML = '<option value="">—</option>' + state.mics.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
     sel.value = state.settings.ref;
@@ -709,8 +714,8 @@
   }
   const VARIANT_SHORT = { 'with XLR adapter': 'XLR', '20 cm': '20 cm' };
   function drawLibrary() {
-    const chips = $('libChips'), ul = $('libList');
-    chips.innerHTML = ''; ul.innerHTML = '';
+    const chips = $('libChips');
+    chips.innerHTML = '';
     const models = [...new Set(LIBRARY.map(e => e.model || e.name))];
     const owned = model => LIBRARY.some(e => (e.model || e.name) === model && e.owned !== false);
     const split = models.some(m => !owned(m));
@@ -760,21 +765,6 @@
         g.addEventListener('scroll', edge, { passive: true });
         requestAnimationFrame(edge);
       }
-    }
-    // Details (description, source, links) for the library mics currently on the chart.
-    const shown = models.filter(model => LIBRARY.some(e => (e.model || e.name) === model && state.mics.some(x => x.lib === e.name)));
-    $('libInfoEmpty').hidden = shown.length > 0;
-    for (const model of shown) {
-      const e0 = LIBRARY.find(e => (e.model || e.name) === model);
-      const links = [
-        e0.graph ? `<a href="${esc(e0.graph)}" target="_blank" rel="noopener">source graph</a>` : '',
-        e0.url ? `<a href="${esc(e0.url)}" target="_blank" rel="noopener">official page</a>` : '',
-        e0.pdf ? `<a href="${esc(e0.pdf)}" target="_blank" rel="noopener">manual (PDF)</a>` : '',
-      ].filter(Boolean).join(' · ');
-      const li = document.createElement('li');
-      li.className = 'lib-item';
-      li.innerHTML = `<span class="name" style="cursor:default">${esc(model)}${e0.desc ? `<br><span class="lib-desc">${esc(e0.desc)}</span>` : ''}<br><span class="meta">${esc(e0.source || '')}${links ? ' · ' + links : ''}</span></span>`;
-      ul.appendChild(li);
     }
     $('libBox').hidden = !LIBRARY.length;
   }
