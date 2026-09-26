@@ -274,6 +274,7 @@
   svg#ranges { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
   .ranges-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin: 10px 0 6px; }
   .play-opts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+  /* Three groups: Choose instruments (left); Stop, Sound, and Through (centre); Chord (right). */
   .play-opt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .play-opt select { max-width: 220px; }
   #chordSeg button { padding: 2px 7px; min-width: 28px; }
@@ -422,14 +423,14 @@
                 <button type="button" role="radio" data-sound="held">Held tone</button>
               </div>
             </div>
-            <div class="field play-opt" title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave). Several fingers also play several keys at once.">
-              <span class="cap">Chord</span>
-              <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
-            </div>
             <div class="field play-opt" title="Plays the keys as that mic would pick them up: each overtone made louder or quieter by the mic's curve at its frequency, at the angle set above. The level is relative to the mic's on-axis 1 kHz level, so mics don't differ in overall loudness, but off axis the sound gets quieter.">
               <span class="cap">Through</span>
               <select id="through" aria-label="Play through"></select>
             </div>
+          </div>
+          <div class="field play-opt chord-opt" title="Play a chord on the key you tap (the key is the root): Off for single notes, M major, m minor, 7 dominant 7th, M7 major 7th, m7 minor 7th, 5 power chord (root, 5th, octave). Several fingers also play several keys at once.">
+            <span class="cap">Chord</span>
+            <div class="seg small" id="chordSeg" role="radiogroup" aria-label="Chord"></div>
           </div>
         </div>
         <div id="instChips" class="inst-chips" hidden></div>
