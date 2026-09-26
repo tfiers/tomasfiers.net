@@ -266,7 +266,6 @@
   .ts-thin { fill: none; stroke: var(--ink-2); stroke-width: 1; }
   .ts-coil { fill: none; stroke: var(--accent); stroke-width: 1.3; }
   .ts-diaf { fill: var(--accent); }
-  .ts-ring { fill: none; stroke: var(--muted); stroke-width: 16; opacity: 0.55; }
   .ts-sig { fill: none; stroke: #d95926; stroke-width: 1.3; stroke-linejoin: round; }
   .ts-dot { fill: var(--ink-2); }
   .ts-mag { fill: var(--muted); opacity: 0.55; }
@@ -278,6 +277,13 @@
   .type-card a { color: var(--accent); }
   .ts-field { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 2 2; }
   .ts-t { font-size: 7px; fill: var(--muted); }
+  .ts-pm { font-size: 9px; font-weight: 600; fill: #d95926; }
+  .ts-q { font-size: 6px; font-weight: 600; fill: var(--accent); }
+  .ts-amp { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1; }
+  .type-card .ts-electret { float: right; width: 42%; max-width: 200px; margin: 4px 0 6px 12px; text-align: center; font-size: 0.68rem; line-height: 1.25; }
+  .ts-electret svg { width: 100%; height: auto; display: block; }
+  .ts-electret figcaption span { font-size: 0.64rem; color: var(--muted); }
+  .type-card h4.type-h { clear: both; }
   .ts-pole { font-size: 9px; font-weight: 600; fill: var(--ink-2); }
   .type-diagram { display: flex; gap: 10px; justify-content: center; margin: 8px 0 2px; }
   .type-diagram figure { margin: 0; text-align: center; font-size: 0.72rem; line-height: 1.25; }
@@ -1764,7 +1770,7 @@
       '<h4 class="type-h">Condenser</h4><p>The diaphragm and a fixed plate form a charged capacitor; sound changes the gap, and so the voltage. More sensitive and detailed, and reaches higher; needs phantom power (48 V).</p><ul>' +
       '<li><b>Large diaphragm</b> (about 1″): lower self-noise and a fuller sound; the classic studio vocal mic. Its pattern changes more with frequency (below), so sound from the sides or back is coloured.</li>' +
       '<li><b>Small diaphragm</b> (about ½″): more neutral, with nearly the same pattern at all frequencies; for acoustic instruments, overheads, and stereo pairs.</li>' +
-      '</ul>%DIAGRAM%<p><b>Electret condensers</b> (of any size) have their charge built into the material, so the capsule needs no polarising voltage. Like every condenser, they still have a tiny amplifier behind the capsule that needs a little power: phantom power, a battery, or a recorder\'s “plug-in power”. Here: the AT2020, Behringer C-2, DPA 4099, and Ovid CC 100.</p>' +
+      '</ul>%DIAGRAM%%ELECTRET%<p><b>Electret condensers</b> (of any size) have their charge built into the material, so the capsule needs no polarising voltage. Like every condenser, they still have a tiny amplifier behind the capsule that needs a little power: phantom power, a battery, or a recorder\'s “plug-in power”. Here: the AT2020, Behringer C-2, DPA 4099, and Ovid CC 100.</p>' +
       '<h4 class="type-h">Ribbon</h4><p>A thin metal ribbon hanging in a magnetic field; naturally figure-8. Its highs roll off gently from about 8–10 kHz, softening sibilance and cymbals, hence “smooth” or “warm”. Low output (needs a quiet, high-gain preamp), and delicate: keep it out of wind and plosives.</p><p>Most ribbons are passive and don\'t need phantom power; with a correctly wired cable it can\'t reach the ribbon anyway. But a faulty cable, or plugging in while phantom is on, can jolt the ribbon and stretch it, so switch phantom off before connecting one, especially an older one. Newer active ribbons have a built-in amplifier and do need phantom power.</p>',
     'Sensitivity': 'The output voltage for a 94 dB <a href="https://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level" target="_blank" rel="noopener">SPL</a> (1 Pa) tone at 1 kHz. Higher means less preamp gain is needed.',
     'Self-noise': 'The noise the mic itself generates, <a href="https://en.wikipedia.org/wiki/A-weighting" target="_blank" rel="noopener">A-weighted</a>: filtered the way our hearing works, so low rumble and the highest frequencies count less. Lower is quieter.',
@@ -1774,7 +1780,7 @@
   };
   // Column help as HTML; the Type help gets a diagram of two real mics' polar patterns at three
   // frequencies: a large diaphragm's pattern changes shape with frequency, a small diaphragm's hardly does.
-  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '').replace('%TYPES%', key === 'Type' ? typeSchematics() : '');
+  const helpHtml = key => COL_HELP[key].replace('%DIAGRAM%', key === 'Type' ? typeDiagram() : '').replace('%TYPES%', key === 'Type' ? typeSchematics() : '').replace('%ELECTRET%', key === 'Type' ? electretSchematic() : '');
   // Three simple cross-sections: how a dynamic, a condenser, and a ribbon mic turn sound into a signal.
   // The mic types, explained in a panel of their own (like the mic details).
   function openTypeCard() {
@@ -1797,7 +1803,9 @@
       ${[49, 53, 57, 61].map(x => `<ellipse cx="${x}" cy="55" rx="2.2" ry="10" class="ts-coil"/>`).join('')}
       <path d="M50 66 V96 H104 M58 66 V92 H104" class="ts-thin"/>${sig(106, 94)}
       <text x="84" y="22" class="ts-t" text-anchor="middle">magnet</text><text x="55" y="40" class="ts-t" text-anchor="middle">coil</text>
-      <text x="22" y="100" class="ts-t" text-anchor="middle">cone</text>`, '<b>Dynamic</b><br><span>sound moves a cone; the coil on it moves in a magnet’s field</span>');
+      <text x="22" y="100" class="ts-t" text-anchor="middle">cone</text>
+      <text x="70" y="57.6" class="ts-pole" style="font-size:6.5px" text-anchor="middle">N</text>
+      <text x="90" y="36" class="ts-pole" style="font-size:7px" text-anchor="middle">S</text><text x="90" y="80" class="ts-pole" style="font-size:7px" text-anchor="middle">S</text>`, '<b>Dynamic</b><br><span>sound moves a cone; the coil on it moves in a magnet’s field</span>');
     const con = svg(`${waves(4, 55)}
       <rect x="32" y="22" width="3" height="66" class="ts-diaf"/>
       <rect x="40" y="22" width="6" height="66" class="ts-plate"/>
@@ -1805,16 +1813,37 @@
       <path d="M96 12 V40 M88 42 H104 M92 47 H100 M88 52 H104 M92 57 H100 M96 59 V98 H43 V88" class="ts-thin"/>
       <circle cx="96" cy="12" r="1.5" class="ts-dot"/>
       <text x="108" y="50" class="ts-t">battery</text><text x="70" y="24" class="ts-t" text-anchor="middle">resistor</text>
-      <text x="39" y="106" class="ts-t" text-anchor="middle">diaphragm + plate</text>`, '<b>Condenser</b><br><span>sound changes the gap between diaphragm and plate, charged by a voltage</span>');
-    const pleats = Array.from({ length: 9 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 3.5`).join(' ');
-    const rib = svg(`${waves(4, 80)}
-      <circle cx="70" cy="66" r="26" class="ts-ring" stroke-dasharray="${(0.75 * 2 * Math.PI * 26 - 7).toFixed(1)} 14 ${(0.25 * 2 * Math.PI * 26 - 7).toFixed(1)}"/>
-      <path d="M66 20 ${pleats} M74 20 ${pleats}" class="ts-dia"/>
-      ${Array.from({ length: 9 }, (_, i) => `<path d="M${66 + (i % 2 ? 2.5 : 0)} ${20 + i * 3.5} h8" class="ts-fold"/>`).join('')}
-      <path d="M70 20 V12 H104 M72 51.5 Q88 50 90 20 V16 H104" class="ts-thin"/>${sig(106, 14)}
-      <text x="40" y="104" class="ts-t" text-anchor="middle">magnet</text><text x="50" y="30" class="ts-t" text-anchor="end">ribbon</text>`,
+      <text x="85" y="45" class="ts-pm" text-anchor="end">+</text><text x="85" y="60" class="ts-pm" text-anchor="end">−</text>
+      <text x="33" y="106" class="ts-t" text-anchor="middle">diaphragm</text><text x="50" y="74" class="ts-t">back plate</text>`, '<b>Condenser</b><br><span>sound changes the gap between diaphragm and plate, charged by a voltage</span>');
+    // A ring magnet seen from the front, with its poles facing each other across the slot at the top; the
+    // pleated ribbon hangs in that slot and moves in and out of the page.
+    const pleats = Array.from({ length: 5 }, (_, i) => `l${i % 2 ? -2.5 : 2.5} 3.5`).join(' ');
+    const rib = svg(`${waves(4, 84)}
+      <path d="M77 29.7 A35 35 0 1 1 63 29.7 V44.2 A21 21 0 1 0 77 44.2 Z" class="ts-mag"/>
+      <text x="58.5" y="37" class="ts-pole" text-anchor="middle">N</text><text x="81.5" y="37" class="ts-pole" text-anchor="middle">S</text>
+      <path d="M66 27.5 ${pleats} M74 27.5 ${pleats}" class="ts-dia"/>
+      ${Array.from({ length: 5 }, (_, i) => `<path d="M${66 + (i % 2 ? 2.5 : 0)} ${27.5 + i * 3.5} h8" class="ts-fold"/>`).join('')}
+      <path d="M70 27.5 V12 H104 M72 45 Q96 48 96 20 V16 H104" class="ts-thin"/>${sig(106, 14)}
+      <text x="75" y="24" class="ts-pm">+</text><text x="64" y="52" class="ts-pm" text-anchor="end">−</text>
+      <text x="40" y="106" class="ts-t" text-anchor="middle">magnet</text><text x="62" y="20" class="ts-t" text-anchor="end">ribbon</text>`,
       '<b>Ribbon</b><br><span>a thin, pleated metal ribbon moves in the gap of a magnet</span>');
     return `<div class="type-schematics">${dyn}${con}${rib}</div>`;
+  }
+  // An electret capsule in cross-section, after HyperPhysics: the charged film, the perforated back plate, the
+  // air behind it, and the tiny amplifier (FET) that still needs power.
+  function electretSchematic() {
+    const waves = [0, 6, 12].map(d => `<path d="M${3 + d} 30 q-5 14 0 28" class="ts-wave"/>`).join('');
+    const holes = [16, 25, 34, 43, 52, 61].map(y => `<rect x="31" y="${y}" width="4" height="6" class="ts-plate"/>`).join('');
+    const charges = [22, 34, 46, 58, 70].map(y => `<text x="26.5" y="${y}" class="ts-q" text-anchor="middle">+</text>`).join('');
+    return `<figure class="ts-electret"><svg viewBox="0 0 150 92">${waves}
+      <path d="M18 10 H72 V78 H18 V74 H68 V14 H18 Z" class="ts-mag"/>
+      <rect x="20" y="14" width="2" height="60" class="ts-diaf"/>${charges}${holes}
+      <text x="52" y="32" class="ts-t" text-anchor="middle">air</text>
+      <path d="M35 44 H80 M91 44 H108 M84.5 40 V24 H108" class="ts-thin"/>
+      <path d="M80 36 L91 44 L80 52 Z" class="ts-amp"/>${`<path d="M110 44 l3 0 l2 -7 l2 11 l2 -9 l2 6 l2 -3 l3 0" class="ts-sig"/>`}
+      <text x="110" y="26" class="ts-t">power</text><text x="85" y="62" class="ts-t" text-anchor="middle">FET</text>
+      <text x="18" y="89" class="ts-t">charged film</text></svg>
+      <figcaption><b>Electret capsule</b><br><span>the film keeps its charge; the tiny amplifier still needs power</span></figcaption></figure>`;
   }
   function typeDiagram() {
     const FREQS = [[1000, 'var(--ink-2)', '1 kHz'], [8000, '#d95926', '8 kHz'], [16000, '#3987e5', '16 kHz']];
