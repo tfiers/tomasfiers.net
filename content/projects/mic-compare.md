@@ -1,5 +1,5 @@
 ---
-title: "Microphone frequency responses"
+title: "Microphone frequency responses and polar patterns"
 date: 2026-09-25
 image: mic-compare.png
 link: /mics.html
