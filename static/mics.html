@@ -71,6 +71,10 @@
   .view-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; background: var(--page); }
   .src-note { margin: -4px 0 12px; }
+  .note p { margin: 0 0 4px; }
+  .note ul { margin: 0 0 4px; padding-left: 1.1em; }
+  .note li { margin: 2px 0; }
+  .note b { font-weight: 600; color: var(--ink-2); }
   .seg button { border: none; background: none; border-radius: 6px; padding: 3px 12px; font-size: 0.85rem; color: var(--ink-2); }
   .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
   #chartPanel:not(.polar) .polar-only, #chartPanel.polar .resp-only { display: none; }
@@ -206,8 +210,14 @@
   .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   .chip { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .chip .dot + .dot { margin-left: -2px; }
-  .chip .n { color: var(--muted); font-size: 0.75rem; font-weight: 400; }
-  .chip .caret { color: var(--muted); font-size: 0.65rem; margin-left: -2px; }
+  /* Quick picker under a multi-pattern chip: one toggle per pattern/variant, plus the info card. */
+  .picker { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    max-width: min(92vw, 380px); padding: 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.16); }
+  .picker[hidden] { display: none; }
+  .picker .chip { padding: 3px 9px; font-size: 0.82rem; }
+  .picker .chip .pat { width: 16px; height: 16px; }
+  .picker .info { border: none; background: none; color: var(--accent); font-size: 0.82rem; padding: 3px 6px; }
   button:disabled { color: var(--muted); cursor: default; }
 
   details { margin-top: 12px; }
@@ -243,7 +253,14 @@
       </div>
       <button type="button" class="info-btn" aria-expanded="false" aria-controls="srcNote" title="Where the curves come from">i</button>
       </div>
-      <p class="hint src-note" id="srcNote" hidden>Curves come from the manufacturers' frequency-response graphs (each mic's info card shows the original). Where the PDF holds the curve as vector data it is read exactly; otherwise it is traced from the image, to within about ±0.5 dB. Each maker measures differently (distance, room, smoothing), so compare loosely. Faded parts of a curve lie outside the mic's rated frequency range.</p>
+      <div class="hint note src-note" id="srcNote" hidden>
+        <p><b>Frequency</b> shows how strongly each mic picks up each pitch, in dB (up = more). <b>Polar</b> shows how much quieter it gets away from the front, at one frequency.</p>
+        <ul>
+          <li>The curves are the makers' own published graphs: read exactly from the PDF where possible, otherwise traced (±0.5 dB). Each mic's card shows the original.</li>
+          <li>Makers measure differently (distance, room, smoothing), so differences of a dB or two mean little.</li>
+          <li>Faded = outside the mic's rated frequency range.</li>
+        </ul>
+      </div>
       <div class="controls">
         <div class="field field-level resp-only">
           <span class="cap">Level</span>
@@ -288,7 +305,7 @@
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
       <p class="hint" id="polarWarn" hidden></p>
-      <p class="hint" id="polarNote" hidden></p>
+      <div class="hint note" id="polarNote" hidden></div>
       <details id="tableBox">
         <summary>Values at standard frequencies</summary>
         <div class="table-wrap" id="tableWrap"></div>
@@ -298,7 +315,15 @@
 
     <section class="panel" id="micPanel">
       <h2 class="with-info">Mics <button type="button" class="info-btn" id="micInfoBtn" aria-expanded="false" aria-controls="micNote" title="About the specs">i</button></h2>
-      <p class="hint mic-note" id="micNote" hidden>Specs from the manufacturers' data sheets. Sensitivity is the output for 1 Pa (94 dB SPL); self-noise is A-weighted; – = not published. Tap a name for the mic's info card (in the library: long-press a mic; mics with several patterns (▾) open their card on tap).</p>
+      <div class="hint note mic-note" id="micNote" hidden>
+        <ul>
+          <li><b>Sensitivity:</b> output for a sound of 1 Pa (94 dB SPL). Higher = louder signal, less preamp gain needed.</li>
+          <li><b>Self-noise:</b> the mic's own hiss, A-weighted. Lower = quieter.</li>
+          <li><b>Max SPL:</b> the loudest sound it handles before distorting.</li>
+          <li>– = not published by the maker.</li>
+        </ul>
+        <p>Tap a name for the mic's card, with photos, graphs and links. In the library: long-press a mic.</p>
+      </div>
       <div class="table-wrap mic-wrap"><table class="mic-table" id="micTable"></table></div>
       <p class="hint" id="micEmpty" hidden>No mics yet. Add one from the library.</p>
     </section>
@@ -348,6 +373,7 @@
   </div>
 </main>
 <dialog id="infoCard" aria-label="Mic info"></dialog>
+<div id="picker" class="picker" role="dialog" aria-label="Pick patterns" hidden></div>
 
 <script src="mics-library.js"></script>
 <script>
@@ -1106,17 +1132,19 @@
     const split = models.some(m => !owned(m));
     const variants = model => LIBRARY.filter(e => (e.model || e.name) === model);
     // One chip per model. A single-curve mic: tap to add / remove. A mic with several patterns or variants:
-    // tap opens its card to pick them; its dots show which are on the chart. Long press: the card, for any mic.
+    // tap opens a quick picker; its dots show which are on the chart. Long press: the info card, for any mic.
     const chip = model => {
       const vs = variants(model);
       const shown = vs.map(v => state.mics.find(x => x.lib === v.name)).filter(Boolean);
       const btn = document.createElement('button');
       btn.className = 'chip' + (shown.length ? ' on' : '');
       btn.innerHTML = (shown.length ? shown.map(m => `<span class="dot" style="background:${colorOf(m)}"></span>`).join('') : '<span class="plus">+</span>') +
-        esc(model) + (vs.length > 1 ? ` <span class="n">${vs.length}</span><span class="caret">▾</span>` : '');
+        esc(model);
+      btn.dataset.model = model;
       if (vs.length > 1) {
         btn.title = `${model}: pick patterns`;
-        btn.onclick = () => openModel(model);
+        btn.setAttribute('aria-haspopup', 'dialog');
+        btn.onclick = () => pickerModel === model ? closePicker() : openPicker(model, btn);
       } else {
         const m = shown[0];
         btn.title = (m ? 'Remove ' : 'Add ') + model;
@@ -1139,7 +1167,42 @@
       chips.appendChild(row);
     }
     $('libBox').hidden = !LIBRARY.length;
+    // Keep an open picker in sync (the chips were just rebuilt).
+    if (pickerModel) {
+      const a = [...chips.querySelectorAll('.chip')].find(b => b.dataset.model === pickerModel);
+      if (a) openPicker(pickerModel, a); else closePicker();
+    }
   }
+
+  let pickerModel = null;
+  function openPicker(model, anchor) {
+    const pk = $('picker');
+    pickerModel = model;
+    pk.innerHTML = '';
+    for (const v of LIBRARY.filter(e => (e.model || e.name) === model)) {
+      const m = state.mics.find(x => x.lib === v.name);
+      const b = document.createElement('button');
+      b.className = 'chip' + (m ? ' on' : '');
+      b.innerHTML = (m ? `<span class="dot" style="background:${colorOf(m)}"></span>` : '<span class="plus">+</span>') + variantLabel(v);
+      b.title = (m ? 'Remove ' : 'Add ') + v.name;
+      b.onclick = () => { if (m) state.mics = state.mics.filter(x => x !== m); else addFromLibrary(v); update(); };
+      pk.appendChild(b);
+    }
+    const info = document.createElement('button');
+    info.className = 'info'; info.textContent = 'Info'; info.title = 'Info card for ' + model;
+    info.onclick = () => { closePicker(); openModel(model); };
+    pk.appendChild(info);
+    pk.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    pk.style.top = (r.bottom + scrollY + 6) + 'px';
+    pk.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - pk.offsetWidth - 8)) + scrollX + 'px';
+  }
+  function closePicker() { pickerModel = null; $('picker').hidden = true; }
+  // Close the picker on a tap elsewhere (its own chip toggles it), or with Esc.
+  document.addEventListener('pointerdown', ev => {
+    if (pickerModel && !ev.target.closest('#picker') && !(ev.target.closest('.chip') && ev.target.closest('.chip').dataset.model === pickerModel)) closePicker();
+  });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && pickerModel) closePicker(); });
 
 
   // ---------- save / share ----------
@@ -1211,11 +1274,13 @@
     const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
     const narrow = new Map();
     for (const e of LIBRARY) if (e.offaxis && (e.offaxis.f[0] > 250 || e.offaxis.f[e.offaxis.f.length - 1] < 16000)) narrow.set(e.model || e.name, span(e.offaxis));
-    $('polarNote').textContent = 'Off axis, a curve is the on-axis curve plus the drop read from the maker\'s polar plot. ' +
-      'The plots are drawn at a few frequencies, mostly 250 Hz–16 kHz' +
-      (narrow.size ? ' (' + [...narrow].map(([m, sp]) => `${m}: ${sp}`).join('; ') + ')' : '') +
-      '; in between they are interpolated, beyond that the nearest one is held and the curve is faded. ' +
-      'Read from the PDF where possible, else traced from the image (roughly ±1 dB). Your own curves have no polar data.';
+    $('polarNote').innerHTML =
+      '<p>Off axis, a curve is an estimate: the on-axis curve minus the drop the maker\'s polar plot shows at that angle.</p><ul>' +
+      '<li>Polar plots give only a few frequencies, mostly 250 Hz–16 kHz' +
+      (narrow.size ? ' (' + [...narrow].map(([m, sp]) => `${esc(m)}: ${sp}`).join('; ') + ')' : '') +
+      '. In between, they are interpolated; outside, the nearest one is used and the curve is faded.</li>' +
+      '<li>Read from the PDF where possible, otherwise traced (±1 dB).</li>' +
+      '<li>Your own curves have no polar data, so they are hidden off axis.</li></ul>';
   }
 
   // Every ⓘ button shows/hides the note it controls (the Angle and Frequency ones share one).
