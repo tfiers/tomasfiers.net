@@ -184,6 +184,9 @@
   .with-info { display: flex; align-items: center; gap: 8px; }
   .info-btn { width: 20px; height: 20px; padding: 0; border-radius: 50%; font: italic 600 12px/1 Georgia, serif;
     color: var(--muted); border: 1.5px solid var(--muted); background: none; display: inline-grid; place-items: center; }
+  .info-btn.sm { width: 16px; height: 16px; font-size: 10px; border-width: 1.2px; text-transform: none; }
+  .cap.with-info { gap: 5px; }
+  #polarWarn + #polarNote, #polarNote { margin-top: 6px; }
   .info-btn[aria-expanded="true"] { color: var(--surface); background: var(--muted); }
   .mic-note { margin: -4px 0 10px; }
   h1 { margin-bottom: 16px; }
@@ -234,8 +237,8 @@
     <div class="main-col">
     <section class="panel" id="chartPanel">
       <div class="seg" id="viewSeg" role="tablist" aria-label="View">
-        <button type="button" role="tab" data-view="resp">Single direction</button>
-        <button type="button" role="tab" data-view="polar">Polar</button>
+        <button type="button" role="tab" data-view="resp">By frequency</button>
+        <button type="button" role="tab" data-view="polar">By direction</button>
       </div>
       <div class="controls">
         <div class="field field-level resp-only">
@@ -265,26 +268,27 @@
             <option value="auto">Auto</option>
           </select>
         </label>
-        <label class="field field-wide resp-only">
-          <span class="cap">Angle <span id="angleLabel" class="cap-val"></span></span>
-          <input type="range" id="angle" min="0" max="180" step="15" value="0">
-        </label>
-        <label class="field field-wide polar-only">
-          <span class="cap">Frequency <span id="polarFLabel" class="cap-val"></span></span>
-          <input type="range" id="polarF" min="0" max="6" step="1" value="2">
+        <div class="field field-wide resp-only">
+          <span class="cap with-info">Angle <span id="angleLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
+          <input type="range" id="angle" min="0" max="180" step="15" value="0" aria-label="Angle">
+        </div>
+        <div class="field field-wide polar-only">
+          <span class="cap with-info">Frequency <span id="polarFLabel" class="cap-val"></span><button type="button" class="info-btn sm polar-info" aria-expanded="false" aria-controls="polarNote" title="About the off-axis data">i</button></span>
+          <input type="range" id="polarF" min="0" max="6" step="1" value="2" aria-label="Frequency">
           <div class="ticks" aria-hidden="true"><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>16k</span></div>
-        </label>
+        </div>
       </div>
       <div class="chart-wrap" id="chartWrap">
         <svg id="chart" viewBox="0 0 800 440" role="img" aria-label="Frequency response curves"></svg>
         <div class="tip" id="tip"></div>
         <div class="empty" id="empty" hidden>No mics shown. Add one from the library or paste data on the right.</div>
       </div>
+      <p class="hint" id="polarWarn" hidden></p>
+      <p class="hint" id="polarNote" hidden></p>
       <details id="tableBox">
         <summary>Values at standard frequencies</summary>
         <div class="table-wrap" id="tableWrap"></div>
       </details>
-      <p class="hint" id="polarHint" hidden></p>
       <p class="hint" id="sensHint" hidden>Curves are shifted so that 1 kHz sits at the mic's published sensitivity: higher = more output for the same sound. Mics without a published sensitivity are hidden.</p>
     </section>
 
@@ -763,26 +767,31 @@
 
   // Which shown mics have no polar data (hidden off-axis / in the polar view), and which lack this frequency.
   function drawPolarHint() {
-    const s = state.settings, hint = $('polarHint');
+    const s = state.settings;
     const polar = s.view === 'polar', angle = Number(s.angle) || 0;
     const shown = state.mics.filter(m => m.visible);
     const none = shown.filter(m => !offaxisOf(m)).map(m => m.name);
-    let t = '';
-    if ((polar || angle) && none.length) t += `No polar data for ${none.join(', ')}` + (polar ? '. ' : ' (hidden off axis). ');
+    // Always shown: what's missing from the chart. Behind the ⓘ: how the off-axis data is made.
+    let w = '', t = '';
+    if ((polar || angle) && none.length) w += `No polar data for ${none.join(', ')}` + (polar ? '. ' : ' (hidden off axis). ');
     if (polar) {
       const f = POLAR_FREQS[s.polarF];
       const edge = shown.filter(m => { const oa = offaxisOf(m); return oa && (f < oa.f[0] || f > oa.f[oa.f.length - 1]); });
-      if (edge.length) t += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtHz(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}`; }).join('; ') + '. ';
-      if (!shown.some(m => offaxisOf(m))) t += 'All library mics have polar data; your own curves don\'t. ';
-    } else if (angle) {
+      if (edge.length) w += edge.map(m => { const oa = offaxisOf(m); return `${m.name}: nearest is ${fmtHz(f < oa.f[0] ? oa.f[0] : oa.f[oa.f.length - 1])}`; }).join('; ') + '. ';
+      if (!shown.some(m => offaxisOf(m))) w += 'All library mics have polar data; your own curves don\'t. ';
+    }
+    if (angle || polar) {
       // Mention mics whose polar plot covers less than the usual 250 Hz–16 kHz.
       const span = oa => oa.f.length === 1 ? fmtHz(oa.f[0]) + ' only' : fmtHz(oa.f[0]) + '–' + fmtHz(oa.f[oa.f.length - 1]);
       const narrow = shown.filter(m => { const oa = offaxisOf(m); return oa && (oa.f[0] > 250 || oa.f[oa.f.length - 1] < 16000); });
       t += 'Off axis = on-axis curve + the maker\'s polar plot, which mostly covers 250 Hz–16 kHz' +
         (narrow.length ? ' (' + narrow.map(m => `${m.name}: ${span(offaxisOf(m))}`).join('; ') + ')' : '') + '; beyond that the nearest is held (faded). ';
     }
-    if (polar || angle) t += 'Polar data traced from the manufacturers\' plots, roughly ±1 dB.';
-    hint.textContent = t; hint.hidden = !t;
+    t += 'Polar data from the manufacturers\' plots (read from the PDF where possible, else traced, roughly ±1 dB).';
+    $('polarWarn').textContent = w; $('polarWarn').hidden = !w;
+    $('polarNote').textContent = t;
+    $('polarNote').hidden = !polarNoteOpen;
+    document.querySelectorAll('.polar-info').forEach(b => b.setAttribute('aria-expanded', polarNoteOpen));
   }
 
   function drawTable() {
@@ -1185,6 +1194,10 @@
       history.replaceState(null, '', location.pathname + location.search);
     } catch (err) { msg('shareMsg', 'Could not read shared link.', true); }
   }
+
+  // ⓘ next to Angle / Frequency: show/hide how the off-axis data is made.
+  let polarNoteOpen = false;
+  document.querySelectorAll('.polar-info').forEach(b => b.onclick = () => { polarNoteOpen = !polarNoteOpen; drawPolarHint(); });
 
   // ⓘ next to 'Mics': show/hide the note about the data.
   $('micInfoBtn').onclick = ev => {
