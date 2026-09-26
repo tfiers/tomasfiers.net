@@ -212,6 +212,34 @@ for e in lib:
     e['name']=e['model']+(' ('+e['pattern'][0].lower()+e['pattern'][1:]+')' if e.get('pattern') else '')
     e['points']=[[round(f,1),round(d,2)] for f,d in e['points']]
     print(e['name'],len(e['points']))
+
+# Short lines (at most ~110 characters), so the file can be read and diffed on GitHub: one field per line,
+# and long lists (curves, polar data) packed several values per line.
+WIDTH = 110
+def fmt(v, ind):
+    one = json.dumps(v, separators=(',', ':'), ensure_ascii=False)
+    if ind + len(one) <= WIDTH or not isinstance(v, (list, dict)) or not v:
+        return ' ' * ind + one
+    pad = ' ' * (ind + 2)
+    if isinstance(v, dict):
+        items = []
+        for k, x in v.items():
+            key = json.dumps(k, ensure_ascii=False) + ':'
+            sub = fmt(x, ind + 2).lstrip()
+            items.append(pad + key + sub)
+        return ' ' * ind + '{\n' + ',\n'.join(items) + '\n' + ' ' * ind + '}'
+    parts = [fmt(x, ind + 2).lstrip() for x in v]
+    if any('\n' in p for p in parts):
+        return ' ' * ind + '[\n' + ',\n'.join(pad + p for p in parts) + '\n' + ' ' * ind + ']'
+    lines, cur = [], ''
+    for p in parts:
+        if cur and len(pad) + len(cur) + 1 + len(p) > WIDTH:
+            lines.append(cur); cur = p
+        else:
+            cur = cur + ',' + p if cur else p
+    lines.append(cur)
+    return ' ' * ind + '[\n' + ',\n'.join(pad + l for l in lines) + '\n' + ' ' * ind + ']'
+
 js="""// Mic Atlas (mics.html): the built-in microphones. One entry per curve (a mic with several patterns
 // or variants has one entry per pattern, sharing `model`). To add a mic, append an entry; only
 // model, name and points are required, everything else is optional.
@@ -232,6 +260,6 @@ js="""// Mic Atlas (mics.html): the built-in microphones. One entry per curve (a
 // The curves here were read from the vector paths in the manufacturers' PDFs where possible,
 // otherwise traced from the images (roughly ±0.5 dB; polar data ±1 dB).
 window.MIC_LIBRARY = [
-""" + ",\n".join("  "+json.dumps(e,separators=(',',':'),ensure_ascii=False) for e in lib) + "\n];\n"
+""" + ",\n".join(fmt(e, 2) for e in lib) + "\n];\n"
 open(STATIC+'mics-library.js','w').write(js)
 print(len(js))
